@@ -3,7 +3,7 @@ package com.lankatrails.lankatrails_backend.model.enums;
 import lombok.Getter;
 
 @Getter
-public enum ProviderCategory {
+public enum ServiceCategory {
     ACCOMMODATION("Accommodation"),
     ACTIVITY("Activity"),
     TOUR_GUIDE("Tour Guide"),
@@ -12,7 +12,7 @@ public enum ProviderCategory {
 
     private final String displayName;
 
-    ProviderCategory(String displayName) {
+    ServiceCategory(String displayName) {
         this.displayName = displayName;
     }
 }

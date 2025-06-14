@@ -28,7 +28,7 @@ public class RegistrationController {
             @Valid @RequestBody TouristRegistrationRequest request) {
         RegistrationResponse tourist = registrationService.registerTourist(request);
         return ResponseEntity.ok(
-                new APIResponse<>(true, "Tourist registered successfully", tourist.getEmail())
+                new APIResponse<>(true, "Tourist registered successfully", tourist.toString())
         );
     }
 
@@ -37,7 +37,7 @@ public class RegistrationController {
             @Valid @RequestBody ProviderRegistrationRequest request) {
         RegistrationResponse provider = registrationService.registerProvider(request);
         return ResponseEntity.ok(
-                new APIResponse<>(true, "Provider registered successfully", provider.getEmail())
+                new APIResponse<>(true, "Provider registered successfully", provider.toString())
         );
     }
 }

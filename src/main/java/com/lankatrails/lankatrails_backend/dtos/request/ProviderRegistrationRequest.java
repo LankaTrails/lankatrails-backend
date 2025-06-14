@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
-import com.lankatrails.lankatrails_backend.model.enums.ProviderCategory;
+import com.lankatrails.lankatrails_backend.model.Category;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -22,7 +23,7 @@ public class ProviderRegistrationRequest extends RegistrationRequest {
 
     @Setter
     @Getter
-    private Set<ProviderCategory> categories;
+    private Set<Category> categories;
 
     public ProviderRegistrationRequest() {
         this.setUserRole(UserRole.PROVIDER);

@@ -1,6 +1,6 @@
 package com.lankatrails.lankatrails_backend.model;
 
-import com.lankatrails.lankatrails_backend.model.enums.ProviderCategory;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
 import jakarta.persistence.*;
@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -30,11 +31,14 @@ public class Provider extends User {
      @Column(name = "logo_url")
      private String logoUrl;
 
-     @ElementCollection(targetClass = ProviderCategory.class)
-     @CollectionTable(name = "provider_categories", joinColumns = @JoinColumn(name = "user_id"))
-     @Column(name = "category")
-     @Enumerated(EnumType.STRING)
-     private Set<ProviderCategory> categories;
+     @Getter
+     @Setter
+     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE},
+             fetch = FetchType.EAGER)
+     @JoinTable(name = "provider_categories",
+             joinColumns = @JoinColumn(name = "user_id"),
+             inverseJoinColumns = @JoinColumn(name = "category_id"))
+     private Set<Category> categories = new HashSet<>();
 
      @PrePersist
      protected void onCreate() {
