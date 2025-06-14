@@ -1,15 +1,15 @@
 package com.lankatrails.lankatrails_backend.model;
 
+import com.lankatrails.lankatrails_backend.model.enums.ProviderCategory;
 import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.Set;
 
 @Entity
 @Table(name = "providers")
@@ -26,11 +26,19 @@ public class Provider extends User {
      @Column(name = "business_description")
      private String businessDescription;
 
+     @Size(max = 255)
+     @Column(name = "logo_url")
+     private String logoUrl;
+
+     @ElementCollection(targetClass = ProviderCategory.class)
+     @CollectionTable(name = "provider_categories", joinColumns = @JoinColumn(name = "user_id"))
+     @Column(name = "category")
+     @Enumerated(EnumType.STRING)
+     private Set<ProviderCategory> categories;
+
      @PrePersist
      protected void onCreate() {
-        // Assuming there's a method in User to set the role
-        super.setRole(UserRole.PROVIDER);
-        super.setStatus(UserStatus.ACTIVE);
+          super.setRole(UserRole.PROVIDER);
+          super.setStatus(UserStatus.PENDING);
      }
-
 }

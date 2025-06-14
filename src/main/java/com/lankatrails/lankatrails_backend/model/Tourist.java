@@ -30,4 +30,28 @@ public class Tourist extends User {
         super.setRole(UserRole.TOURIST);
         super.setStatus(UserStatus.ACTIVE);
     }
+
+    public @Size(max = 20) String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(@Size(max = 20) String firstName) {
+        this.firstName = firstName;
+    }
+
+    public @Size(max = 50) String getCountry() {
+        return country;
+    }
+
+    public void setCountry(@Size(max = 50) String country) {
+        this.country = country;
+    }
+
+    public @Size(max = 20) String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(@Size(max = 20) String lastName) {
+        this.lastName = lastName;
+    }
 }
