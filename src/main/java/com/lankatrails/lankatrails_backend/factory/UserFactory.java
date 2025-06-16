@@ -1,15 +1,20 @@
 package com.lankatrails.lankatrails_backend.factory;
 
-import com.lankatrails.lankatrails_backend.model.Provider;
-import com.lankatrails.lankatrails_backend.model.Tourist;
-import com.lankatrails.lankatrails_backend.model.User;
-import com.lankatrails.lankatrails_backend.model.enums.UserRole;
-import com.lankatrails.lankatrails_backend.dtos.request.ProviderRegistrationRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TouristRegistrationRequest;
+import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.enums.*;
+import com.lankatrails.lankatrails_backend.dtos.request.*;
+import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Component
+@RequiredArgsConstructor
 public class UserFactory {
+
+    private final CategoryRepository categoryRepository;
 
     public User createUser(TouristRegistrationRequest request) {
         Tourist tourist = new Tourist();
@@ -27,8 +32,21 @@ public class UserFactory {
         provider.setBusinessName(request.getBusinessName());
         provider.setBusinessDescription(request.getBusinessDescription());
         provider.setLogoUrl(request.getLogoUrl());
-        provider.setCategories(request.getCategories());
+        provider.setCategories(mapCategories(request.getCategories()));
         provider.setRole(UserRole.PROVIDER);
         return provider;
+    }
+
+    private Set<Category> mapCategories(Set<String> categoryNames) {
+        Set<Category> categories = new HashSet<>();
+
+        categoryNames.forEach(categoryName -> {
+            ServiceCategory serviceCategory = ServiceCategory.valueOf(categoryName.toUpperCase());
+            Category category = categoryRepository.findByCategoryName(serviceCategory)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid category: " + categoryName));
+            categories.add(category);
+        });
+
+        return categories;
     }
 }

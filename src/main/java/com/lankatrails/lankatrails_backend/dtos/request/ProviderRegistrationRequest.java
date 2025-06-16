@@ -23,7 +23,7 @@ public class ProviderRegistrationRequest extends RegistrationRequest {
 
     @Setter
     @Getter
-    private Set<Category> categories;
+    private Set<String> categories;
 
     public ProviderRegistrationRequest() {
         this.setUserRole(UserRole.PROVIDER);

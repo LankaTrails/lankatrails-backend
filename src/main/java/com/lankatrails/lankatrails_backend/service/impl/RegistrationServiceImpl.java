@@ -1,12 +1,11 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.ProviderRegistrationRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TouristRegistrationRequest;
-import com.lankatrails.lankatrails_backend.dtos.response.RegistrationResponse;
-import com.lankatrails.lankatrails_backend.exception.EmailAlreadyExistsException;
-import com.lankatrails.lankatrails_backend.factory.UserFactory;
-import com.lankatrails.lankatrails_backend.model.User;
-import com.lankatrails.lankatrails_backend.repositories.UserRepository;
+import com.lankatrails.lankatrails_backend.dtos.request.*;
+import com.lankatrails.lankatrails_backend.dtos.response.*;
+import com.lankatrails.lankatrails_backend.exception.*;
+import com.lankatrails.lankatrails_backend.factory.*;
+import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.service.RegistrationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

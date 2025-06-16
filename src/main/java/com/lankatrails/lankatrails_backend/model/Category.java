@@ -11,17 +11,17 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-@Table(name = "category")
+@Table(name = "categories")
 @ToString
 public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "category_id")
-    private Integer roleId;
+    private Integer categoryId;
 
     @ToString.Exclude
     @Enumerated(EnumType.STRING)
-    @Column(length = 20, name = "category_name")
+    @Column(length = 20, name = "name")
     private ServiceCategory categoryName;
 
     public Category(ServiceCategory categoryName) {
