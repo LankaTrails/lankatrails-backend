@@ -28,7 +28,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         log.info("Attempting tourist registration for email: {}", request.getEmail());
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new EmailAlreadyExistsException("Email " + request.getEmail() + " is already registered");
+            throw new EmailAlreadyExistsException(request.getEmail());
         }
 
         User user = userFactory.createUser(request);
@@ -51,7 +51,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         log.info("Attempting provider registration for email: {}", request.getEmail());
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new EmailAlreadyExistsException("Email " + request.getEmail() + " is already registered");
+            throw new EmailAlreadyExistsException(request.getEmail());
         }
 
         User user = userFactory.createUser(request);
