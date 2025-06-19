@@ -24,12 +24,11 @@ public class RegistrationController {
     private final RegistrationService registrationService;
 
     @PostMapping("/signup/tourist")
-    public ResponseEntity<APIResponse<String>> registerTourist(
+    public ResponseEntity<RegistrationResponse> registerTourist(
             @Valid @RequestBody TouristRegistrationRequest request) {
         RegistrationResponse tourist = registrationService.registerTourist(request);
-        return ResponseEntity.ok(
-                new APIResponse<>(true, "Tourist registered successfully", tourist.toString())
-        );
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(tourist);
     }
 
     @PostMapping("/signup/provider")
