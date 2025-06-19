@@ -7,6 +7,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.util.List;
+import java.util.Set;
+
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,6 +26,9 @@ public class Category {
     @Enumerated(EnumType.STRING)
     @Column(length = 20, name = "name")
     private ServiceCategory categoryName;
+
+    @OneToMany(mappedBy = "category",cascade = CascadeType.ALL)
+    private Set<Services> services;
 
     public Category(ServiceCategory categoryName) {
         this.categoryName = categoryName;

@@ -40,9 +40,13 @@ public class Provider extends User {
              inverseJoinColumns = @JoinColumn(name = "category_id"))
      private Set<Category> categories = new HashSet<>();
 
+     @OneToMany(mappedBy = "provider", cascade = CascadeType.ALL)
+     private Set<Services> services = new HashSet<>();
+
      @PrePersist
      protected void onCreate() {
           super.setRole(UserRole.PROVIDER);
           super.setStatus(UserStatus.PENDING);
      }
+
 }
