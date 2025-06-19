@@ -4,11 +4,15 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Entity
+@Inheritance(strategy = InheritanceType.JOINED)
+@Table(name = "services")
 @Getter
 @Setter
 @NoArgsConstructor
+@SuperBuilder
 public class Services {
 
     @Id
@@ -23,12 +27,10 @@ public class Services {
 
     @ManyToOne
     @JoinColumn(name = "provider_id")
-    private Provider provider_id;
+    private Provider provider;
 
     @ManyToOne
     @JoinColumn(name = "category_id")
-    private  Category category_id;
-
-
+    private  Category category;
 
 }
