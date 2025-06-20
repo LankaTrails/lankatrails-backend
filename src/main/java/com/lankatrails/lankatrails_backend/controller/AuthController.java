@@ -2,9 +2,7 @@ package com.lankatrails.lankatrails_backend.controller;
 
 
 import com.lankatrails.lankatrails_backend.dtos.request.ProviderRegistrationRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.RegistrationRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TouristRegistrationRequest;
-import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.RegistrationResponse;
 import com.lankatrails.lankatrails_backend.service.RegistrationService;
 import jakarta.validation.Valid;
@@ -19,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-public class RegistrationController {
+public class AuthController {
 
     private final RegistrationService registrationService;
 
@@ -32,11 +30,10 @@ public class RegistrationController {
     }
 
     @PostMapping("/signup/provider")
-    public ResponseEntity<APIResponse<String>> registerProvider(
+    public ResponseEntity<RegistrationResponse> registerProvider(
             @Valid @RequestBody ProviderRegistrationRequest request) {
         RegistrationResponse provider = registrationService.registerProvider(request);
-        return ResponseEntity.ok(
-                new APIResponse<>(true, "Provider registered successfully", provider.toString())
-        );
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(provider);
     }
 }
