@@ -6,6 +6,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
 @Table(name = "services")
@@ -17,7 +20,7 @@ public class Services {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Integer service_id;
+    private Long service_id;
 
     private String service_name;
 
@@ -32,5 +35,7 @@ public class Services {
     @ManyToOne
     @JoinColumn(name = "category_id")
     private  Category category;
+
+
 
 }

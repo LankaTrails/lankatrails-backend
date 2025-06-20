@@ -1,6 +1,6 @@
 package com.lankatrails.lankatrails_backend.dtos.response;
 
-import com.lankatrails.lankatrails_backend.dtos.request.ServiceRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,5 +13,5 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ServiceResponse {
-    private List<ServiceRequest> content;
+    private List<ActivityServiceRequest> content;
 }
