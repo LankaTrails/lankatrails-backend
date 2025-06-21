@@ -5,22 +5,49 @@ import com.lankatrails.lankatrails_backend.dtos.response.*;
 import com.lankatrails.lankatrails_backend.exception.*;
 import com.lankatrails.lankatrails_backend.factory.*;
 import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import com.lankatrails.lankatrails_backend.repositories.*;
-import com.lankatrails.lankatrails_backend.service.RegistrationService;
+import com.lankatrails.lankatrails_backend.security.jwt.JwtUtils;
+import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
+import com.lankatrails.lankatrails_backend.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseCookie;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class RegistrationServiceImpl implements RegistrationService {
+public class AuthServiceImpl implements AuthService {
 
+    @Autowired
     private final UserRepository userRepository;
+
+    @Autowired
     private final PasswordEncoder passwordEncoder;
+
+    @Autowired
     private final UserFactory userFactory;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private JwtUtils jwtUtils;
 
     @Override
     @Transactional
@@ -65,6 +92,27 @@ public class RegistrationServiceImpl implements RegistrationService {
                 .email(savedUser.getEmail())
                 .role(savedUser.getRole())
                 .status(savedUser.getStatus())
+                .build();
+    }
+
+    @Override
+    public LoginResponse authenticateUser(LoginRequest request) {
+        Authentication authentication = authenticationManager
+                .authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+
+        String jwt = jwtUtils.generateToken(userDetails);
+        String refreshToken = jwtUtils.generateRefreshToken(userDetails);
+
+        return LoginResponse.builder()
+                .id(userDetails.getId())
+                .email(userDetails.getUsername())
+                .role(UserRole.valueOf(userDetails.getAuthorities().iterator().next().getAuthority()))
+                .jwtToken(jwt)
+                .refreshToken(refreshToken)
+                .emailVerified(userDetails.isEmailVerified())
                 .build();
     }
 }
