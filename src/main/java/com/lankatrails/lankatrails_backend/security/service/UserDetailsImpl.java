@@ -2,6 +2,7 @@ package com.lankatrails.lankatrails_backend.security.service;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.lankatrails.lankatrails_backend.model.User;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -24,13 +25,17 @@ public class UserDetailsImpl implements UserDetails {
     @JsonIgnore
     private String password;
 
-    private Collection<? extends GrantedAuthority> authorities;
+    @Getter
+    private Boolean emailVerified;
 
-    public UserDetailsImpl(Long id, String email, String password,
+    private final Collection<? extends GrantedAuthority> authorities;
+
+    public UserDetailsImpl(Long id, String email, String password, Boolean emailVerified,
                            Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.email = email;
         this.password = password;
+        this.emailVerified = emailVerified;
         this.authorities = authorities;
     }
 
@@ -40,9 +45,10 @@ public class UserDetailsImpl implements UserDetails {
         );
 
         return new UserDetailsImpl(
-                user.getId(),
+                user.getUserId(),
                 user.getEmail(),
                 user.getPassword(),
+                user.getEmailVerified(),
                 authorities
         );
     }
@@ -89,5 +95,7 @@ public class UserDetailsImpl implements UserDetails {
         return id.equals(user.id);
     }
 
-
+    public boolean isEmailVerified() {
+        return emailVerified != null && emailVerified;
+    }
 }
