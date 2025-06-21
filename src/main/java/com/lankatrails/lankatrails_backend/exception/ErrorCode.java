@@ -10,10 +10,12 @@ public enum ErrorCode {
     BAD_CREDENTIALS("AUTH_002", "Invalid email or password"),
     EMAIL_NOT_VERIFIED("AUTH_003", "Email not verified"),
     USER_NOT_FOUND("AUTH_004", "User not found"),
+    USER_PENDING_APPROVAL("AUTH_005", "User pending approval"),
 
     // Resource Errors
     RESOURCE_NOT_FOUND("RESOURCE_001", "Resource not found"),
     EMAIL_ALREADY_EXISTS("RESOURCE_002", "Email already in use"),
+    BAD_REQUEST("RESOURCE_003", "Bad request"),
 
     // System Errors
     INTERNAL_ERROR("SYSTEM_001", "Internal server error");

@@ -68,7 +68,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/tourist/**").hasRole("TOURIST")
                         .requestMatchers("/api/provider/**").hasRole("PROVIDER")
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").permitAll()// Update to admin role
                         .requestMatchers("/h2-console/**").permitAll()
                         .anyRequest().authenticated()
                 )
