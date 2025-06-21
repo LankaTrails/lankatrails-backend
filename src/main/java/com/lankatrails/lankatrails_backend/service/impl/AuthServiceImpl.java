@@ -6,6 +6,7 @@ import com.lankatrails.lankatrails_backend.exception.*;
 import com.lankatrails.lankatrails_backend.factory.*;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.UserRole;
+import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.jwt.JwtUtils;
 import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
@@ -121,6 +122,11 @@ public class AuthServiceImpl implements AuthService {
         } catch (AuthenticationException ex) {
             log.error("Authentication failed for {}: {}", request.getEmail(), ex.getMessage());
             throw new BadCredentialsException("Invalid email or password.");
+        }
+
+        if (user.getStatus() == UserStatus.PENDING) {
+            log.warn("Login failed: User account is pending approval for {}", request.getEmail());
+            throw new UserPendingApprovalException("Your account is pending approval. Please wait for admin approval.");
         }
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
