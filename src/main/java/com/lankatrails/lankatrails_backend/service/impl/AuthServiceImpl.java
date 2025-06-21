@@ -20,6 +20,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,6 +70,7 @@ public class AuthServiceImpl implements AuthService {
                 .email(savedUser.getEmail())
                 .role(savedUser.getRole())
                 .status(savedUser.getStatus())
+                .emailVerified(savedUser.getEmailVerified())
                 .build();
     }
 
@@ -92,27 +94,53 @@ public class AuthServiceImpl implements AuthService {
                 .email(savedUser.getEmail())
                 .role(savedUser.getRole())
                 .status(savedUser.getStatus())
+                .emailVerified(savedUser.getEmailVerified())
                 .build();
     }
 
     @Override
     public LoginResponse authenticateUser(LoginRequest request) {
-        Authentication authentication = authenticationManager
-                .authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+        log.info("Attempting login for email: {}", request.getEmail());
+
+        // Fetch user by email to check if verified before authenticating
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + request.getEmail()));
+
+        // Check if email is verified
+        if (!user.getEmailVerified()) {
+            log.warn("Login failed: Email not verified for {}", request.getEmail());
+            throw new BadCredentialsException("Please verify your email before logging in.");
+        }
+
+        // Perform authentication (Spring Security)
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
+        } catch (AuthenticationException ex) {
+            log.error("Authentication failed for {}: {}", request.getEmail(), ex.getMessage());
+            throw new BadCredentialsException("Invalid email or password.");
+        }
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
+        // Generate tokens
         String jwt = jwtUtils.generateToken(userDetails);
         String refreshToken = jwtUtils.generateRefreshToken(userDetails);
 
+        log.info("User {} logged in successfully with role: {}", userDetails.getUsername(), userDetails.getAuthorities());
+
+        // Build and return login response
         return LoginResponse.builder()
                 .id(userDetails.getId())
                 .email(userDetails.getUsername())
                 .role(UserRole.valueOf(userDetails.getAuthorities().iterator().next().getAuthority()))
                 .jwtToken(jwt)
                 .refreshToken(refreshToken)
-                .emailVerified(userDetails.isEmailVerified())
+                .emailVerified(true)
                 .build();
     }
+
 }

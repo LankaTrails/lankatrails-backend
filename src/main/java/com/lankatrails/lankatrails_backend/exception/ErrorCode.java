@@ -9,6 +9,7 @@ public enum ErrorCode {
     AUTHENTICATION_FAILED("AUTH_001", "Authentication failed"),
     BAD_CREDENTIALS("AUTH_002", "Invalid email or password"),
     EMAIL_NOT_VERIFIED("AUTH_003", "Email not verified"),
+    USER_NOT_FOUND("AUTH_004", "User not found"),
 
     // Resource Errors
     RESOURCE_NOT_FOUND("RESOURCE_001", "Resource not found"),
