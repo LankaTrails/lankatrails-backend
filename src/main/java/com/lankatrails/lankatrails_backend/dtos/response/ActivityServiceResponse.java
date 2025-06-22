@@ -12,6 +12,8 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ServiceResponse {
+public class ActivityServiceResponse {
     private List<ActivityServiceRequest> content;
+
+    private String msg;
 }

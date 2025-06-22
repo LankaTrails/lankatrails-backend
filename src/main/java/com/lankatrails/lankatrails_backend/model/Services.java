@@ -28,6 +28,8 @@ public class Services {
 
     private String contact_no;
 
+    private Boolean status;
+
     @ManyToOne
     @JoinColumn(name = "provider_id")
     private Provider provider;

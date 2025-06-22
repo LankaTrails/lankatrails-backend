@@ -13,4 +13,5 @@ public abstract class ServiceRequest {
     private String service_name;
     private String location_based;
     private String contact_no;
+    private Boolean status;
 }
