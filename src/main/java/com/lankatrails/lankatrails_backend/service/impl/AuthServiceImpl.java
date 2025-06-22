@@ -8,6 +8,7 @@ import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.jwt.JwtUtils;
+import com.lankatrails.lankatrails_backend.security.service.RefreshTokenRedisService;
 import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
 import com.lankatrails.lankatrails_backend.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private JwtUtils jwtUtils;
+
+    @Autowired
+    private RefreshTokenRedisService refreshTokenRedisService;
 
     @Override
     @Transactional
@@ -129,6 +133,8 @@ public class AuthServiceImpl implements AuthService {
         // Generate tokens
         String jwt = jwtUtils.generateToken(userDetails);
         String refreshToken = jwtUtils.generateRefreshToken(userDetails);
+
+        refreshTokenRedisService.storeToken(userDetails.getEmail(), refreshToken);
 
         log.info("User {} logged in successfully with role: {}", userDetails.getUsername(), userDetails.getAuthorities());
 
