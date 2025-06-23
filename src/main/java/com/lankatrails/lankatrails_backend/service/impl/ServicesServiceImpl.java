@@ -85,4 +85,27 @@ public class ServicesServiceImpl implements ServicesService {
 
   }
 
+  @Override
+  public ActivityServiceRequest updateWithId(Long Id,ActivityService activityService){
+      ActivityService activity=activityServiceRepository.findById(Id)
+              .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
+
+      //update the entry
+      activity.setService_name(activityService.getService_name());
+      activity.setLocation_based(activityService.getLocation_based());
+      activity.setContact_no(activityService.getContact_no());
+      activity.setStatus(activityService.getStatus());
+      activity.setActivity_type(activityService.getActivity_type());
+      activity.setActivity_details(activityService.getActivity_details());
+      activity.setSafety_instructions(activityService.getSafety_instructions());
+
+      //save the updated service
+      activityServiceRepository.save(activity);
+
+      return modelMapper.map(activityServiceRepository.findById(Id),ActivityServiceRequest.class);
+
+
+
+  }
+
 }

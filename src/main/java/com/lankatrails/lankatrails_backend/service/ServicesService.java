@@ -10,5 +10,6 @@ public interface ServicesService {
     ActivityServiceResponse getAll_ActivityServices();
     ActivityServiceRequest searchWithId(Long Id);
     ActivityServiceRequest removeActivityService(Long Id,ActivityService activityService);
+    ActivityServiceRequest updateWithId(Long Id,ActivityService activityService);
 
 }
