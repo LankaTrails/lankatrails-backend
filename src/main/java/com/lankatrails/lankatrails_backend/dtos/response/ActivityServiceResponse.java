@@ -15,5 +15,4 @@ import java.util.List;
 public class ActivityServiceResponse {
     private List<ActivityServiceRequest> content;
 
-    private String msg;
 }

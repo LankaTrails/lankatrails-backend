@@ -28,6 +28,11 @@ public class ActivityServiceController {
                //return ResponseEntity.status(HttpStatus.CREATED).body(ActivityServiceDTO);
                return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.CREATED);
     }
+    @GetMapping("/delete/{id}")
+    public ResponseEntity<ActivityServiceRequest> removeActivityService(@PathVariable Long id,@RequestBody ActivityService activityService){
+        ActivityServiceRequest activityServiceResponse=servicesService.removeActivityService(id,activityService);
+        return new ResponseEntity<>(activityServiceResponse,HttpStatus.OK);
+    }
 
     @GetMapping("/getAll")
     public ResponseEntity<ActivityServiceResponse> getAll_ActivityServices(){
@@ -36,16 +41,14 @@ public class ActivityServiceController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ActivityServiceResponse> searchById(@PathVariable Long id){
-        ActivityServiceResponse activityServiceResponse=servicesService.searchWithId(id);
-        return new ResponseEntity<>(activityServiceResponse,HttpStatus.OK);
+    public ResponseEntity<ActivityServiceRequest> searchById(@PathVariable Long id){
+        ActivityServiceRequest activityService=servicesService.searchWithId(id);
+        return new ResponseEntity<>(activityService,HttpStatus.OK);
     }
 
-//    @GetMapping("/{id}")
-//    public ResponseEntity<ActivityServiceResponse> findServiceById(@PathVariable Long id){
-//        ActivityServiceResponse activityServiceResponse=servicesService.searchById(id);
-//        return new ResponseEntity<>(activityServiceResponse,HttpStatus.OK);
-//    }
+
+
+
 
 
 

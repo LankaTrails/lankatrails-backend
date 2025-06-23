@@ -8,8 +8,7 @@ import com.lankatrails.lankatrails_backend.model.Services;
 public interface ServicesService {
     ActivityServiceRequest addService(ActivityService activityService, Long category, Long provider );
     ActivityServiceResponse getAll_ActivityServices();
-    ActivityServiceResponse searchWithId(Long Id);
+    ActivityServiceRequest searchWithId(Long Id);
+    ActivityServiceRequest removeActivityService(Long Id,ActivityService activityService);
 
-
-//    ActivityServiceResponse searchById(Long id);
 }

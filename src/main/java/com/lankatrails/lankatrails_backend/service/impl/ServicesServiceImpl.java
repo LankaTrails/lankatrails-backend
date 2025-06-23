@@ -67,11 +67,22 @@ public class ServicesServiceImpl implements ServicesService {
     }
 
   @Override
-  public ActivityServiceResponse searchWithId(Long Id){
-        ActivityServiceResponse activityServiceResponse=new ActivityServiceResponse();
+  public ActivityServiceRequest searchWithId(Long Id){
+        ActivityService activityService=activityServiceRepository.findById(Id)
+                .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
 
-        activityServiceResponse.setMsg("hello"+Id);
-        return activityServiceResponse;
+        return modelMapper.map(activityService,ActivityServiceRequest.class);
+  }
+  @Override
+  public ActivityServiceRequest removeActivityService(Long Id,ActivityService activityService){
+        ActivityService activity=activityServiceRepository.findById(Id)
+                .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
+        activity.setStatus(false);
+
+        activityServiceRepository.save(activity);
+
+        return modelMapper.map(activityServiceRepository.findById(Id),ActivityServiceRequest.class);
+
   }
 
 }
