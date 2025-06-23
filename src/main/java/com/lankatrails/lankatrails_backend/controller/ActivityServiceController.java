@@ -35,8 +35,12 @@ public class ActivityServiceController {
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<ActivityServiceResponse> getAll_ActivityServices(){
-        ActivityServiceResponse activityServiceResponse=servicesService.getAll_ActivityServices();
+    public ResponseEntity<ActivityServiceResponse> getAll_ActivityServices(
+            @RequestParam(name = "pageNumber") Integer pageNumber,
+            @RequestParam(name = "pageSize") Integer pageSize
+    ){
+
+        ActivityServiceResponse activityServiceResponse=servicesService.getAll_ActivityServices(pageNumber,pageSize);
         return new ResponseEntity<>(activityServiceResponse,HttpStatus.OK);
     }
 

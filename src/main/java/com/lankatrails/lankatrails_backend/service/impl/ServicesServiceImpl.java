@@ -2,6 +2,7 @@ package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
+import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.ActivityService;
 import com.lankatrails.lankatrails_backend.model.Category;
@@ -14,6 +15,9 @@ import com.lankatrails.lankatrails_backend.service.ServicesService;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,13 +60,29 @@ public class ServicesServiceImpl implements ServicesService {
     }
 
     @Override
-    public ActivityServiceResponse getAll_ActivityServices(){
-        List<ActivityService> activityServices=activityServiceRepository.findAll();
+    public ActivityServiceResponse getAll_ActivityServices(Integer pageNumber, Integer pageSize){
+
+        Pageable pageDetails= PageRequest.of(pageNumber,pageSize);
+
+        Page<ActivityService> activityServicePage=activityServiceRepository.findAll(pageDetails);
+
+        List<ActivityService> activityServices=activityServicePage.getContent();
+
+        if (activityServices.isEmpty())
+            throw new APIException("No Activity Service created till now");
+
         List<ActivityServiceRequest> activityServices_DTOs=activityServices.stream()
                 .map(activityService -> modelMapper.map(activityService,ActivityServiceRequest.class))
                 .toList();
+
         ActivityServiceResponse activityServiceResponse=new ActivityServiceResponse();
+
         activityServiceResponse.setContent(activityServices_DTOs);
+        activityServiceResponse.setLastPage(activityServicePage.isLast());
+        activityServiceResponse.setPageNumber(activityServicePage.getNumber());
+        activityServiceResponse.setPageSize(activityServicePage.getSize());
+        activityServiceResponse.setTotalElements(activityServicePage.getTotalElements());
+        activityServiceResponse.setTotalPages(activityServicePage.getTotalPages());
         return activityServiceResponse;
     }
 
