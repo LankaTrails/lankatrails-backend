@@ -4,7 +4,9 @@ import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.model.ActivityService;
 import com.lankatrails.lankatrails_backend.model.Services;
+import com.lankatrails.lankatrails_backend.model.TabsSection;
 import com.lankatrails.lankatrails_backend.service.ServicesService;
+import jakarta.validation.Valid;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -16,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 public class ActivityServiceController {
     @Autowired
     ServicesService servicesService;
+
+
 
     @PostMapping("/add/{categoryId}/{providerId}")
     public ResponseEntity<ActivityServiceRequest> addService
@@ -29,7 +33,7 @@ public class ActivityServiceController {
                return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.CREATED);
     }
     @GetMapping("/delete/{id}")
-    public ResponseEntity<ActivityServiceRequest> removeActivityService(@PathVariable Long id,@RequestBody ActivityService activityService){
+    public ResponseEntity<ActivityServiceRequest> removeActivityService(@PathVariable Long id,@Valid @RequestBody ActivityService activityService){
         ActivityServiceRequest activityServiceResponse=servicesService.removeActivityService(id,activityService);
         return new ResponseEntity<>(activityServiceResponse,HttpStatus.OK);
     }
@@ -59,6 +63,22 @@ public class ActivityServiceController {
         ActivityServiceRequest updatedService=servicesService.updateWithId(id,activityService);
         return  new ResponseEntity<>(updatedService,HttpStatus.OK);
     }
+
+    @PostMapping("/{id}/tabs")
+    public ResponseEntity<ActivityServiceRequest> addTab
+            (
+                    @PathVariable Long id,
+                    @RequestBody TabsSection tabsSection
+            ){
+
+        ActivityServiceRequest addTabs=servicesService.addTabs(id,tabsSection);
+        return new ResponseEntity<>(addTabs,HttpStatus.CREATED);
+
+    }
+
+
+
+
 
 
 

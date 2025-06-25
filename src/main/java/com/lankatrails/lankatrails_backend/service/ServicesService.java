@@ -4,6 +4,7 @@ import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.model.ActivityService;
 import com.lankatrails.lankatrails_backend.model.Services;
+import com.lankatrails.lankatrails_backend.model.TabsSection;
 
 public interface ServicesService {
     ActivityServiceRequest addService(ActivityService activityService, Long category, Long provider );
@@ -11,5 +12,6 @@ public interface ServicesService {
     ActivityServiceRequest searchWithId(Long Id);
     ActivityServiceRequest removeActivityService(Long Id,ActivityService activityService);
     ActivityServiceRequest updateWithId(Long Id,ActivityService activityService);
+    ActivityServiceRequest addTabs(Long Id, TabsSection tabsSection);
 
 }

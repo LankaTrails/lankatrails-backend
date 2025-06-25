@@ -4,13 +4,8 @@ import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.model.ActivityService;
-import com.lankatrails.lankatrails_backend.model.Category;
-import com.lankatrails.lankatrails_backend.model.Provider;
-import com.lankatrails.lankatrails_backend.model.Services;
-import com.lankatrails.lankatrails_backend.repositories.ActivityServiceRepository;
-import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
-import com.lankatrails.lankatrails_backend.repositories.ProviderRepository;
+import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.service.ServicesService;
 
 import org.modelmapper.ModelMapper;
@@ -35,6 +30,9 @@ public class ServicesServiceImpl implements ServicesService {
 
     @Autowired
     private ActivityServiceRepository activityServiceRepository;
+
+    @Autowired
+    private TabsSectionRepository tabsSectionRepository;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -91,7 +89,10 @@ public class ServicesServiceImpl implements ServicesService {
         ActivityService activityService=activityServiceRepository.findById(Id)
                 .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
 
-        return modelMapper.map(activityService,ActivityServiceRequest.class);
+        List<TabsSectionView> tabsSection=tabsSectionRepository.findByService_ServiceId(Id);
+        ActivityServiceRequest dto=modelMapper.map(activityService,ActivityServiceRequest.class);
+        dto.setTabsSection(tabsSection);
+        return dto;
   }
   @Override
   public ActivityServiceRequest removeActivityService(Long Id,ActivityService activityService){
@@ -111,13 +112,13 @@ public class ServicesServiceImpl implements ServicesService {
               .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
 
       //update the entry
-      activity.setService_name(activityService.getService_name());
-      activity.setLocation_based(activityService.getLocation_based());
-      activity.setContact_no(activityService.getContact_no());
+      activity.setServiceName(activityService.getServiceName());
+      activity.setLocationBased(activityService.getLocationBased());
+      activity.setContactNo(activityService.getContactNo());
       activity.setStatus(activityService.getStatus());
-      activity.setActivity_type(activityService.getActivity_type());
-      activity.setActivity_details(activityService.getActivity_details());
-      activity.setSafety_instructions(activityService.getSafety_instructions());
+      activity.setActivityType(activityService.getActivityType());
+      activity.setActivityDetails(activityService.getActivityDetails());
+      activity.setSafetyInstructions(activityService.getSafetyInstructions());
 
       //save the updated service
       activityServiceRepository.save(activity);
@@ -127,5 +128,31 @@ public class ServicesServiceImpl implements ServicesService {
 
 
   }
+
+    @Override
+    public ActivityServiceRequest addTabs(Long Id, TabsSection tabsSection) {
+        ActivityService service=activityServiceRepository.findById(Id)
+                .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
+
+        tabsSection.setService(service);
+        tabsSectionRepository.save(tabsSection);
+
+        List<TabsSectionView> tabs=tabsSectionRepository.findByService_ServiceId(Id);
+
+        ActivityServiceRequest dto=new ActivityServiceRequest();
+
+        dto.setServiceName(service.getServiceName());
+        dto.setStatus(service.getStatus());
+        dto.setActivityType(service.getActivityType());
+        dto.setActivityDetails(service.getActivityDetails());
+        dto.setSafetyInstructions(service.getSafetyInstructions());
+        dto.setContactNo(service.getContactNo());
+        dto.setLocationBased(service.getLocationBased());
+        dto.setTabsSection(tabs);
+
+        return dto;
+
+
+    }
 
 }

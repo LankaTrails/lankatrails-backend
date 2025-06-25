@@ -10,8 +10,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public abstract class ServiceRequest {
-    private String service_name;
-    private String location_based;
-    private String contact_no;
+    private String serviceName;
+    private String locationBased;
+    private String contactNo;
     private Boolean status;
 }
