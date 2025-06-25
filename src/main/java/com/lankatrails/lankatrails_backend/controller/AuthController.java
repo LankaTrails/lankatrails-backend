@@ -83,6 +83,17 @@ public class AuthController {
                 .body(responseMessage);
     }
 
+    @PostMapping("/refresh-token")
+    public ResponseEntity<LoginResponse> refreshToken(HttpServletRequest request) {
+        LoginResponse loginResponse = authService.refreshToken(request);
+        ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(loginResponse.getJwtToken());
+        ResponseCookie refreshCookie = jwtUtils.generateRefreshCookie(loginResponse.getRefreshToken());
+        return ResponseEntity.status(HttpStatus.OK)
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(loginResponse);
+    }
+
     @GetMapping("/logged-user")
     public ResponseEntity<APIResponse<UserProfileDto>> getLoggedUserProfile(HttpServletRequest request) {
         APIResponse<UserProfileDto> userProfileResponse = authService.getLoggedUserProfile(request);

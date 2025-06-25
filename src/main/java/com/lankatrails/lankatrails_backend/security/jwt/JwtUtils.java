@@ -142,4 +142,35 @@ public class JwtUtils {
         }
         return false;
     }
+
+    public String getRefreshTokenFromCookies(HttpServletRequest request) {
+        Cookie cookie = WebUtils.getCookie(request, "refresh_token");
+        if (cookie != null) {
+            try {
+                return URLDecoder.decode(cookie.getValue(), StandardCharsets.UTF_8);
+            } catch (IllegalArgumentException e) {
+                log.warn("Failed to decode refresh token cookie value");
+                return null;
+            }
+        }
+        return null;
+    }
+
+    public String generateTokenFromEmail(String email) {
+        return Jwts.builder()
+                .subject(email)
+                .issuedAt(new Date())
+                .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
+                .signWith(key())
+                .compact();
+    }
+
+    public String generateRefreshTokenFromEmail(String email) {
+        return Jwts.builder()
+                .subject(email)
+                .issuedAt(new Date())
+                .expiration(new Date((new Date()).getTime() + jwtExpirationMs * 24L)) // 24x longer expiry
+                .signWith(key())
+                .compact();
+    }
 }

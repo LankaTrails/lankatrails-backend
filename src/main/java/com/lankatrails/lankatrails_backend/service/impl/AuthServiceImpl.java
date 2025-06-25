@@ -270,4 +270,47 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    @Override
+    public LoginResponse refreshToken(HttpServletRequest request) {
+        log.info("Attempting to refresh token for request: {}", request.getRequestURI());
+
+        String refreshToken = jwtUtils.getRefreshTokenFromCookies(request);
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            log.warn("Refresh token not found in cookies.");
+            throw new UnauthorizedException("Refresh token not found.");
+        }
+
+        String email = jwtUtils.getUserNameFromJwtToken(refreshToken);
+        if (email == null) {
+            log.warn("Email not found in refresh token.");
+            throw new UnauthorizedException("Email not found in refresh token.");
+        }
+
+        // Validate and refresh the token
+        if (!refreshTokenRedisService.validateRefreshToken(email, refreshToken)) {
+            log.warn("Invalid or expired refresh token for email: {}", email);
+            throw new UnauthorizedException("Invalid or expired refresh token.");
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+
+        String newJwt = jwtUtils.generateTokenFromEmail(email);
+        String newRefreshToken = jwtUtils.generateRefreshTokenFromEmail(email);
+
+        // Update the Redis store with the new refresh token
+        refreshTokenRedisService.storeToken(email, newRefreshToken);
+
+        log.info("Tokens refreshed successfully for user: {}", email);
+
+        return LoginResponse.builder()
+                .id(user.getUserId())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .jwtToken(newJwt)
+                .refreshToken(newRefreshToken)
+                .emailVerified(user.getEmailVerified())
+                .build();
+    }
+
 }

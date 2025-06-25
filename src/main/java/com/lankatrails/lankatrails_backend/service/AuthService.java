@@ -22,4 +22,6 @@ public interface AuthService {
     APIResponse<String> logoutUser(HttpServletRequest request);
 
     APIResponse<UserProfileDto> getLoggedUserProfile(HttpServletRequest request);
+
+    LoginResponse refreshToken(HttpServletRequest request);
 }
