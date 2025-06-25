@@ -7,6 +7,7 @@ import com.lankatrails.lankatrails_backend.dtos.request.TouristRegistrationReque
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.LoginResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.RegistrationResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.UserProfileDto;
 import jakarta.servlet.http.HttpServletRequest;
 
 public interface AuthService {
@@ -19,4 +20,6 @@ public interface AuthService {
     LoginResponse authenticateUser(LoginRequest request);
 
     APIResponse<String> logoutUser(HttpServletRequest request);
+
+    APIResponse<UserProfileDto> getLoggedUserProfile(HttpServletRequest request);
 }

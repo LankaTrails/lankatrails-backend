@@ -8,6 +8,7 @@ import com.lankatrails.lankatrails_backend.dtos.request.TouristRegistrationReque
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.LoginResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.RegistrationResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.UserProfileDto;
 import com.lankatrails.lankatrails_backend.security.jwt.JwtUtils;
 import com.lankatrails.lankatrails_backend.security.service.RefreshTokenRedisService;
 import com.lankatrails.lankatrails_backend.service.AuthService;
@@ -19,10 +20,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -66,7 +64,7 @@ public class AuthController {
         ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(loginResponse.getJwtToken());
         ResponseCookie refreshCookie = jwtUtils.generateRefreshCookie(loginResponse.getRefreshToken());
 
-        return ResponseEntity.ok()
+        return ResponseEntity.status(HttpStatus.OK)
                 .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .body(loginResponse);
@@ -79,10 +77,18 @@ public class AuthController {
         ResponseCookie jwtCookie = jwtUtils.getCleanJwtCookie();
         ResponseCookie refreshCookie = jwtUtils.getCleanRefreshCookie();
 
-        return ResponseEntity.ok()
+        return ResponseEntity.status(HttpStatus.OK)
                 .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .body(responseMessage);
+    }
+
+    @GetMapping("/logged-user")
+    public ResponseEntity<APIResponse<UserProfileDto>> getLoggedUserProfile(HttpServletRequest request) {
+        APIResponse<UserProfileDto> userProfileResponse = authService.getLoggedUserProfile(request);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(userProfileResponse);
     }
 
 }

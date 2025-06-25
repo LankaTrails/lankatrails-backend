@@ -33,6 +33,15 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
 
     @Autowired
+    private final TouristRepository touristRepository;
+
+    @Autowired
+    private final ProviderRepository providerRepository;
+
+    @Autowired
+    private final AdminRepository adminRepository;
+
+    @Autowired
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -167,6 +176,98 @@ public class AuthServiceImpl implements AuthService {
                 .success(true)
                 .message("User logged out successfully.")
                 .build();
+    }
+
+    @Override
+    public APIResponse<UserProfileDto> getLoggedUserProfile(HttpServletRequest request) {
+        log.info("Fetching logged user profile for request: {}", request.getRequestURI());
+
+        String jwtToken = jwtUtils.getJwtFromCookies(request);
+        if (jwtToken == null || jwtToken.isEmpty()) {
+            log.warn("Failed to fetch user profile: JWT token not found in cookies.");
+            throw new UnauthorizedException("JWT token not found.");
+        }
+
+        String email = jwtUtils.getUserNameFromJwtToken(jwtToken);
+        if (email == null) {
+            log.warn("Failed to fetch user profile: Email not found in JWT token.");
+            throw new UnauthorizedException("Email not found in JWT token.");
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+
+        switch (user.getRole()) {
+            case TOURIST -> {
+                Tourist tourist = touristRepository.findByUserId(user.getUserId())
+                        .orElseThrow(() -> new UserNotFoundException("Tourist profile not found."));
+
+                TouristProfileDto touristProfile = TouristProfileDto.builder()
+                        .id(user.getUserId())
+                        .email(user.getEmail())
+                        .role(user.getRole())
+                        .status(user.getStatus())
+                        .emailVerified(user.getEmailVerified())
+                        .firstName(tourist.getFirstName())
+                        .lastName(tourist.getLastName())
+                        .country(tourist.getCountry())
+                        .build();
+
+                return APIResponse.<UserProfileDto>builder()
+                        .success(true)
+                        .message("Tourist profile fetched successfully.")
+                        .data(touristProfile)
+                        .build();
+            }
+
+            case PROVIDER -> {
+                Provider provider = providerRepository.findByUserId(user.getUserId())
+                        .orElseThrow(() -> new UserNotFoundException("Provider profile not found."));
+
+                ProviderProfileDto providerProfile = ProviderProfileDto.builder()
+                        .id(user.getUserId())
+                        .email(user.getEmail())
+                        .role(user.getRole())
+                        .status(user.getStatus())
+                        .emailVerified(user.getEmailVerified())
+                        .businessName(provider.getBusinessName())
+                        .businessDescription(provider.getBusinessDescription())
+                        .logoUrl(provider.getLogoUrl())
+                        .build();
+
+                return APIResponse.<UserProfileDto>builder()
+                        .success(true)
+                        .message("Provider profile fetched successfully.")
+                        .data(providerProfile)
+                        .build();
+            }
+
+            case ADMIN -> {
+                Admin admin = adminRepository.findByUserId(user.getUserId())
+                        .orElseThrow(() -> new UserNotFoundException("Admin profile not found."));
+
+                AdminProfileDto adminProfile = AdminProfileDto.builder()
+                        .id(user.getUserId())
+                        .email(user.getEmail())
+                        .role(user.getRole())
+                        .status(user.getStatus())
+                        .firstName(admin.getFirstName())
+                        .lastName(admin.getLastName())
+                        .emailVerified(user.getEmailVerified())
+                        .build();
+
+                return APIResponse.<UserProfileDto>builder()
+                        .success(true)
+                        .message("Admin profile fetched successfully.")
+                        .data(adminProfile)
+                        .build();
+            }
+
+            default -> {
+                log.error("Unsupported user role: {}", user.getRole());
+                throw new UnsupportedOperationException("User role not supported: " + user.getRole());
+            }
+        }
     }
 
 }
