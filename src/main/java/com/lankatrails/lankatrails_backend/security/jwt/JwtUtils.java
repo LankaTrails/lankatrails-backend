@@ -109,6 +109,12 @@ public class JwtUtils {
                 .build();
     }
 
+    public ResponseCookie getCleanRefreshCookie() {
+        return ResponseCookie.from("refresh_token", null)
+                .path("/api/auth/refresh-token")
+                .build();
+    }
+
     public String getUserNameFromJwtToken(String token) {
         return Jwts.parser()
                 .verifyWith((SecretKey) key())

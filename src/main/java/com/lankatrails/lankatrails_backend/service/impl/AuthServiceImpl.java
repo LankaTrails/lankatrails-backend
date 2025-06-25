@@ -11,25 +11,18 @@ import com.lankatrails.lankatrails_backend.security.jwt.JwtUtils;
 import com.lankatrails.lankatrails_backend.security.service.RefreshTokenRedisService;
 import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
 import com.lankatrails.lankatrails_backend.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -146,6 +139,33 @@ public class AuthServiceImpl implements AuthService {
                 .jwtToken(jwt)
                 .refreshToken(refreshToken)
                 .emailVerified(true)
+                .build();
+    }
+
+    @Override
+    public APIResponse<String> logoutUser(HttpServletRequest request) {
+        log.info("Attempting logout for request: {}", request.getRequestURI());
+
+        String jwtToken = jwtUtils.getJwtFromCookies(request);
+        if (jwtToken == null) {
+            log.warn("Logout failed: JWT token not found in cookies.");
+            throw new UnauthorizedException("JWT token not found.");
+        }
+
+        String email = jwtUtils.getUserNameFromJwtToken(jwtToken);
+        if (email == null) {
+            log.warn("Logout failed: Email not found in JWT token.");
+            throw new UnauthorizedException("Email not found in JWT token.");
+        }
+
+        // Delete refresh token from Redis
+        refreshTokenRedisService.deleteToken(email);
+        log.info("Refresh token deleted for email: {}", email);
+
+        log.info("User {} logged out successfully.", email);
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("User logged out successfully.")
                 .build();
     }
 
