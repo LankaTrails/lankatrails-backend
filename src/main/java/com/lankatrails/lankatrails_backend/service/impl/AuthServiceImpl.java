@@ -155,12 +155,7 @@ public class AuthServiceImpl implements AuthService {
     public APIResponse<String> logoutUser(HttpServletRequest request) {
         log.info("Attempting logout for request: {}", request.getRequestURI());
 
-        String jwtToken = jwtUtils.getJwtFromCookies(request);
-        if (jwtToken == null) {
-            log.warn("Logout failed: JWT token not found in cookies.");
-            throw new UnauthorizedException("JWT token not found.");
-        }
-
+        String jwtToken = jwtUtils.getJwtToken(request);
         String email = jwtUtils.getUserNameFromJwtToken(jwtToken);
         if (email == null) {
             log.warn("Logout failed: Email not found in JWT token.");
@@ -182,12 +177,7 @@ public class AuthServiceImpl implements AuthService {
     public APIResponse<UserProfileDto> getLoggedUserProfile(HttpServletRequest request) {
         log.info("Fetching logged user profile for request: {}", request.getRequestURI());
 
-        String jwtToken = jwtUtils.getJwtFromCookies(request);
-        if (jwtToken == null || jwtToken.isEmpty()) {
-            log.warn("Failed to fetch user profile: JWT token not found in cookies.");
-            throw new UnauthorizedException("JWT token not found.");
-        }
-
+        String jwtToken = jwtUtils.getJwtToken(request);
         String email = jwtUtils.getUserNameFromJwtToken(jwtToken);
         if (email == null) {
             log.warn("Failed to fetch user profile: Email not found in JWT token.");
@@ -274,12 +264,7 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponse refreshToken(HttpServletRequest request) {
         log.info("Attempting to refresh token for request: {}", request.getRequestURI());
 
-        String refreshToken = jwtUtils.getRefreshTokenFromCookies(request);
-        if (refreshToken == null || refreshToken.isEmpty()) {
-            log.warn("Refresh token not found in cookies.");
-            throw new UnauthorizedException("Refresh token not found.");
-        }
-
+        String refreshToken = jwtUtils.getRefreshToken(request);
         String email = jwtUtils.getUserNameFromJwtToken(refreshToken);
         if (email == null) {
             log.warn("Email not found in refresh token.");
