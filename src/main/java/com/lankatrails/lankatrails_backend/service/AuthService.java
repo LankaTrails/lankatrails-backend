@@ -24,4 +24,6 @@ public interface AuthService {
     APIResponse<UserProfileDto> getLoggedUserProfile(HttpServletRequest request);
 
     APIResponse<LoginResponse> refreshToken(HttpServletRequest request);
+
+    APIResponse<String> approveProvider(Long providerId);
 }

@@ -6,6 +6,7 @@ import com.lankatrails.lankatrails_backend.exception.*;
 import com.lankatrails.lankatrails_backend.factory.*;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.UserRole;
+import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.jwt.JwtUtils;
 import com.lankatrails.lankatrails_backend.security.service.RefreshTokenRedisService;
@@ -15,6 +16,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -142,6 +145,11 @@ public class AuthServiceImpl implements AuthService {
         } catch (AuthenticationException ex) {
             log.error("Authentication failed for {}: {}", request.getEmail(), ex.getMessage());
             throw new BadCredentialsException("Invalid email or password.");
+        }
+
+        if (user.getStatus() == UserStatus.PENDING) {
+            log.warn("Login failed: User account is pending approval for {}", request.getEmail());
+            throw new UserPendingApprovalException("Your account is pending approval. Please wait for admin approval.");
         }
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -318,6 +326,37 @@ public class AuthServiceImpl implements AuthService {
                         .refreshToken(newRefreshToken)
                         .emailVerified(user.getEmailVerified())
                         .build())
+                .build();
+    }
+
+    @Override
+    public APIResponse<String> approveProvider(Long providerId) {
+        log.info("Approving provider with ID: {}", providerId);
+
+        User provider = userRepository.findById(providerId)
+                .orElseThrow(() -> new UserNotFoundException("Provider not found with ID: " + providerId));
+
+        if (provider.getRole() != UserRole.PROVIDER) {
+            log.error("Approval failed: User with ID {} is not a provider.", providerId);
+            throw new BadRequestException("User is not a provider.", "UserID", providerId);
+        }
+
+        if (provider.getStatus() == UserStatus.ACTIVE) {
+            log.warn("Provider with ID {} is already approved.", providerId);
+            return APIResponse.<String>builder()
+                    .status(HttpStatus.OK)
+                    .message("Provider already approved.")
+                    .data("Provider with ID " + providerId + " is already approved.")
+                    .build();
+        }
+
+        provider.setStatus(UserStatus.ACTIVE);
+        userRepository.save(provider);
+
+        log.info("Provider with ID {} approved successfully.", providerId);
+        return APIResponse.<String>builder()
+                .status(HttpStatus.OK)
+                .message("Provider with ID " + providerId + " has been approved.")
                 .build();
     }
 

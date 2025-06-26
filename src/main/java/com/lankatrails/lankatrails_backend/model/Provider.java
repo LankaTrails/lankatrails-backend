@@ -46,7 +46,7 @@ public class Provider extends User {
      @PrePersist
      protected void onCreate() {
           super.setRole(UserRole.PROVIDER);
-          super.setStatus(UserStatus.ACTIVE);
+          super.setStatus(UserStatus.PENDING);
      }
 
 }
