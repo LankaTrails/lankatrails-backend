@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.controller;
 
 import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.model.ActivityService;
 import com.lankatrails.lankatrails_backend.model.Services;
@@ -57,7 +58,7 @@ public class ActivityServiceController {
     @PostMapping("/update/{id}")
     public ResponseEntity<ActivityServiceRequest> updateActivityService
             (
-             @RequestBody ActivityService activityService,
+             @RequestBody ActivityServiceRequest activityService,
              @PathVariable Long id
             ){
         ActivityServiceRequest updatedService=servicesService.updateWithId(id,activityService);
@@ -73,6 +74,19 @@ public class ActivityServiceController {
 
         ActivityServiceRequest addTabs=servicesService.addTabs(id,tabsSection);
         return new ResponseEntity<>(addTabs,HttpStatus.CREATED);
+
+    }
+
+    @GetMapping("/delete/tabs/{id}")
+    public String removeTabs(@PathVariable Long id){
+        Boolean status=servicesService.removeTabs(id);
+
+        if (status==true){
+            return "successfully deleted";
+        }else{
+            return "Couldn't Delete";
+        }
+
 
     }
 

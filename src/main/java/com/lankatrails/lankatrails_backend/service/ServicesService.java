@@ -11,7 +11,8 @@ public interface ServicesService {
     ActivityServiceResponse getAll_ActivityServices(Integer pageNumber, Integer pageSize);
     ActivityServiceRequest searchWithId(Long Id);
     ActivityServiceRequest removeActivityService(Long Id,ActivityService activityService);
-    ActivityServiceRequest updateWithId(Long Id,ActivityService activityService);
+    ActivityServiceRequest updateWithId(Long Id,ActivityServiceRequest activityService);
     ActivityServiceRequest addTabs(Long Id, TabsSection tabsSection);
+    Boolean removeTabs(Long id);
 
 }

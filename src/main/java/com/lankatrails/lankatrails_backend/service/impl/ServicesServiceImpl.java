@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
@@ -16,9 +17,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class ServicesServiceImpl implements ServicesService {
@@ -89,9 +90,19 @@ public class ServicesServiceImpl implements ServicesService {
         ActivityService activityService=activityServiceRepository.findById(Id)
                 .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
 
-        List<TabsSectionView> tabsSection=tabsSectionRepository.findByService_ServiceId(Id);
+        List<TabsSection> tabsSection=tabsSectionRepository.findByService_ServiceId(Id);
+        List<TabSectionRequest> tabs=new ArrayList<>();
+
+        for (TabsSection tab :tabsSection){
+            TabSectionRequest tabReq = new TabSectionRequest();
+            tabReq.setId(tab.getId());
+            tabReq.setHeading(tab.getHeading());
+            tabReq.setContent(tab.getContent());
+            tabs.add(tabReq);
+        }
+
         ActivityServiceRequest dto=modelMapper.map(activityService,ActivityServiceRequest.class);
-        dto.setTabsSection(tabsSection);
+        dto.setTabsSection(tabs);
         return dto;
   }
   @Override
@@ -107,11 +118,24 @@ public class ServicesServiceImpl implements ServicesService {
   }
 
   @Override
-  public ActivityServiceRequest updateWithId(Long Id,ActivityService activityService){
+  public Boolean removeTabs(Long id){
+        tabsSectionRepository.findById(id)
+                .orElseThrow(()->new ResourceNotFoundException("Activity Service Tabs",id));
+
+        tabsSectionRepository.deleteById(id);
+        return true;
+
+  }
+
+  @Override
+  @Transactional
+  public ActivityServiceRequest updateWithId(Long Id,ActivityServiceRequest activityService){
+
       ActivityService activity=activityServiceRepository.findById(Id)
               .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
 
-      //update the entry
+
+      //update the activity service
       activity.setServiceName(activityService.getServiceName());
       activity.setLocationBased(activityService.getLocationBased());
       activity.setContactNo(activityService.getContactNo());
@@ -120,10 +144,45 @@ public class ServicesServiceImpl implements ServicesService {
       activity.setActivityDetails(activityService.getActivityDetails());
       activity.setSafetyInstructions(activityService.getSafetyInstructions());
 
-      //save the updated service
+      //save the updated activity service
       activityServiceRepository.save(activity);
 
-      return modelMapper.map(activityServiceRepository.findById(Id),ActivityServiceRequest.class);
+      //update or add tabs
+      //get the tabs from the database
+      Set<TabsSection> tabs=activity.getTabs();
+
+      //get the tabs from the request
+      List<TabSectionRequest> reqTabs=activityService.getTabsSection();
+
+      //create a map of existing tabs by ID for quick lookup
+      Map<Long,TabsSection> savedTabMap=tabs.stream()
+              .collect(Collectors.toMap(TabsSection::getId, Function.identity()));
+
+      //create a set to track updated or newly added tabs
+      Set<TabsSection> updatedTabs=new HashSet<>();
+
+      for (TabSectionRequest req:reqTabs){
+          TabsSection tab;
+          if (req.getId()!=null && savedTabMap.containsKey(req.getId())){
+              //update the existing tab
+              tab=savedTabMap.get(req.getId());
+              tab.setHeading(req.getHeading());
+              tab.setContent(req.getContent());
+          }else{
+              //create new tab
+              tab=new TabsSection();
+              tab.setHeading(req.getHeading());
+              tab.setContent(req.getContent());
+              tab.setService(activity);
+          }
+          updatedTabs.add(tab);
+      }
+
+      tabsSectionRepository.saveAll(updatedTabs);
+
+      ActivityServiceRequest responseDTO=modelMapper.map(activityServiceRepository.findById(Id),ActivityServiceRequest.class);
+      responseDTO.setTabsSection(reqTabs);
+      return responseDTO;
 
 
 
@@ -137,20 +196,20 @@ public class ServicesServiceImpl implements ServicesService {
         tabsSection.setService(service);
         tabsSectionRepository.save(tabsSection);
 
-        List<TabsSectionView> tabs=tabsSectionRepository.findByService_ServiceId(Id);
+        List<TabsSection> tabs=tabsSectionRepository.findByService_ServiceId(Id);
+        List<TabSectionRequest> tabResponse=new ArrayList<>();
+        for (TabsSection tab :tabs){
+            TabSectionRequest tabSectionRequest=new TabSectionRequest();
+            tabSectionRequest.setId(tab.getId());
+            tabSectionRequest.setHeading(tab.getHeading());
+            tabSectionRequest.setContent(tab.getContent());
+            tabResponse.add(tabSectionRequest);
+        }
 
-        ActivityServiceRequest dto=new ActivityServiceRequest();
+        ActivityServiceRequest responseDTO=modelMapper.map(service,ActivityServiceRequest.class);
 
-        dto.setServiceName(service.getServiceName());
-        dto.setStatus(service.getStatus());
-        dto.setActivityType(service.getActivityType());
-        dto.setActivityDetails(service.getActivityDetails());
-        dto.setSafetyInstructions(service.getSafetyInstructions());
-        dto.setContactNo(service.getContactNo());
-        dto.setLocationBased(service.getLocationBased());
-        dto.setTabsSection(tabs);
-
-        return dto;
+        responseDTO.setTabsSection(tabResponse);
+        return responseDTO;
 
 
     }
