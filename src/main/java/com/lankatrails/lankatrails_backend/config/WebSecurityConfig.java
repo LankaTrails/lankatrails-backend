@@ -83,18 +83,46 @@ public class WebSecurityConfig {
     }
 
 
+//    @Bean
+//    public CorsConfigurationSource corsConfigurationSource() {
+//        CorsConfiguration config = new CorsConfiguration();
+//        config.setAllowedOrigins(Arrays.asList(
+//                "http://localhost:19006", // React Native
+//                "https://admin.lankatrails.com",
+//                "https://provider.lankatrails.com"
+//        ));
+//        config.setAllowedMethods(List.of("*"));
+//        config.setAllowedHeaders(List.of("*"));
+//        config.setExposedHeaders(List.of("Authorization"));
+//        config.setAllowCredentials(true);
+//
+//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+//        source.registerCorsConfiguration("/**", config);
+//        return source;
+//    }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList(
-                "http://localhost:19006", // React Native
-                "https://admin.lankatrails.com",
-                "https://provider.lankatrails.com"
-        ));
-        config.setAllowedMethods(List.of("*"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setExposedHeaders(List.of("Authorization"));
+
+        // Allow all origins during development
+        config.setAllowedOrigins(Arrays.asList("*"));
+
+        // Alternatively, you can keep specific origins but add your development URLs:
+        // config.setAllowedOrigins(Arrays.asList(
+        //     "http://localhost:19006",
+        //     "http://localhost:8080",
+        //     "http://192.168.x.x:19006", // Your local network IP
+        //     "https://admin.lankatrails.com",
+        //     "https://provider.lankatrails.com",
+        //     "exp://192.168.x.x:19000" // Expo dev client URL
+        // ));
+
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        config.setAllowedHeaders(Arrays.asList("*"));
+        config.setExposedHeaders(Arrays.asList("Authorization", "content-type"));
         config.setAllowCredentials(true);
+        config.setMaxAge(3600L); // 1 hour
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

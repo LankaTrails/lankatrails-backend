@@ -13,15 +13,15 @@ import jakarta.servlet.http.HttpServletRequest;
 public interface AuthService {
 //    RegistrationResponse registerUser(RegistrationRequest request);
 
-    RegistrationResponse registerTourist(TouristRegistrationRequest request);
+    APIResponse<RegistrationResponse> registerTourist(TouristRegistrationRequest request);
 
-    RegistrationResponse registerProvider(ProviderRegistrationRequest request);
+    APIResponse<RegistrationResponse> registerProvider(ProviderRegistrationRequest request);
 
-    LoginResponse authenticateUser(LoginRequest request);
+    APIResponse<LoginResponse> authenticateUser(LoginRequest request);
 
     APIResponse<String> logoutUser(HttpServletRequest request);
 
     APIResponse<UserProfileDto> getLoggedUserProfile(HttpServletRequest request);
 
-    LoginResponse refreshToken(HttpServletRequest request);
+    APIResponse<LoginResponse> refreshToken(HttpServletRequest request);
 }

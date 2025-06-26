@@ -36,33 +36,33 @@ public class AuthController {
     private final RefreshTokenRedisService refreshTokenRedisService;
 
     @PostMapping("/signup/tourist")
-    public ResponseEntity<RegistrationResponse> registerTourist(
+    public ResponseEntity<APIResponse<RegistrationResponse>> registerTourist(
             @Valid @RequestBody TouristRegistrationRequest request) {
-        RegistrationResponse tourist = authService.registerTourist(request);
+        APIResponse<RegistrationResponse> tourist = authService.registerTourist(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(tourist);
     }
 
     @PostMapping("/signup/provider")
-    public ResponseEntity<RegistrationResponse> registerProvider(
+    public ResponseEntity<APIResponse<RegistrationResponse>> registerProvider(
             @Valid @RequestBody ProviderRegistrationRequest request) {
-        RegistrationResponse provider = authService.registerProvider(request);
+        APIResponse<RegistrationResponse> provider = authService.registerProvider(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(provider);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(
+    public ResponseEntity<APIResponse<LoginResponse>> login(
             @Valid @RequestBody LoginRequest request) {
 
         if (!loginRateLimiter.acquirePermission()) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
         }
 
-        LoginResponse loginResponse = authService.authenticateUser(request);
+        APIResponse<LoginResponse> loginResponse = authService.authenticateUser(request);
 
-        ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(loginResponse.getJwtToken());
-        ResponseCookie refreshCookie = jwtUtils.generateRefreshCookie(loginResponse.getRefreshToken());
+        ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(loginResponse.getData().getJwtToken());
+        ResponseCookie refreshCookie = jwtUtils.generateRefreshCookie(loginResponse.getData().getRefreshToken());
 
         return ResponseEntity.status(HttpStatus.OK)
                 .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
@@ -84,11 +84,11 @@ public class AuthController {
     }
 
     @PostMapping("/refresh-token")
-    public ResponseEntity<LoginResponse> refreshToken(HttpServletRequest request) {
-        LoginResponse loginResponse = authService.refreshToken(request);
+    public ResponseEntity<APIResponse<LoginResponse>> refreshToken(HttpServletRequest request) {
+        APIResponse<LoginResponse> loginResponse = authService.refreshToken(request);
 
-        ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(loginResponse.getJwtToken());
-        ResponseCookie refreshCookie = jwtUtils.generateRefreshCookie(loginResponse.getRefreshToken());
+        ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(loginResponse.getData().getJwtToken());
+        ResponseCookie refreshCookie = jwtUtils.generateRefreshCookie(loginResponse.getData().getRefreshToken());
 
         return ResponseEntity.status(HttpStatus.OK)
                 .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())

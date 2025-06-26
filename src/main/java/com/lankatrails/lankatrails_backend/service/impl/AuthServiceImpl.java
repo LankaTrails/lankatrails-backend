@@ -58,7 +58,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public RegistrationResponse registerTourist(TouristRegistrationRequest request) {
+    public APIResponse<RegistrationResponse> registerTourist(TouristRegistrationRequest request) {
         log.info("Attempting tourist registration for email: {}", request.getEmail());
 
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -71,18 +71,22 @@ public class AuthServiceImpl implements AuthService {
         User savedUser = userRepository.save(user);
         log.info("Tourist registered successfully with ID: {}", savedUser.getUserId());
 
-        return RegistrationResponse.builder()
-                .userId(savedUser.getUserId())
-                .email(savedUser.getEmail())
-                .role(savedUser.getRole())
-                .status(savedUser.getStatus())
-                .emailVerified(savedUser.getEmailVerified())
+        return APIResponse.<RegistrationResponse>builder()
+                .success(true)
+                .message("Tourist registered successfully.")
+                .data(RegistrationResponse.builder()
+                        .userId(savedUser.getUserId())
+                        .email(savedUser.getEmail())
+                        .role(savedUser.getRole())
+                        .status(savedUser.getStatus())
+                        .emailVerified(savedUser.getEmailVerified())
+                        .build())
                 .build();
     }
 
     @Override
     @Transactional
-    public RegistrationResponse registerProvider(ProviderRegistrationRequest request) {
+    public APIResponse<RegistrationResponse> registerProvider(ProviderRegistrationRequest request) {
         log.info("Attempting provider registration for email: {}", request.getEmail());
 
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -95,17 +99,21 @@ public class AuthServiceImpl implements AuthService {
         User savedUser = userRepository.save(user);
         log.info("Provider registered successfully with ID: {}", savedUser.getUserId());
 
-        return RegistrationResponse.builder()
-                .userId(savedUser.getUserId())
-                .email(savedUser.getEmail())
-                .role(savedUser.getRole())
-                .status(savedUser.getStatus())
-                .emailVerified(savedUser.getEmailVerified())
+        return APIResponse.<RegistrationResponse>builder()
+                .success(true)
+                .message("Provider registered successfully.")
+                .data(RegistrationResponse.builder()
+                        .userId(savedUser.getUserId())
+                        .email(savedUser.getEmail())
+                        .role(savedUser.getRole())
+                        .status(savedUser.getStatus())
+                        .emailVerified(savedUser.getEmailVerified())
+                        .build())
                 .build();
     }
 
     @Override
-    public LoginResponse authenticateUser(LoginRequest request) {
+    public APIResponse<LoginResponse> authenticateUser(LoginRequest request) {
         log.info("Attempting login for email: {}", request.getEmail());
 
         // Fetch user by email to check if verified before authenticating
@@ -140,14 +148,18 @@ public class AuthServiceImpl implements AuthService {
 
         log.info("User {} logged in successfully with role: {}", userDetails.getUsername(), userDetails.getAuthorities());
 
-        // Build and return login response
-        return LoginResponse.builder()
-                .id(userDetails.getId())
-                .email(userDetails.getUsername())
-                .role(UserRole.valueOf(userDetails.getAuthorities().iterator().next().getAuthority()))
-                .jwtToken(jwt)
-                .refreshToken(refreshToken)
-                .emailVerified(true)
+        // Build and return the login response
+        return APIResponse.<LoginResponse>builder()
+                .success(true)
+                .message("User logged in successfully.")
+                .data(LoginResponse.builder()
+                        .id(userDetails.getId())
+                        .email(userDetails.getUsername())
+                        .role(UserRole.valueOf(userDetails.getAuthorities().stream().findFirst().orElseThrow().getAuthority()))
+                        .jwtToken(jwt)
+                        .refreshToken(refreshToken)
+                        .emailVerified(userDetails.isEmailVerified())
+                        .build())
                 .build();
     }
 
@@ -261,7 +273,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public LoginResponse refreshToken(HttpServletRequest request) {
+    public APIResponse<LoginResponse> refreshToken(HttpServletRequest request) {
         log.info("Attempting to refresh token for request: {}", request.getRequestURI());
 
         String refreshToken = jwtUtils.getRefreshToken(request);
@@ -288,13 +300,17 @@ public class AuthServiceImpl implements AuthService {
 
         log.info("Tokens refreshed successfully for user: {}", email);
 
-        return LoginResponse.builder()
-                .id(user.getUserId())
-                .email(user.getEmail())
-                .role(user.getRole())
-                .jwtToken(newJwt)
-                .refreshToken(newRefreshToken)
-                .emailVerified(user.getEmailVerified())
+        return APIResponse.<LoginResponse>builder()
+                .success(true)
+                .message("Tokens refreshed successfully.")
+                .data(LoginResponse.builder()
+                        .id(user.getUserId())
+                        .email(user.getEmail())
+                        .role(user.getRole())
+                        .jwtToken(newJwt)
+                        .refreshToken(newRefreshToken)
+                        .emailVerified(user.getEmailVerified())
+                        .build())
                 .build();
     }
 
