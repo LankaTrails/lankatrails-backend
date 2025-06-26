@@ -344,9 +344,8 @@ public class AuthServiceImpl implements AuthService {
         if (provider.getStatus() == UserStatus.ACTIVE) {
             log.warn("Provider with ID {} is already approved.", providerId);
             return APIResponse.<String>builder()
-                    .status(HttpStatus.OK)
-                    .message("Provider already approved.")
-                    .data("Provider with ID " + providerId + " is already approved.")
+                    .success(true)
+                    .message("Provider with ID " + providerId + " is already approved.")
                     .build();
         }
 
@@ -355,8 +354,8 @@ public class AuthServiceImpl implements AuthService {
 
         log.info("Provider with ID {} approved successfully.", providerId);
         return APIResponse.<String>builder()
-                .status(HttpStatus.OK)
-                .message("Provider with ID " + providerId + " has been approved.")
+                .success(true)
+                .message("Provider with ID " + providerId + " approved successfully.")
                 .build();
     }
 
