@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.security.jwt;
 
+import com.lankatrails.lankatrails_backend.exception.UnauthorizedException;
 import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.util.WebUtils;
 
 import javax.crypto.SecretKey;
@@ -32,15 +34,6 @@ public class JwtUtils {
 
     @Value("${spring.app.jwtCookieName}")
     private String jwtCookie;
-
-    public String getJwtSecretFromHeader(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        log.debug("Authorization Header: {}", bearerToken);
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7); // Remove Bearer prefix
-        }
-        return null;
-    }
 
     public String generateToken(UserDetailsImpl userDetails) {
         return Jwts.builder()
@@ -94,18 +87,15 @@ public class JwtUtils {
                 .build();
     }
 
-    public String generateTokenFromUsername(String username) {
-        return Jwts.builder()
-                .subject(username)
-                .issuedAt(new Date())
-                .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(key())
-                .compact();
-    }
-
     public ResponseCookie getCleanJwtCookie() {
         return ResponseCookie.from(jwtCookie, null)
                 .path("/api")
+                .build();
+    }
+
+    public ResponseCookie getCleanRefreshCookie() {
+        return ResponseCookie.from("refresh_token", null)
+                .path("/api/auth/refresh-token")
                 .build();
     }
 
@@ -135,5 +125,86 @@ public class JwtUtils {
             log.error("JWT claims string is empty: {}", e.getMessage());
         }
         return false;
+    }
+
+    public String getRefreshTokenFromCookies(HttpServletRequest request) {
+        Cookie cookie = WebUtils.getCookie(request, "refresh_token");
+        if (cookie != null) {
+            try {
+                return URLDecoder.decode(cookie.getValue(), StandardCharsets.UTF_8);
+            } catch (IllegalArgumentException e) {
+                log.warn("Failed to decode refresh token cookie value");
+                return null;
+            }
+        }
+        return null;
+    }
+
+    public String generateTokenFromEmail(String email) {
+        return Jwts.builder()
+                .subject(email)
+                .issuedAt(new Date())
+                .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
+                .signWith(key())
+                .compact();
+    }
+
+    public String generateRefreshTokenFromEmail(String email) {
+        return Jwts.builder()
+                .subject(email)
+                .issuedAt(new Date())
+                .expiration(new Date((new Date()).getTime() + jwtExpirationMs * 24L)) // 24x longer expiry
+                .signWith(key())
+                .compact();
+    }
+
+    public String getJwtFromHeader(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7); // Remove Bearer prefix
+        }
+        return null;
+    }
+
+    public String getRefreshTokenFromHeader(HttpServletRequest request) {
+        String refreshToken = request.getHeader("X-Refresh-Token");
+        if (StringUtils.hasText(refreshToken)) {
+            return refreshToken;
+        }
+        return null;
+    }
+
+    public String getJwtToken(HttpServletRequest request) {
+        String jwt = getJwtFromCookies(request);
+
+        // If not found in cookies or empty, try Authorization header
+        if (jwt == null || jwt.isEmpty()) {
+            jwt = getJwtFromHeader(request);
+        }
+
+        // Final validation
+        if (jwt == null || jwt.isEmpty()) {
+            log.warn("JWT token not found in cookies or Authorization header");
+            throw new UnauthorizedException("Authentication required: No valid JWT found");
+        }
+
+        return jwt;
+    }
+
+    public String getRefreshToken(HttpServletRequest request) {
+        String refreshToken = getRefreshTokenFromCookies(request);
+
+        // If not found in cookies or empty, try Authorization header
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            refreshToken = getRefreshTokenFromHeader(request);
+        }
+
+        // Final validation
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            log.warn("Refresh token not found in cookies or Authorization header");
+            throw new UnauthorizedException("Authentication required: No valid refresh token found");
+        }
+
+        return refreshToken;
     }
 }

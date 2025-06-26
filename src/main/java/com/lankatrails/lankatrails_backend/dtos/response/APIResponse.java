@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 @Setter
 @Builder
 @AllArgsConstructor
+@Builder
 public class APIResponse<T> {
     private HttpStatus status;
     private String message;
