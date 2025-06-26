@@ -53,13 +53,14 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<APIResponse<LoginResponse>> login(
-            @Valid @RequestBody LoginRequest request) {
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpServletRequest) {
 
         if (!loginRateLimiter.acquirePermission()) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
         }
 
-        APIResponse<LoginResponse> loginResponse = authService.authenticateUser(request);
+        APIResponse<LoginResponse> loginResponse = authService.authenticateUser(request, httpServletRequest);
 
         ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(loginResponse.getData().getJwtToken());
         ResponseCookie refreshCookie = jwtUtils.generateRefreshCookie(loginResponse.getData().getRefreshToken());

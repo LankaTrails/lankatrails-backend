@@ -18,17 +18,17 @@ public class UserFactory {
 
     public User createUser(TouristRegistrationRequest request) {
         Tourist tourist = new Tourist();
-        tourist.setEmail(request.getEmail());
+        tourist.setEmail(request.getEmail().toLowerCase());
         tourist.setFirstName(request.getFirstName());
         tourist.setLastName(request.getLastName());
-        tourist.setCountry(request.getCountry());
+        tourist.setCountry(request.getCountry().toLowerCase());
         tourist.setRole(UserRole.TOURIST);
         return tourist;
     }
 
     public User createUser(ProviderRegistrationRequest request) {
         Provider provider = new Provider();
-        provider.setEmail(request.getEmail());
+        provider.setEmail(request.getEmail().toLowerCase());
         provider.setBusinessName(request.getBusinessName());
         provider.setBusinessDescription(request.getBusinessDescription());
         provider.setLogoUrl(request.getLogoUrl());

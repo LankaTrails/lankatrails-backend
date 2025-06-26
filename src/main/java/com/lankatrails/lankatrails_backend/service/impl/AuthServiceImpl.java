@@ -61,7 +61,7 @@ public class AuthServiceImpl implements AuthService {
     public APIResponse<RegistrationResponse> registerTourist(TouristRegistrationRequest request) {
         log.info("Attempting tourist registration for email: {}", request.getEmail());
 
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmail(request.getEmail().toLowerCase())) {
             throw new EmailAlreadyExistsException(request.getEmail());
         }
 
@@ -89,7 +89,7 @@ public class AuthServiceImpl implements AuthService {
     public APIResponse<RegistrationResponse> registerProvider(ProviderRegistrationRequest request) {
         log.info("Attempting provider registration for email: {}", request.getEmail());
 
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmail(request.getEmail().toLowerCase())) {
             throw new EmailAlreadyExistsException(request.getEmail());
         }
 
@@ -113,11 +113,11 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public APIResponse<LoginResponse> authenticateUser(LoginRequest request) {
+    public APIResponse<LoginResponse> authenticateUser(LoginRequest request, HttpServletRequest httpServletRequest) {
         log.info("Attempting login for email: {}", request.getEmail());
 
         // Fetch user by email to check if verified before authenticating
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmail(request.getEmail().toLowerCase())
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + request.getEmail()));
 
         // Check if email is verified
@@ -126,11 +126,18 @@ public class AuthServiceImpl implements AuthService {
             throw new BadCredentialsException("Please verify your email before logging in.");
         }
 
+        String clientType = httpServletRequest.getHeader("Client-Type");
+
+        if ("MOBILE".equalsIgnoreCase(clientType) && user.getRole() != UserRole.TOURIST) {
+            log.warn("Mobile login attempt blocked for non-tourist user {}", user.getEmail());
+            throw new UnauthorizedException("Only tourist accounts are allowed on the mobile app.");
+        }
+
         // Perform authentication (Spring Security)
         Authentication authentication;
         try {
             authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                    new UsernamePasswordAuthenticationToken(request.getEmail().toLowerCase(), request.getPassword())
             );
         } catch (AuthenticationException ex) {
             log.error("Authentication failed for {}: {}", request.getEmail(), ex.getMessage());
@@ -196,7 +203,7 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("Email not found in JWT token.");
         }
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(email.toLowerCase())
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
 
         switch (user.getRole()) {

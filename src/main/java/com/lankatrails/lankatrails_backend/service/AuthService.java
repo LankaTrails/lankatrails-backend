@@ -17,7 +17,7 @@ public interface AuthService {
 
     APIResponse<RegistrationResponse> registerProvider(ProviderRegistrationRequest request);
 
-    APIResponse<LoginResponse> authenticateUser(LoginRequest request);
+    APIResponse<LoginResponse> authenticateUser(LoginRequest request, HttpServletRequest httpServletRequest);
 
     APIResponse<String> logoutUser(HttpServletRequest request);
 
