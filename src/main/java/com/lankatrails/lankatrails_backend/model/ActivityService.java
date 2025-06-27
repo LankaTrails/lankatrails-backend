@@ -11,11 +11,11 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class ActivityService extends Services{
-    private  String activity_type;
+    private  String activityType;
 
-    private String activity_details;
+    private String activityDetails;
 
-    private String safety_instructions;
+    private String safetyInstructions;
 
 
 }
