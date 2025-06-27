@@ -131,7 +131,7 @@ public class AuthServiceImpl implements AuthService {
 
         String clientType = httpServletRequest.getHeader("Client-Type");
 
-        if ("MOBILE".equalsIgnoreCase(clientType) && user.getRole() != UserRole.TOURIST) {
+        if ("MOBILE".equalsIgnoreCase(clientType) && user.getRole() != UserRole.ROLE_TOURIST) {
             log.warn("Mobile login attempt blocked for non-tourist user {}", user.getEmail());
             throw new UnauthorizedException("Only tourist accounts are allowed on the mobile app.");
         }
@@ -215,7 +215,7 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
 
         switch (user.getRole()) {
-            case TOURIST -> {
+            case ROLE_TOURIST -> {
                 Tourist tourist = touristRepository.findByUserId(user.getUserId())
                         .orElseThrow(() -> new UserNotFoundException("Tourist profile not found."));
 
@@ -237,7 +237,7 @@ public class AuthServiceImpl implements AuthService {
                         .build();
             }
 
-            case PROVIDER -> {
+            case ROLE_PROVIDER -> {
                 Provider provider = providerRepository.findByUserId(user.getUserId())
                         .orElseThrow(() -> new UserNotFoundException("Provider profile not found."));
 
@@ -259,7 +259,7 @@ public class AuthServiceImpl implements AuthService {
                         .build();
             }
 
-            case ADMIN -> {
+            case ROLE_ADMIN -> {
                 Admin admin = adminRepository.findByUserId(user.getUserId())
                         .orElseThrow(() -> new UserNotFoundException("Admin profile not found."));
 
@@ -336,7 +336,7 @@ public class AuthServiceImpl implements AuthService {
         User provider = userRepository.findById(providerId)
                 .orElseThrow(() -> new UserNotFoundException("Provider not found with ID: " + providerId));
 
-        if (provider.getRole() != UserRole.PROVIDER) {
+        if (provider.getRole() != UserRole.ROLE_PROVIDER) {
             log.error("Approval failed: User with ID {} is not a provider.", providerId);
             throw new BadRequestException("User is not a provider.", "UserID", providerId);
         }
@@ -344,9 +344,8 @@ public class AuthServiceImpl implements AuthService {
         if (provider.getStatus() == UserStatus.ACTIVE) {
             log.warn("Provider with ID {} is already approved.", providerId);
             return APIResponse.<String>builder()
-                    .status(HttpStatus.OK)
-                    .message("Provider already approved.")
-                    .data("Provider with ID " + providerId + " is already approved.")
+                    .success(true)
+                    .message("Provider with ID " + providerId + " is already approved.")
                     .build();
         }
 
@@ -355,8 +354,8 @@ public class AuthServiceImpl implements AuthService {
 
         log.info("Provider with ID {} approved successfully.", providerId);
         return APIResponse.<String>builder()
-                .status(HttpStatus.OK)
-                .message("Provider with ID " + providerId + " has been approved.")
+                .success(true)
+                .message("Provider with ID " + providerId + " approved successfully.")
                 .build();
     }
 

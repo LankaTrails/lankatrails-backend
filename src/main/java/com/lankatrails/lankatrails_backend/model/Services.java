@@ -20,13 +20,15 @@ public class Services {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long service_id;
+    private Long serviceId;
 
-    private String service_name;
+    private String serviceName;
 
-    private String location_based;
+    private String locationBased;
 
-    private String contact_no;
+    private String contactNo;
+
+    private Boolean status;
 
     @ManyToOne
     @JoinColumn(name = "provider_id")
@@ -36,6 +38,11 @@ public class Services {
     @JoinColumn(name = "category_id")
     private  Category category;
 
+    @OneToMany(mappedBy = "service")
+    private Set<TabsSection> tabs=new HashSet<>();
+
+    @OneToMany(mappedBy = "service")
+    private Set<PolicySection> policies=new HashSet<>();
 
 
 }

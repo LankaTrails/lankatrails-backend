@@ -22,7 +22,7 @@ public class UserFactory {
         tourist.setFirstName(request.getFirstName());
         tourist.setLastName(request.getLastName());
         tourist.setCountry(request.getCountry().toLowerCase());
-        tourist.setRole(UserRole.TOURIST);
+        tourist.setRole(UserRole.ROLE_TOURIST);
         return tourist;
     }
 
@@ -32,8 +32,7 @@ public class UserFactory {
         provider.setBusinessName(request.getBusinessName());
         provider.setBusinessDescription(request.getBusinessDescription());
         provider.setLogoUrl(request.getLogoUrl());
-        provider.setCategories(mapCategories(request.getCategories()));
-        provider.setRole(UserRole.PROVIDER);
+        provider.setRole(UserRole.ROLE_PROVIDER);
         return provider;
     }
 

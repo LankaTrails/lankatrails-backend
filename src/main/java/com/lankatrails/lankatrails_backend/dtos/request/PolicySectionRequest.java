@@ -9,9 +9,9 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public abstract class ServiceRequest {
-    private String serviceName;
-    private String locationBased;
-    private String contactNo;
-    private Boolean status;
+public class PolicySectionRequest {
+    private Long id;
+    private String heading;
+    private String policy;
+
 }

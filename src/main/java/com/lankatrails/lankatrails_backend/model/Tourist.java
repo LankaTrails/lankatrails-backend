@@ -27,7 +27,7 @@ public class Tourist extends User {
 
     @PrePersist
     protected void onCreate() {
-        super.setRole(UserRole.TOURIST);
+        super.setRole(UserRole.ROLE_TOURIST);
         super.setStatus(UserStatus.ACTIVE);
     }
 
