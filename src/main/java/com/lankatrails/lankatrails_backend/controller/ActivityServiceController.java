@@ -16,21 +16,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth/activityService")
+@RequestMapping("/api")
 public class ActivityServiceController {
     @Autowired
     ServicesService servicesService;
 
 
 
-    @PostMapping("/add/{categoryId}/{providerId}")
+    @PostMapping("/provider/activity-service/add/{providerId}")
     public ResponseEntity<ActivityServiceRequest> addService
             (
                     @RequestBody ActivityService service,
-                    @PathVariable Long categoryId,
                     @PathVariable Long providerId
             ){
-               ActivityServiceRequest ActivityServiceDTO =  servicesService.addService(service,categoryId,providerId);
+               ActivityServiceRequest ActivityServiceDTO =  servicesService.addService(service,providerId);
                //return ResponseEntity.status(HttpStatus.CREATED).body(ActivityServiceDTO);
                return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.CREATED);
     }

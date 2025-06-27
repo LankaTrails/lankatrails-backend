@@ -7,6 +7,7 @@ import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse
 import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.service.ServicesService;
 
@@ -44,10 +45,11 @@ public class ServicesServiceImpl implements ServicesService {
 
     @Override
     @Transactional
-    public ActivityServiceRequest addService(ActivityService services, Long categoryId, Long providerId) {
+    public ActivityServiceRequest addService(ActivityService services, Long providerId) {
 
-        Category category=categoryRepository.findById(categoryId)
-                .orElseThrow(()->new ResourceNotFoundException("Category",categoryId));
+        Category category=categoryRepository.findByCategoryName(ServiceCategory.ACTIVITY).orElseThrow(
+                ()->new ResourceNotFoundException("Category",4L)
+        );
 
         services.setCategory(category);
 
