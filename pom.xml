@@ -79,6 +79,39 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- For rate limiting -->
+		<!-- Resilience4j with Vavr -->
+<!--		<dependency>-->
+<!--			<groupId>io.github.resilience4j</groupId>-->
+<!--			<artifactId>resilience4j-ratelimiter</artifactId>-->
+<!--			<version>2.1.0</version>-->
+<!--		</dependency>-->
+		<dependency>
+			<groupId>io.vavr</groupId>
+			<artifactId>vavr</artifactId>
+			<version>0.10.4</version>
+		</dependency>
+
+		<!-- Resilience4j Core -->
+		<dependency>
+			<groupId>io.github.resilience4j</groupId>
+			<artifactId>resilience4j-ratelimiter</artifactId>
+			<version>1.7.1</version>
+		</dependency>
+
+		<!-- For annotation support -->
+		<dependency>
+			<groupId>io.github.resilience4j</groupId>
+			<artifactId>resilience4j-spring-boot2</artifactId>
+			<version>1.7.1</version>
+		</dependency>
+
+		<!-- For email -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+
 		<!-- Utility -->
 		<dependency>
 			<groupId>org.modelmapper</groupId>
@@ -124,6 +157,16 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-logging</artifactId>
+		</dependency>
+
+		<!--redi-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-cache</artifactId>
 		</dependency>
 
 		<!-- Development -->

@@ -31,14 +31,14 @@ public class Provider extends User {
      @Column(name = "logo_url")
      private String logoUrl;
 
-     @Getter
-     @Setter
-     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE},
-             fetch = FetchType.EAGER)
-     @JoinTable(name = "provider_categories",
-             joinColumns = @JoinColumn(name = "user_id"),
-             inverseJoinColumns = @JoinColumn(name = "category_id"))
-     private Set<Category> categories = new HashSet<>();
+//     @Getter
+//     @Setter
+//     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE},
+//             fetch = FetchType.EAGER)
+//     @JoinTable(name = "provider_categories",
+//             joinColumns = @JoinColumn(name = "user_id"),
+//             inverseJoinColumns = @JoinColumn(name = "category_id"))
+//     private Set<Category> categories = new HashSet<>();
 
      @OneToMany(mappedBy = "provider", cascade = CascadeType.ALL)
      private Set<Services> services = new HashSet<>();
