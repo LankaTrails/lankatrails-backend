@@ -21,9 +21,9 @@ public class ProviderRegistrationRequest extends RegistrationRequest {
     @Size(max = 255)
     private String logoUrl;
 
-    @Setter
-    @Getter
-    private Set<String> categories;
+//    @Setter
+//    @Getter
+//    private Set<String> categories;
 
     public ProviderRegistrationRequest() {
         this.setUserRole(UserRole.PROVIDER);
