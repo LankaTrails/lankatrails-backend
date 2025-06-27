@@ -26,13 +26,13 @@ public class InitialDataConfig {
     }
 
     private void initAdmin(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        if (!userRepository.existsByRole(UserRole.ADMIN)) {
+        if (!userRepository.existsByRole(UserRole.ROLE_ADMIN)) {
             Admin admin = new Admin();
             admin.setEmail("admin@lankatrails.com");
             admin.setPassword(passwordEncoder.encode("Admin@123"));
             admin.setFirstName("System");
             admin.setLastName("Administrator");
-            admin.setRole(UserRole.ADMIN);
+            admin.setRole(UserRole.ROLE_ADMIN);
             admin.setStatus(UserStatus.ACTIVE);
 
             userRepository.save(admin);

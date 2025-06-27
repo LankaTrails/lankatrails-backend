@@ -28,7 +28,7 @@ public class Admin extends User {
     @PrePersist
     protected void onCreate() {
         // Assuming there's a method in User to set the role
-        super.setRole(UserRole.ADMIN);
+        super.setRole(UserRole.ROLE_ADMIN);
         super.setStatus(UserStatus.ACTIVE);
     }
 }
