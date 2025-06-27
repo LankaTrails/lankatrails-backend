@@ -4,6 +4,7 @@ import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.model.ActivityService;
+import com.lankatrails.lankatrails_backend.model.PolicySection;
 import com.lankatrails.lankatrails_backend.model.Services;
 import com.lankatrails.lankatrails_backend.model.TabsSection;
 import com.lankatrails.lankatrails_backend.service.ServicesService;
@@ -65,6 +66,7 @@ public class ActivityServiceController {
         return  new ResponseEntity<>(updatedService,HttpStatus.OK);
     }
 
+    //For Tabs
     @PostMapping("/{id}/tabs")
     public ResponseEntity<ActivityServiceRequest> addTab
             (
@@ -89,6 +91,25 @@ public class ActivityServiceController {
 
 
     }
+
+    //For Policies
+    @PostMapping("/{id}/policies")
+    public ResponseEntity<ActivityServiceRequest> addPolicies(@PathVariable Long id, @RequestBody PolicySection policies){
+        ActivityServiceRequest responseDTO=servicesService.addNewPolicy(id,policies);
+        return new ResponseEntity<>(responseDTO,HttpStatus.CREATED);
+    }
+
+    @GetMapping("/delete/policy/{id}")
+    public String removePolicy(@PathVariable Long id){
+        Boolean status=servicesService.removePolicies(id);
+        if (status){
+            return "Successfully Deleted";
+        }else{
+            return "Couldn't Delete";
+        }
+
+    }
+
 
 
 

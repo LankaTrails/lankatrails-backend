@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.exception.APIException;
@@ -38,7 +39,8 @@ public class ServicesServiceImpl implements ServicesService {
     @Autowired
     private ModelMapper modelMapper;
 
-
+    @Autowired
+    private PolicySectionRepository policySectionRepository;
 
     @Override
     @Transactional
@@ -128,6 +130,43 @@ public class ServicesServiceImpl implements ServicesService {
   }
 
   @Override
+  public ActivityServiceRequest addNewPolicy(Long id,PolicySection policies) {
+        ActivityService service=activityServiceRepository.findById(id)
+                .orElseThrow(()->new ResourceNotFoundException("Activity Service",id));
+
+        policies.setService(service);
+        policySectionRepository.save(policies);
+
+        List<TabsSection> serviceTabs=tabsSectionRepository.findByService_ServiceId(id);
+        List<PolicySection> servicePolicies=policySectionRepository.findByService_ServiceId(id);
+
+        ActivityServiceRequest responseDTO=modelMapper.map(service,ActivityServiceRequest.class);
+
+        List<PolicySectionRequest> policiesForDTO=new ArrayList<>();
+        for (PolicySection policy: servicePolicies){
+            PolicySectionRequest policySectionRequest=new PolicySectionRequest();
+            policySectionRequest.setId(policy.getId());
+            policySectionRequest.setHeading(policy.getHeading());
+            policySectionRequest.setPolicy(policy.getPolicy());
+            policiesForDTO.add(policySectionRequest);
+        }
+
+        List<TabSectionRequest> tabsDTO=new ArrayList<>();
+        for (TabsSection tab:serviceTabs){
+            TabSectionRequest tabSectionRequest=new TabSectionRequest();
+            tabSectionRequest.setId(tab.getId());
+            tabSectionRequest.setHeading(tab.getHeading());
+            tabSectionRequest.setContent(tab.getContent());
+            tabsDTO.add(tabSectionRequest);
+        }
+
+        responseDTO.setPolicySection(policiesForDTO);
+        responseDTO.setTabsSection(tabsDTO);
+
+        return responseDTO;
+  }
+
+  @Override
   @Transactional
   public ActivityServiceRequest updateWithId(Long Id,ActivityServiceRequest activityService){
 
@@ -180,8 +219,39 @@ public class ServicesServiceImpl implements ServicesService {
 
       tabsSectionRepository.saveAll(updatedTabs);
 
+      //update or add policies
+      Set<PolicySection> policies=activity.getPolicies();
+
+      //get the policySection from the request
+      List<PolicySectionRequest> reqPolicies=activityService.getPolicySection();
+      //create a map from existing policy ids in the db for easy lookup
+      Map<Long,PolicySection> savedPoliciesMap=policies.stream()
+              .collect(Collectors.toMap(PolicySection::getId,Function.identity()));
+
+      //create a set to track updated policies or the newly added policies
+      Set<PolicySection> updatedPolicies=new HashSet<>();
+
+      for (PolicySectionRequest policy:reqPolicies){
+          PolicySection policySection;
+          if (policy.getId()!=null && savedPoliciesMap.containsKey(policy.getId())){
+              //update the existing tab
+              policySection=savedPoliciesMap.get(policy.getId());
+              policySection.setHeading(policy.getHeading());
+              policySection.setPolicy(policy.getPolicy());
+          }else{
+              //create new tab
+              policySection=new PolicySection();
+              policySection.setHeading(policy.getHeading());
+              policySection.setPolicy(policy.getPolicy());
+              policySection.setService(activity);
+          }
+          updatedPolicies.add(policySection);
+
+      }
+
       ActivityServiceRequest responseDTO=modelMapper.map(activityServiceRepository.findById(Id),ActivityServiceRequest.class);
       responseDTO.setTabsSection(reqTabs);
+      responseDTO.setPolicySection(reqPolicies);
       return responseDTO;
 
 
@@ -212,6 +282,13 @@ public class ServicesServiceImpl implements ServicesService {
         return responseDTO;
 
 
+    }
+
+    public Boolean removePolicies(Long id){
+        policySectionRepository.findById(id)
+                        .orElseThrow(()->new ResourceNotFoundException("Activity Service Policy",id));
+        policySectionRepository.deleteById(id);
+        return true;
     }
 
 }

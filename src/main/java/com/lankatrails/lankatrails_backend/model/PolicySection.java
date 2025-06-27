@@ -13,7 +13,7 @@ import lombok.Setter;
 public class PolicySection {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Integer id;
+    private Long id;
 
     private String heading;
     private String policy;
