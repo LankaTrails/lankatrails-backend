@@ -1,5 +1,8 @@
 package com.lankatrails.lankatrails_backend.exception;
 
+import lombok.Getter;
+
+@Getter
 public enum ErrorCode {
     // Validation Errors
     VALIDATION_FAILED("VALIDATION_001", "Validation failed"),
@@ -19,7 +22,10 @@ public enum ErrorCode {
     BAD_REQUEST("RESOURCE_003", "Bad request"),
 
     // System Errors
-    INTERNAL_ERROR("SYSTEM_001", "Internal server error");
+    INTERNAL_ERROR("SYSTEM_001", "Internal server error"),
+
+    // File Upload Errors
+    FILE_UPLOAD_ERROR("FILE_001", "File upload failed");
 
     private final String code;
     private final String description;
@@ -29,11 +35,4 @@ public enum ErrorCode {
         this.description = description;
     }
 
-    public String getCode() {
-        return code;
     }
-
-    public String getDescription() {
-        return description;
-    }
-}
