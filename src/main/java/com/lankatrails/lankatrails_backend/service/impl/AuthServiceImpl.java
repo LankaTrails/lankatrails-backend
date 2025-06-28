@@ -13,14 +13,12 @@ import com.lankatrails.lankatrails_backend.security.jwt.JwtUtils;
 import com.lankatrails.lankatrails_backend.security.service.RefreshTokenRedisService;
 import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
 import com.lankatrails.lankatrails_backend.service.AuthService;
-import com.lankatrails.lankatrails_backend.service.FileUploadService;
+import com.lankatrails.lankatrails_backend.service.utils.EmailService;
+import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -30,6 +28,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -66,6 +67,27 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private FileUploadService fileUploadService;
 
+    @Autowired
+    private EmailService emailService;
+
+    private void sendVerificationEmail(User user) {
+        String jwtToken = jwtUtils.generateEmailVerificationJwt(user);
+
+        String verificationUrl = String.format("http://localhost:8080/api/auth/verify-email?token=%s", jwtToken);
+
+        Map<String, Object> params = new HashMap<>();
+//        params.put("name", user.getFirstName());
+        params.put("verificationUrl", verificationUrl);
+
+        emailService.sendEmail(
+                user.getEmail(),
+                "Verify your email address",
+                "emails/verify-email", // template path relative to templates dir
+                params
+        );
+    }
+
+
     @Override
     @Transactional
     public APIResponse<RegistrationResponse> registerTourist(TouristRegistrationRequest request, MultipartFile profilePicture) {
@@ -86,6 +108,8 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(user);
         log.info("Tourist registered successfully with ID: {}", savedUser.getUserId());
+
+        sendVerificationEmail(savedUser);
 
         return APIResponse.<RegistrationResponse>builder()
                 .success(true)
@@ -378,6 +402,42 @@ public class AuthServiceImpl implements AuthService {
         return APIResponse.<String>builder()
                 .success(true)
                 .message("Provider with ID " + providerId + " approved successfully.")
+                .build();
+    }
+
+    @Override
+    public APIResponse<String> verifyEmail(String token) {
+        log.info("Verifying email with token: {}", token);
+
+        if (token == null || token.isEmpty()) {
+            log.error("Email verification failed: Token is null or empty.");
+            throw new BadRequestException("Email verification token is required.", "token", null);
+        }
+
+        String email = jwtUtils.getUserNameFromJwtToken(token);
+        if (email == null) {
+            log.error("Email verification failed: Invalid token.");
+            throw new UnauthorizedException("Invalid email verification token.");
+        }
+
+        User user = userRepository.findByEmail(email.toLowerCase())
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+
+        if (user.getEmailVerified()) {
+            log.warn("Email for {} is already verified.", email);
+            return APIResponse.<String>builder()
+                    .success(true)
+                    .message("Email is already verified.")
+                    .build();
+        }
+
+        user.setEmailVerified(true);
+        userRepository.save(user);
+
+        log.info("Email for {} verified successfully.", email);
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Email verified successfully.")
                 .build();
     }
 

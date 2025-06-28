@@ -33,20 +33,36 @@ public class AuthController {
     private final RateLimiter loginRateLimiter;
     private final RefreshTokenRedisService refreshTokenRedisService;
 
-    @PostMapping(value = "/signup/tourist", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    @PostMapping(value = "/signup/tourist", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<APIResponse<RegistrationResponse>> registerTourist(
+//            @RequestPart("user") @Valid TouristRegistrationRequest request,
+//            @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture) {
+//        APIResponse<RegistrationResponse> tourist = authService.registerTourist(request, profilePicture);
+//        return ResponseEntity.status(HttpStatus.CREATED)
+//                .body(tourist);
+//    }
+
+    @PostMapping("/signup/tourist")
     public ResponseEntity<APIResponse<RegistrationResponse>> registerTourist(
-            @RequestPart("user") @Valid TouristRegistrationRequest request,
-            @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture) {
-        APIResponse<RegistrationResponse> tourist = authService.registerTourist(request, profilePicture);
+            @Valid @RequestBody TouristRegistrationRequest request) {
+        APIResponse<RegistrationResponse> tourist = authService.registerTourist(request, null);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(tourist);
     }
 
-    @PostMapping(value = "/signup/provider", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    @PostMapping(value = "/signup/provider", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<APIResponse<RegistrationResponse>> registerProvider(
+//            @RequestPart("user") @Valid ProviderRegistrationRequest request,
+//            @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture) {
+//        APIResponse<RegistrationResponse> provider = authService.registerProvider(request, profilePicture);
+//        return ResponseEntity.status(HttpStatus.CREATED)
+//                .body(provider);
+//    }
+
+    @PostMapping("/signup/provider")
     public ResponseEntity<APIResponse<RegistrationResponse>> registerProvider(
-            @RequestPart("user") @Valid ProviderRegistrationRequest request,
-            @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture) {
-        APIResponse<RegistrationResponse> provider = authService.registerProvider(request, profilePicture);
+            @Valid @RequestBody ProviderRegistrationRequest request) {
+        APIResponse<RegistrationResponse> provider = authService.registerProvider(request, null);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(provider);
     }
@@ -103,6 +119,12 @@ public class AuthController {
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(userProfileResponse);
+    }
+
+    @GetMapping("/verify-email")
+    public ResponseEntity<APIResponse<String>> verifyEmail(@RequestParam String token) {
+        APIResponse<String> response = authService.verifyEmail(token);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
 }

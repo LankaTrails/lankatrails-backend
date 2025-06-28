@@ -27,4 +27,6 @@ public interface AuthService {
     APIResponse<LoginResponse> refreshToken(HttpServletRequest request);
 
     APIResponse<String> approveProvider(Long providerId);
+
+    APIResponse<String> verifyEmail(String token);
 }
