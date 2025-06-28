@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Verify Your Email</title>
+</head>
+<body>
+<h2>Hello <span th:text="${name}">User</span>,</h2>
+<p>Thank you for registering with <strong>LankaTrails</strong>!</p>
+<p>Please verify your email address by clicking the button below:</p>
+
+<a th:href="${verificationUrl}"
+   style="padding: 10px 20px; background-color: #2D9CDB; color: white; text-decoration: none; border-radius: 4px;">
+    Verify Email
+</a>
+
+<P th:text="${verificationUrl}"></P>
+
+<p>This link will expire in 24 hours.</p>
+<p>If you didn’t create an account, you can safely ignore this email.</p>
+<br>
+<p>– LankaTrails Team</p>
+</body>
+</html>

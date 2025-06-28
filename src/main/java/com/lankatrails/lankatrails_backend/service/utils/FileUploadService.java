@@ -1,4 +1,4 @@
-package com.lankatrails.lankatrails_backend.service;
+package com.lankatrails.lankatrails_backend.service.utils;
 
 import com.lankatrails.lankatrails_backend.exception.FileUploadException;
 import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;

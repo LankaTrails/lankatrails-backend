@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.security.jwt;
 
 import com.lankatrails.lankatrails_backend.exception.UnauthorizedException;
+import com.lankatrails.lankatrails_backend.model.User;
 import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -31,6 +32,9 @@ public class JwtUtils {
 
     @Value("${spring.app.jwtExpirationMs}")
     private int jwtExpirationMs;
+
+    @Value("${spring.app.emailVerificationTokenExpirationMs}")
+    private int emailVerificationTokenExpirationMs;
 
     @Value("${spring.app.jwtCookieName}")
     private String jwtCookie;
@@ -207,4 +211,16 @@ public class JwtUtils {
 
         return refreshToken;
     }
+
+    public String generateEmailVerificationJwt(User user) {
+        return Jwts.builder()
+                .subject(user.getEmail())
+                .claim("userId", user.getUserId())
+                .claim("type", "EMAIL_VERIFICATION")
+                .issuedAt(new Date())
+                .expiration(new Date((new Date()).getTime() + emailVerificationTokenExpirationMs))
+                .signWith(key())  // You could have a separate key
+                .compact();
+    }
+
 }
