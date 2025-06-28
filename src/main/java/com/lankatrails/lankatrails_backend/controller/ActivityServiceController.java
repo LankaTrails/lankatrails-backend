@@ -23,13 +23,12 @@ public class ActivityServiceController {
 
 
 
-    @PostMapping("/provider/activity-service/add/{providerId}")
+    @PostMapping("/provider/activity-service/add")
     public ResponseEntity<ActivityServiceRequest> addService
             (
-                    @RequestBody ActivityService service,
-                    @PathVariable Long providerId
+                    @RequestBody ActivityServiceRequest service
             ){
-               ActivityServiceRequest ActivityServiceDTO =  servicesService.addService(service,providerId);
+               ActivityServiceRequest ActivityServiceDTO =  servicesService.addService(service);
                //return ResponseEntity.status(HttpStatus.CREATED).body(ActivityServiceDTO);
                return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.CREATED);
     }

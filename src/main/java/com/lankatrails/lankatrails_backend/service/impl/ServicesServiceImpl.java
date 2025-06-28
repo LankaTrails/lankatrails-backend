@@ -9,6 +9,7 @@ import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import com.lankatrails.lankatrails_backend.repositories.*;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ServicesService;
 
 import org.modelmapper.ModelMapper;
@@ -43,23 +44,62 @@ public class ServicesServiceImpl implements ServicesService {
     @Autowired
     private PolicySectionRepository policySectionRepository;
 
+    @Autowired
+    private AuthUtils authUtils;
+
     @Override
     @Transactional
-    public ActivityServiceRequest addService(ActivityService services, Long providerId) {
+    public ActivityServiceRequest addService(ActivityServiceRequest services) {
 
         Category category=categoryRepository.findByCategoryName(ServiceCategory.ACTIVITY).orElseThrow(
                 ()->new ResourceNotFoundException("Category",4L)
         );
+        ActivityService mappedObj=modelMapper.map(services,ActivityService.class);
+        mappedObj.setCategory(category);
 
-        services.setCategory(category);
+        Provider provider=(Provider) authUtils.loggedInUser();
 
-        Provider provider=providerRepository.findById(providerId)
-                .orElseThrow(()->new ResourceNotFoundException("Provider",providerId));
+        mappedObj.setProvider(provider);
 
-        services.setProvider(provider);
+        activityServiceRepository.save(mappedObj);
+        ActivityService lastServiceAdded=activityServiceRepository.findAll().getLast();
 
-        Services saved_service=activityServiceRepository.save(services);
-        return modelMapper.map(saved_service,ActivityServiceRequest.class);
+        //set the tabs
+        List<TabSectionRequest> tabsReq=services.getTabsSection();
+        if (tabsReq!=null){
+            for (TabSectionRequest tab : tabsReq){
+                TabsSection tabsSection=new TabsSection();
+                tabsSection.setHeading(tab.getHeading());
+                tabsSection.setContent(tab.getContent());
+                tabsSection.setService(lastServiceAdded);
+                tabsSectionRepository.save(tabsSection);
+            }
+        }
+
+
+        //set the policies
+        List<PolicySectionRequest> policyReq=services.getPolicySection();
+        if (policyReq!=null){
+            for (PolicySectionRequest policy:policyReq){
+                PolicySection policySection=new PolicySection();
+                policySection.setHeading(policy.getHeading());
+                policySection.setPolicy(policy.getPolicy());
+                policySection.setService(lastServiceAdded);
+                policySectionRepository.save(policySection);
+            }
+        }
+
+        //set the response
+        ActivityServiceRequest responseDTO=new ActivityServiceRequest();
+        responseDTO.setServiceName(services.getServiceName());
+        responseDTO.setLocationBased(services.getLocationBased());
+        responseDTO.setContactNo(services.getContactNo());
+        responseDTO.setActivityType(services.getActivityType());
+        responseDTO.setActivityDetails(services.getActivityDetails());
+        responseDTO.setSafetyInstructions(services.getSafetyInstructions());
+        responseDTO.setTabsSection(tabsReq);
+
+        return responseDTO;
     }
 
     @Override
