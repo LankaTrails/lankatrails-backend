@@ -61,8 +61,8 @@ public class ServicesServiceImpl implements ServicesService {
 
         mappedObj.setProvider(provider);
 
-        activityServiceRepository.save(mappedObj);
-        ActivityService lastServiceAdded=activityServiceRepository.findAll().getLast();
+        ActivityService lastServiceAdded=activityServiceRepository.save(mappedObj);
+
 
         //set the tabs
         List<TabSectionRequest> tabsReq=services.getTabsSection();
@@ -79,6 +79,7 @@ public class ServicesServiceImpl implements ServicesService {
 
         //set the policies
         List<PolicySectionRequest> policyReq=services.getPolicySection();
+
         if (policyReq!=null){
             for (PolicySectionRequest policy:policyReq){
                 PolicySection policySection=new PolicySection();
@@ -98,6 +99,7 @@ public class ServicesServiceImpl implements ServicesService {
         responseDTO.setActivityDetails(services.getActivityDetails());
         responseDTO.setSafetyInstructions(services.getSafetyInstructions());
         responseDTO.setTabsSection(tabsReq);
+        responseDTO.setPolicySection(policyReq);
 
         return responseDTO;
     }
