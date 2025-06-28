@@ -9,13 +9,14 @@ import com.lankatrails.lankatrails_backend.dtos.response.LoginResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.RegistrationResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.UserProfileDto;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface AuthService {
 //    RegistrationResponse registerUser(RegistrationRequest request);
 
-    APIResponse<RegistrationResponse> registerTourist(TouristRegistrationRequest request);
+    APIResponse<RegistrationResponse> registerTourist(TouristRegistrationRequest request, MultipartFile profilePicture);
 
-    APIResponse<RegistrationResponse> registerProvider(ProviderRegistrationRequest request);
+    APIResponse<RegistrationResponse> registerProvider(ProviderRegistrationRequest request, MultipartFile profilePicture);
 
     APIResponse<LoginResponse> authenticateUser(LoginRequest request, HttpServletRequest httpServletRequest);
 

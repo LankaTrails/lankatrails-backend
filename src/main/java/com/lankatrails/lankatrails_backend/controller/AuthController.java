@@ -16,11 +16,9 @@ import io.github.resilience4j.ratelimiter.RateLimiter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
@@ -35,18 +33,20 @@ public class AuthController {
     private final RateLimiter loginRateLimiter;
     private final RefreshTokenRedisService refreshTokenRedisService;
 
-    @PostMapping("/signup/tourist")
+    @PostMapping(value = "/signup/tourist", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<APIResponse<RegistrationResponse>> registerTourist(
-            @Valid @RequestBody TouristRegistrationRequest request) {
-        APIResponse<RegistrationResponse> tourist = authService.registerTourist(request);
+            @RequestPart("user") @Valid TouristRegistrationRequest request,
+            @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture) {
+        APIResponse<RegistrationResponse> tourist = authService.registerTourist(request, profilePicture);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(tourist);
     }
 
-    @PostMapping("/signup/provider")
+    @PostMapping(value = "/signup/provider", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<APIResponse<RegistrationResponse>> registerProvider(
-            @Valid @RequestBody ProviderRegistrationRequest request) {
-        APIResponse<RegistrationResponse> provider = authService.registerProvider(request);
+            @RequestPart("user") @Valid ProviderRegistrationRequest request,
+            @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture) {
+        APIResponse<RegistrationResponse> provider = authService.registerProvider(request, profilePicture);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(provider);
     }

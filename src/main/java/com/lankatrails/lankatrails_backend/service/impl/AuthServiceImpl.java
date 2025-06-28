@@ -5,6 +5,7 @@ import com.lankatrails.lankatrails_backend.dtos.response.*;
 import com.lankatrails.lankatrails_backend.exception.*;
 import com.lankatrails.lankatrails_backend.factory.*;
 import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
 import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
 import com.lankatrails.lankatrails_backend.repositories.*;
@@ -12,9 +13,11 @@ import com.lankatrails.lankatrails_backend.security.jwt.JwtUtils;
 import com.lankatrails.lankatrails_backend.security.service.RefreshTokenRedisService;
 import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
 import com.lankatrails.lankatrails_backend.service.AuthService;
+import com.lankatrails.lankatrails_backend.service.FileUploadService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -26,6 +29,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -59,9 +63,12 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private RefreshTokenRedisService refreshTokenRedisService;
 
+    @Autowired
+    private FileUploadService fileUploadService;
+
     @Override
     @Transactional
-    public APIResponse<RegistrationResponse> registerTourist(TouristRegistrationRequest request) {
+    public APIResponse<RegistrationResponse> registerTourist(TouristRegistrationRequest request, MultipartFile profilePicture) {
         log.info("Attempting tourist registration for email: {}", request.getEmail());
 
         if (userRepository.existsByEmail(request.getEmail().toLowerCase())) {
@@ -70,6 +77,12 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userFactory.createUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        // Handle profile picture upload if provided
+        if (profilePicture != null && !profilePicture.isEmpty()) {
+            String profilePictureUrl = fileUploadService.storeFile(profilePicture, UploadCategory.PROFILE_PICTURE);
+            user.setProfilePictureUrl(profilePictureUrl);
+        }
 
         User savedUser = userRepository.save(user);
         log.info("Tourist registered successfully with ID: {}", savedUser.getUserId());
@@ -89,7 +102,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public APIResponse<RegistrationResponse> registerProvider(ProviderRegistrationRequest request) {
+    public APIResponse<RegistrationResponse> registerProvider(ProviderRegistrationRequest request, MultipartFile profilePicture) {
         log.info("Attempting provider registration for email: {}", request.getEmail());
 
         if (userRepository.existsByEmail(request.getEmail().toLowerCase())) {
@@ -98,6 +111,12 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userFactory.createUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        // Handle profile picture upload if provided
+        if (profilePicture != null && !profilePicture.isEmpty()) {
+            String profilePictureUrl = fileUploadService.storeFile(profilePicture, UploadCategory.PROFILE_PICTURE);
+            user.setProfilePictureUrl(profilePictureUrl);
+        }
 
         User savedUser = userRepository.save(user);
         log.info("Provider registered successfully with ID: {}", savedUser.getUserId());
@@ -224,6 +243,7 @@ public class AuthServiceImpl implements AuthService {
                         .email(user.getEmail())
                         .role(user.getRole())
                         .status(user.getStatus())
+                        .profilePictureUrl(user.getProfilePictureUrl())
                         .emailVerified(user.getEmailVerified())
                         .firstName(tourist.getFirstName())
                         .lastName(tourist.getLastName())
@@ -246,6 +266,7 @@ public class AuthServiceImpl implements AuthService {
                         .email(user.getEmail())
                         .role(user.getRole())
                         .status(user.getStatus())
+                        .profilePictureUrl(user.getProfilePictureUrl())
                         .emailVerified(user.getEmailVerified())
                         .businessName(provider.getBusinessName())
                         .businessDescription(provider.getBusinessDescription())
@@ -268,6 +289,7 @@ public class AuthServiceImpl implements AuthService {
                         .email(user.getEmail())
                         .role(user.getRole())
                         .status(user.getStatus())
+                        .profilePictureUrl(user.getProfilePictureUrl())
                         .firstName(admin.getFirstName())
                         .lastName(admin.getLastName())
                         .emailVerified(user.getEmailVerified())
