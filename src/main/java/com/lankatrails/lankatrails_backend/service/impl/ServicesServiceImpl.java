@@ -8,6 +8,7 @@ import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.repositories.*;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ServicesService;
 
 import org.modelmapper.ModelMapper;
@@ -42,6 +43,9 @@ public class ServicesServiceImpl implements ServicesService {
     @Autowired
     private PolicySectionRepository policySectionRepository;
 
+    @Autowired
+    private AuthUtils authUtils;
+
     @Override
     @Transactional
     public ActivityServiceRequest addService(ActivityService services, Long categoryId, Long providerId) {
@@ -51,11 +55,12 @@ public class ServicesServiceImpl implements ServicesService {
 
         services.setCategory(category);
 
-        Provider provider=providerRepository.findById(providerId)
-                .orElseThrow(()->new ResourceNotFoundException("Provider",providerId));
+//        Provider provider=providerRepository.findById(providerId)
+//                .orElseThrow(()->new ResourceNotFoundException("Provider",providerId));
 
+//        services.setProvider(provider);
+        Provider provider = (Provider) authUtils.loggedInUser();
         services.setProvider(provider);
-
         Services saved_service=activityServiceRepository.save(services);
         return modelMapper.map(saved_service,ActivityServiceRequest.class);
     }

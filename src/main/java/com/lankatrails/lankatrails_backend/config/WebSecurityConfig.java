@@ -2,6 +2,8 @@ package com.lankatrails.lankatrails_backend.config;
 
 import com.lankatrails.lankatrails_backend.security.jwt.AuthTokenFilter;
 import com.lankatrails.lankatrails_backend.security.jwt.JwtUtils;
+import com.lankatrails.lankatrails_backend.security.service.CustomOAuth2UserService;
+import com.lankatrails.lankatrails_backend.security.service.OAuth2LoginSuccessHandler;
 import com.lankatrails.lankatrails_backend.security.service.UserDetailsServiceImpl;
 import jakarta.servlet.Filter;
 import lombok.RequiredArgsConstructor;
@@ -36,11 +38,8 @@ public class WebSecurityConfig {
 
     private final JwtUtils jwtUtils;
     private final UserDetailsServiceImpl userDetailsService;
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final CustomOAuth2UserService customOAuth2UserService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -63,6 +62,12 @@ public class WebSecurityConfig {
                                 .headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK)
                         )
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
+                )
+                .oauth2Login(oauth -> oauth
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService)  // 🆕 inject custom user loader
+                        )
+                        .successHandler(oAuth2LoginSuccessHandler)
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()

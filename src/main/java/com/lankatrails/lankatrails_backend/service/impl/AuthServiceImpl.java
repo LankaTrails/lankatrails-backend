@@ -27,6 +27,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -357,6 +359,24 @@ public class AuthServiceImpl implements AuthService {
                 .success(true)
                 .message("Provider with ID " + providerId + " approved successfully.")
                 .build();
+    }
+
+    @Override
+    public User findOrCreateOAuthUser(String email, Map<String, Object> attributes) {
+        log.info("Finding or creating OAuth user with email: {}", email);
+
+        // Check if the user already exists
+        User user = userRepository.findByEmail(email.toLowerCase())
+                .orElseGet(() -> {
+                    log.info("Creating new user for email: {}", email);
+                    User newUser = userFactory.createOAuthUser(email, attributes);
+                    newUser.setPassword("{noop}oauth");  // No password really used, but valid format
+                    // Set a default password
+                    return userRepository.save(newUser);
+                });
+
+        log.info("OAuth user found/created with ID: {}", user.getUserId());
+        return user;
     }
 
 }

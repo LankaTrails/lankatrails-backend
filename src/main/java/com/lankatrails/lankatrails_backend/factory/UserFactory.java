@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 @Component
@@ -47,5 +48,16 @@ public class UserFactory {
         });
 
         return categories;
+    }
+
+    public User createOAuthUser(String email, Map<String, Object> attributes) {
+        Tourist tourist = new Tourist();
+        tourist.setEmail(email.toLowerCase());
+        tourist.setFirstName((String) attributes.get("firstName"));
+        tourist.setLastName((String) attributes.get("lastName"));
+        tourist.setCountry((String) attributes.get("country"));
+        tourist.setRole(UserRole.ROLE_TOURIST);
+
+        return tourist;
     }
 }
