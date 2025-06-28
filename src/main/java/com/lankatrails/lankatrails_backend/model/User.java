@@ -52,10 +52,13 @@ public class User {
 
     @Builder.Default
     @Column(name = "email_verified")
-    private boolean emailVerified = true;
+    private boolean emailVerified = false;
 
     @Column(name = "email_verification_token")
     private String emailVerificationToken;
+
+    @Column(name = "profile_picture_url")
+    private String profilePictureUrl;
 
     @CreationTimestamp
     @Column(name = "created_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")

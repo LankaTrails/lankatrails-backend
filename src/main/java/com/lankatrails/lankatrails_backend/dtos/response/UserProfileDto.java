@@ -20,7 +20,7 @@ public abstract class UserProfileDto {
 //    private String firstName;
 //    private String lastName;
 //    private String phoneNumber;
-//    private String profilePictureUrl;
+    private String profilePictureUrl;
 //    private String bio;
     private boolean emailVerified;
 }

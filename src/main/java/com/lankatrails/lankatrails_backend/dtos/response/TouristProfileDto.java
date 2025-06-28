@@ -18,7 +18,7 @@ public class TouristProfileDto extends UserProfileDto {
 //    private String profilePictureUrl;
 //    private String bio;
 
-    public TouristProfileDto(Long id, String email, UserRole role, UserStatus status, boolean emailVerified) {
-        super(id, email, role, status, emailVerified);
+    public TouristProfileDto(Long id, String email, UserRole role, UserStatus status, String profilePicUrl, boolean emailVerified) {
+        super(id, email, role, status, profilePicUrl, emailVerified);
     }
 }
