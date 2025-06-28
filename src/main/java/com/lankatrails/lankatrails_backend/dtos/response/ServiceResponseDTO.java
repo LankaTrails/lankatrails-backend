@@ -1,17 +1,18 @@
 package com.lankatrails.lankatrails_backend.dtos.response;
 
-import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ServiceResponse {
-    private List<ActivityServiceRequest> content;
+public class ServiceResponseDTO {
+    private Integer pageNumber;
+    private Integer pageSize;
+    private Long totalElements;
+    private Integer totalPages;
+    private Boolean lastPage;
 }

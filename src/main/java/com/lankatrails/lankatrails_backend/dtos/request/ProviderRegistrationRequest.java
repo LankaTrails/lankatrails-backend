@@ -26,7 +26,7 @@ public class ProviderRegistrationRequest extends RegistrationRequest {
 //    private Set<String> categories;
 
     public ProviderRegistrationRequest() {
-        this.setUserRole(UserRole.PROVIDER);
+        this.setUserRole(UserRole.ROLE_PROVIDER);
     }
 
     public @Size(max = 50) String getBusinessName() {
