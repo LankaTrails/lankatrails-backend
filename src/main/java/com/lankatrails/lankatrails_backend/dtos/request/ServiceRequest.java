@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,5 +18,7 @@ public abstract class ServiceRequest {
     private String locationBased;
     private String contactNo;
     private Boolean status;
+    private List<TabSectionRequest> tabsSection;
+    private List<PolicySectionRequest> policySection;
 
 }
