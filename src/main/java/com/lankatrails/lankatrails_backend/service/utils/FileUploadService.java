@@ -12,7 +12,7 @@ import java.util.UUID;
 @Service
 public class FileUploadService {
 
-    private static final String UPLOAD_ROOT = "uploads";
+    private static final String UPLOAD_ROOT = "D:\\LankaTrails\\lankatrails\\lankatrails-backend\\uploads";
 
     public String storeFile(MultipartFile file, UploadCategory category) {
         if (file == null || file.isEmpty()) {
@@ -47,5 +47,18 @@ public class FileUploadService {
         } catch (IOException e) {
             throw new FileUploadException("Failed to store file: " + e.getMessage());
         }
+    }
+
+    //method to store list of files
+    public String[] storeFiles(MultipartFile[] files, UploadCategory category) {
+        if (files == null || files.length == 0) {
+            throw new IllegalArgumentException("No files to upload");
+        }
+
+        String[] fileUrls = new String[files.length];
+        for (int i = 0; i < files.length; i++) {
+            fileUrls[i] = storeFile(files[i], category);
+        }
+        return fileUrls;
     }
 }
