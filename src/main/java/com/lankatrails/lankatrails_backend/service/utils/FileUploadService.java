@@ -42,7 +42,7 @@ public class FileUploadService {
             file.transferTo(filePath.toFile());
 
             // Return relative URL path
-            return "/" + UPLOAD_ROOT + "/" + category.getDirectory() + "/" + uniqueFilename;
+            return "/uploads" + "/" + category.getDirectory() + "/" + uniqueFilename;
 
         } catch (IOException e) {
             throw new FileUploadException("Failed to store file: " + e.getMessage());

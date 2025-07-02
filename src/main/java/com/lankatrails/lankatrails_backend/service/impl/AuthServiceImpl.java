@@ -294,7 +294,7 @@ public class AuthServiceImpl implements AuthService {
                         .emailVerified(user.getEmailVerified())
                         .businessName(provider.getBusinessName())
                         .businessDescription(provider.getBusinessDescription())
-                        .logoUrl(provider.getLogoUrl())
+                        .logoUrl(provider.getProfilePictureUrl())
                         .build();
 
                 return APIResponse.<UserProfileDto>builder()

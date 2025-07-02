@@ -54,8 +54,8 @@ public class User {
     @Column(name = "email_verified")
     private boolean emailVerified = true;
 
-    @Column(name = "email_verification_token")
-    private String emailVerificationToken;
+//    @Column(name = "email_verification_token")
+//    private String emailVerificationToken;
 
     @Column(name = "profile_picture_url")
     private String profilePictureUrl;
