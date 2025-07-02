@@ -107,17 +107,17 @@ public class WebSecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         // Allow all origins during development
-        config.setAllowedOrigins(Arrays.asList("*"));
+//        config.setAllowedOrigins(Arrays.asList("*"));
 
         // Alternatively, you can keep specific origins but add your development URLs:
-        // config.setAllowedOrigins(Arrays.asList(
-        //     "http://localhost:19006",
-        //     "http://localhost:8080",
-        //     "http://192.168.x.x:19006", // Your local network IP
-        //     "https://admin.lankatrails.com",
-        //     "https://provider.lankatrails.com",
-        //     "exp://192.168.x.x:19000" // Expo dev client URL
-        // ));
+         config.setAllowedOrigins(Arrays.asList(
+             "http://localhost:19006",
+             "http://localhost:8081",
+             "http://192.168.x.x:19006", // Your local network IP
+             "https://admin.lankatrails.com",
+             "https://provider.lankatrails.com",
+             "exp://192.168.x.x:19000" // Expo dev client URL
+         ));
 
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(Arrays.asList("*"));

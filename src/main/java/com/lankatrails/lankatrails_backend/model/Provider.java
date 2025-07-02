@@ -31,6 +31,9 @@ public class Provider extends User {
      @Column(name = "logo_url")
      private String logoUrl;
 
+     @Column(name = "contact_number")
+     private String contactNumber;
+
 //     @Getter
 //     @Setter
 //     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE},

@@ -32,6 +32,7 @@ public class UserFactory {
         provider.setBusinessName(request.getBusinessName());
         provider.setBusinessDescription(request.getBusinessDescription());
         provider.setLogoUrl(request.getLogoUrl());
+        provider.setContactNumber(request.getContactNumber());
         provider.setRole(UserRole.ROLE_PROVIDER);
         return provider;
     }
