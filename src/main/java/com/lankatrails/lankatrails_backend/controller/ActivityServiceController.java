@@ -48,7 +48,7 @@ public class ActivityServiceController {
         return new ResponseEntity<>(activityServiceResponse,HttpStatus.OK);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("activity-service/{id}")
     public ResponseEntity<ActivityServiceRequest> searchById(@PathVariable Long id){
         ActivityServiceRequest activityService=servicesService.searchWithId(id);
         return new ResponseEntity<>(activityService,HttpStatus.OK);

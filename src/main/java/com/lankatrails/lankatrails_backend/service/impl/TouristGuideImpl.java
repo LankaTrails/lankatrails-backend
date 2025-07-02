@@ -115,22 +115,68 @@ public class TouristGuideImpl implements TouristGuideService {
             responseDTO.setTabsSection(tabsReq);
             responseDTO.setPolicySection(policyReq);
 
-
-
             TouristGuideResponseDTO response=new TouristGuideResponseDTO();
             List<TouristGuideRequestDTO> responseList=new ArrayList<>();
             responseList.add(responseDTO);
             response.setContent(responseList);
             return response;
 
-
         }else{
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());
         }
 
+    }
 
+    @Override
+    public TouristGuideResponseDTO getGuideDetails(Long id) {
+        TouristGuide touristGuide=touristGuideRepository.findById(id)
+                .orElseThrow(()->new ResourceNotFoundException("Tour Guide",id));
 
+        List<TabsSection> tabSection=tabsSectionRepository.findByService_ServiceId(id);
+        List<TabSectionRequest> tabs=new ArrayList<>();
 
+        //get the tabs
+        for(TabsSection tab: tabSection){
+            TabSectionRequest tabReq=new TabSectionRequest();
+            tabReq.setId(tab.getId());
+            tabReq.setHeading(tab.getHeading());
+            tabReq.setContent(tab.getContent());
+            tabs.add(tabReq);
+        }
+
+        List<PolicySection> policySection=policySectionRepository.findByService_ServiceId(id);
+        List<PolicySectionRequest> policies=new ArrayList<>();
+
+        //get the policies
+        for (PolicySection policy:policySection){
+            PolicySectionRequest guidePolicies=new PolicySectionRequest();
+            guidePolicies.setId(policy.getId());
+            guidePolicies.setHeading(policy.getHeading());
+            guidePolicies.setPolicy(policy.getPolicy());
+            policies.add(guidePolicies);
+        }
+
+        //Prepare the response
+
+        TouristGuideRequestDTO prepareResponse=new TouristGuideRequestDTO();
+        List<TouristGuideRequestDTO> response=new ArrayList<>();
+
+        prepareResponse.setServiceName(touristGuide.getServiceName());
+        prepareResponse.setContactNo(touristGuide.getContactNo());
+        prepareResponse.setLocationBased(touristGuide.getLocationBased());
+        prepareResponse.setPolicySection(policies);
+        prepareResponse.setTabsSection(tabs);
+        prepareResponse.setLanguages(touristGuide.getLanguages());
+        prepareResponse.setServiceAreas(touristGuide.getServiceAreas());
+
+        response.add(prepareResponse);
+
+        TouristGuideResponseDTO responseDTO=new TouristGuideResponseDTO();
+
+        responseDTO.setContent(response);
+
+        return responseDTO;
 
     }
+
 }

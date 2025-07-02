@@ -4,6 +4,7 @@ package com.lankatrails.lankatrails_backend.controller;
 import com.lankatrails.lankatrails_backend.dtos.request.TouristGuideRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.TouristGuideResponseDTO;
 import com.lankatrails.lankatrails_backend.repositories.TouristGuideRepository;
+import com.lankatrails.lankatrails_backend.service.ServicesForAll;
 import com.lankatrails.lankatrails_backend.service.TouristGuideService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,10 +12,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth/tourist")
+@RequestMapping("/api/auth/guide")
 public class TourGuideController {
     @Autowired
     TouristGuideService touristGuideService;
+
+    @Autowired
+    ServicesForAll servicesForAll;
 
     @GetMapping("/all")
     public ResponseEntity<TouristGuideResponseDTO> getAllTourGuides
@@ -26,9 +30,30 @@ public class TourGuideController {
             TouristGuideResponseDTO touristGuideResponseDTO = touristGuideService.getAllTourGuides();
             return new ResponseEntity<>(touristGuideResponseDTO, HttpStatus.OK);
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<TouristGuideResponseDTO> getGuideDetails(@PathVariable Long id){
+        TouristGuideResponseDTO touristGuideResponseDTO=touristGuideService.getGuideDetails(id);
+        return new ResponseEntity<>(touristGuideResponseDTO,HttpStatus.OK);
+    }
     @PostMapping("/add")
     public ResponseEntity<TouristGuideResponseDTO> addNewTourGuide(@RequestBody TouristGuideRequestDTO requestDTO){
         TouristGuideResponseDTO touristGuideRequestDTO=touristGuideService.addNewTouristGuide(requestDTO);
-        return null;
+
+        return new ResponseEntity<>(touristGuideRequestDTO,HttpStatus.CREATED);
+    }
+
+    @GetMapping("/delete/{id}")
+    public String deleteTourGuide(@PathVariable Long id){
+        Boolean removeStatus=servicesForAll.removeService(id);
+        if (removeStatus)
+            return "successfull";
+        else
+            return "unsuccessfull";
+
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<TouristGuideResponseDTO> updateTourGuide(@PathVariable Long id){
+        TouristGuideResponseDTO touristGuideResponseDTO=touristGuideService.updateTourGuide(id);
+        return  new ResponseEntity<>(touristGuideResponseDTO,HttpStatus.OK);
     }
 }
