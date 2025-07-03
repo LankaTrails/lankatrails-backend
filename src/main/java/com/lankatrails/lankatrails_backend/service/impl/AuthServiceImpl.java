@@ -90,7 +90,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public APIResponse<RegistrationResponse> registerTourist(TouristRegistrationRequest request, MultipartFile profilePicture) {
+    public APIResponse<RegistrationResponse> registerTourist(TouristRegistrationRequest request ) {
         log.info("Attempting tourist registration for email: {}", request.getEmail());
 
         if (userRepository.existsByEmail(request.getEmail().toLowerCase())) {
@@ -101,10 +101,10 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         // Handle profile picture upload if provided
-        if (profilePicture != null && !profilePicture.isEmpty()) {
-            String profilePictureUrl = fileUploadService.storeFile(profilePicture, UploadCategory.PROFILE_PICTURE);
-            user.setProfilePictureUrl(profilePictureUrl);
-        }
+//        if (profilePicture != null && !profilePicture.isEmpty()) {
+//            String profilePictureUrl = fileUploadService.storeFile(profilePicture, UploadCategory.PROFILE_PICTURE);
+//            user.setProfilePictureUrl(profilePictureUrl);
+//        }
 
         User savedUser = userRepository.save(user);
         log.info("Tourist registered successfully with ID: {}", savedUser.getUserId());
@@ -126,7 +126,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public APIResponse<RegistrationResponse> registerProvider(ProviderRegistrationRequest request, MultipartFile profilePicture) {
+    public APIResponse<RegistrationResponse> registerProvider(ProviderRegistrationRequest request) {
         log.info("Attempting provider registration for email: {}", request.getEmail());
 
         if (userRepository.existsByEmail(request.getEmail().toLowerCase())) {
@@ -137,10 +137,10 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         // Handle profile picture upload if provided
-        if (profilePicture != null && !profilePicture.isEmpty()) {
-            String profilePictureUrl = fileUploadService.storeFile(profilePicture, UploadCategory.PROFILE_PICTURE);
-            user.setProfilePictureUrl(profilePictureUrl);
-        }
+//        if (profilePicture != null && !profilePicture.isEmpty()) {
+//            String profilePictureUrl = fileUploadService.storeFile(profilePicture, UploadCategory.PROFILE_PICTURE);
+//            user.setProfilePictureUrl(profilePictureUrl);
+//        }
 
         User savedUser = userRepository.save(user);
         log.info("Provider registered successfully with ID: {}", savedUser.getUserId());
@@ -294,7 +294,7 @@ public class AuthServiceImpl implements AuthService {
                         .emailVerified(user.getEmailVerified())
                         .businessName(provider.getBusinessName())
                         .businessDescription(provider.getBusinessDescription())
-                        .logoUrl(provider.getLogoUrl())
+                        .logoUrl(provider.getProfilePictureUrl())
                         .build();
 
                 return APIResponse.<UserProfileDto>builder()

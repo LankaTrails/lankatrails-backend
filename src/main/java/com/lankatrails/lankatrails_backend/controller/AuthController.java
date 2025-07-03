@@ -45,27 +45,27 @@ public class AuthController {
     @PostMapping("/signup/tourist")
     public ResponseEntity<APIResponse<RegistrationResponse>> registerTourist(
             @Valid @RequestBody TouristRegistrationRequest request) {
-        APIResponse<RegistrationResponse> tourist = authService.registerTourist(request, null);
+        APIResponse<RegistrationResponse> tourist = authService.registerTourist(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(tourist);
     }
 
-    @PostMapping(value = "/signup/provider", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<APIResponse<RegistrationResponse>> registerProvider(
-            @RequestPart("user") @Valid ProviderRegistrationRequest request,
-            @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture) {
-        APIResponse<RegistrationResponse> provider = authService.registerProvider(request, profilePicture);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(provider);
-    }
-
-//    @PostMapping("/signup/provider")
+//    @PostMapping(value = "/signup/provider", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 //    public ResponseEntity<APIResponse<RegistrationResponse>> registerProvider(
-//            @Valid @RequestBody ProviderRegistrationRequest request) {
-//        APIResponse<RegistrationResponse> provider = authService.registerProvider(request, null);
+//            @RequestPart("user") @Valid ProviderRegistrationRequest request,
+//            @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture) {
+//        APIResponse<RegistrationResponse> provider = authService.registerProvider(request, profilePicture);
 //        return ResponseEntity.status(HttpStatus.CREATED)
 //                .body(provider);
 //    }
+
+    @PostMapping("/signup/provider")
+    public ResponseEntity<APIResponse<RegistrationResponse>> registerProvider(
+            @Valid @RequestBody ProviderRegistrationRequest request) {
+        APIResponse<RegistrationResponse> provider = authService.registerProvider(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(provider);
+    }
 
     @PostMapping("/login")
     public ResponseEntity<APIResponse<LoginResponse>> login(
