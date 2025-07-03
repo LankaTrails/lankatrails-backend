@@ -18,11 +18,11 @@ import com.lankatrails.lankatrails_backend.service.TouristGuideService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class TouristGuideImpl implements TouristGuideService {
@@ -177,6 +177,99 @@ public class TouristGuideImpl implements TouristGuideService {
 
         return responseDTO;
 
+    }
+
+    @Override
+    @Transactional
+    public TouristGuideResponseDTO updateTourGuide(Long id, TouristGuideRequestDTO requestDTO) {
+
+        TouristGuide touristGuide=touristGuideRepository.findById(id)
+                .orElseThrow(()-> new ResourceNotFoundException("Tour Guide",id));
+
+        //update the tourist guide
+        touristGuide.setServiceName(requestDTO.getServiceName());
+        touristGuide.setLocationBased(requestDTO.getLocationBased());
+        touristGuide.setContactNo(requestDTO.getContactNo());
+        touristGuide.setStatus(requestDTO.getStatus());
+        touristGuide.setLanguages(requestDTO.getLanguages());
+        touristGuide.setServiceAreas(requestDTO.getServiceAreas());
+
+        //save the updated tour guide
+        touristGuideRepository.save(touristGuide);
+
+        //update or add tabs
+        //get the tabs from the database
+        Set<TabsSection> tabs=touristGuide.getTabs();
+
+        //get the tabs from the request
+        List<TabSectionRequest> reqTabs=requestDTO.getTabsSection();
+
+        //create a map of existing tabs by ID for quick lookup
+        Map<Long,TabsSection> savedTabMap=tabs.stream()
+                .collect(Collectors.toMap(TabsSection::getId, Function.identity()));
+
+        //create a set to track updated or newly added tabs
+        Set<TabsSection> updatedTabs=new HashSet<>();
+
+        for(TabSectionRequest req:reqTabs){
+            TabsSection tab;
+            if (req.getId()!=null && savedTabMap.containsKey(req.getId())){
+                //update the existing tab
+                tab=savedTabMap.get(req.getId());
+                tab.setHeading(req.getHeading());
+                tab.setContent(req.getContent());
+            }else{
+                //create new tab
+                tab=new TabsSection();
+                tab.setHeading(req.getHeading());
+                tab.setContent(req.getContent());
+                tab.setService(touristGuide);
+            }
+            updatedTabs.add(tab);
+        }
+        tabsSectionRepository.saveAll(updatedTabs);
+
+        //update or add policies
+        Set<PolicySection> policies=touristGuide.getPolicies();
+
+        //get the policySection from the request
+        List<PolicySectionRequest> reqPolicies=requestDTO.getPolicySection();
+        //create a map from existing policy ids in the db for easy lookup
+        Map<Long,PolicySection> savedPoliciesMap=policies.stream()
+                .collect(Collectors.toMap(PolicySection::getId,Function.identity()));
+
+        //create a set to track updated policies or the newly added policies
+        Set<PolicySection> updatedPolicies=new HashSet<>();
+
+        for (PolicySectionRequest policy:reqPolicies){
+            PolicySection policySection;
+            if (policy.getId()!=null && savedPoliciesMap.containsKey(policy.getId())){
+                //update the existing tab
+                policySection=savedPoliciesMap.get(policy.getId());
+                policySection.setHeading(policy.getHeading());
+                policySection.setPolicy(policy.getPolicy());
+            }else{
+                //create new tab
+                policySection=new PolicySection();
+                policySection.setHeading(policy.getHeading());
+                policySection.setPolicy(policy.getPolicy());
+                policySection.setService(touristGuide);
+            }
+            updatedPolicies.add(policySection);
+
+        }
+
+        TouristGuideRequestDTO responseDTO=modelMapper.map(touristGuideRepository.findById(id),TouristGuideRequestDTO.class);
+        responseDTO.setTabsSection(reqTabs);
+        responseDTO.setPolicySection(reqPolicies);
+
+        List<TouristGuideRequestDTO> responseList=new ArrayList<>();
+        responseList.add(responseDTO);
+
+        TouristGuideResponseDTO sendResponse=new TouristGuideResponseDTO();
+        sendResponse.setContent(responseList);
+
+        return sendResponse;
     }
 
 }

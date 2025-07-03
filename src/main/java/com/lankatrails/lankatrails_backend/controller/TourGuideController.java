@@ -51,9 +51,9 @@ public class TourGuideController {
             return "unsuccessfull";
 
     }
-    @PutMapping("/{id}")
-    public ResponseEntity<TouristGuideResponseDTO> updateTourGuide(@PathVariable Long id){
-        TouristGuideResponseDTO touristGuideResponseDTO=touristGuideService.updateTourGuide(id);
+    @PostMapping("/{id}")
+    public ResponseEntity<TouristGuideResponseDTO> updateTourGuide(@PathVariable Long id, @RequestBody TouristGuideRequestDTO requestDTO){
+        TouristGuideResponseDTO touristGuideResponseDTO=touristGuideService.updateTourGuide(id,requestDTO);
         return  new ResponseEntity<>(touristGuideResponseDTO,HttpStatus.OK);
     }
 }

@@ -7,6 +7,7 @@ import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse
 import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
+import com.lankatrails.lankatrails_backend.factory.ServiceFactory;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import com.lankatrails.lankatrails_backend.repositories.*;
@@ -46,11 +47,20 @@ public class ServicesServiceImpl implements ServicesService {
     private PolicySectionRepository policySectionRepository;
 
     @Autowired
+    private ServiceFactory serviceFactory;
+
+    @Autowired
+    private TabsImpl tabsImpl;
+
+    @Autowired
+    private PolicyImpl policyImpl;
+
+    @Autowired
     private AuthUtils authUtils;
 
     @Override
     @Transactional
-    public ActivityServiceRequest addService(ActivityServiceRequest services) {
+    public ActivityServiceResponse addService(ActivityServiceRequest services) {
 
         Category category=categoryRepository.findByCategoryName(ServiceCategory.ACTIVITY).orElseThrow(
                 ()->new ResourceNotFoundException("Category",4L)
@@ -66,44 +76,24 @@ public class ServicesServiceImpl implements ServicesService {
 
         if(checkDb.isEmpty()){
             ActivityService lastServiceAdded=activityServiceRepository.save(mappedObj);
+
             //set the tabs
             List<TabSectionRequest> tabsReq=services.getTabsSection();
-            if (tabsReq!=null){
-                for (TabSectionRequest tab : tabsReq){
-                    TabsSection tabsSection=new TabsSection();
-                    tabsSection.setHeading(tab.getHeading());
-                    tabsSection.setContent(tab.getContent());
-                    tabsSection.setService(lastServiceAdded);
-                    tabsSectionRepository.save(tabsSection);
-                }
-            }
-
+            Boolean tabAdditionStatus=tabsImpl.addTabs(tabsReq,lastServiceAdded);
 
             //set the policies
             List<PolicySectionRequest> policyReq=services.getPolicySection();
-
-            if (policyReq!=null){
-                for (PolicySectionRequest policy:policyReq){
-                    PolicySection policySection=new PolicySection();
-                    policySection.setHeading(policy.getHeading());
-                    policySection.setPolicy(policy.getPolicy());
-                    policySection.setService(lastServiceAdded);
-                    policySectionRepository.save(policySection);
-                }
-            }
+            Boolean policyAdditionStatus=policyImpl.addPolicies(policyReq,lastServiceAdded);
 
             //set the response
-            ActivityServiceRequest responseDTO=new ActivityServiceRequest();
-            responseDTO.setServiceName(services.getServiceName());
-            responseDTO.setLocationBased(services.getLocationBased());
-            responseDTO.setContactNo(services.getContactNo());
-            responseDTO.setActivityType(services.getActivityType());
-            responseDTO.setActivityDetails(services.getActivityDetails());
-            responseDTO.setSafetyInstructions(services.getSafetyInstructions());
-            responseDTO.setTabsSection(tabsReq);
-            responseDTO.setPolicySection(policyReq);
+            if(tabAdditionStatus && policyAdditionStatus){
+                ActivityServiceResponse responseDTO=serviceFactory.createServiceResponse(services,tabsReq,policyReq);
 
-            return responseDTO;
+                return responseDTO;
+            }else{
+                throw new APIException("Couldn't Save the Activity Service");
+            }
+
 
 
         }else {

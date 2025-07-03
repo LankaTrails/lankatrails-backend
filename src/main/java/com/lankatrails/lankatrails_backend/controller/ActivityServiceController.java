@@ -2,6 +2,7 @@ package com.lankatrails.lankatrails_backend.controller;
 
 import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.model.ActivityService;
 import com.lankatrails.lankatrails_backend.model.PolicySection;
@@ -24,11 +25,11 @@ public class ActivityServiceController {
 
 
     @PostMapping("/provider/activity-service/add")
-    public ResponseEntity<ActivityServiceRequest> addService
+    public ResponseEntity<ActivityServiceResponse> addService
             (
                     @RequestBody ActivityServiceRequest service
             ){
-               ActivityServiceRequest ActivityServiceDTO =  servicesService.addService(service);
+               ActivityServiceResponse ActivityServiceDTO =  servicesService.addService(service);
                //return ResponseEntity.status(HttpStatus.CREATED).body(ActivityServiceDTO);
                return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.CREATED);
     }
@@ -98,12 +99,14 @@ public class ActivityServiceController {
     }
 
     @GetMapping("/delete/policy/{id}")
-    public String removePolicy(@PathVariable Long id){
+    public ResponseEntity<APIResponse<String>> removePolicy(@PathVariable Long id){
         Boolean status=servicesService.removePolicies(id);
         if (status){
-            return "Successfully Deleted";
+
+            return new ResponseEntity<>(new APIResponse <>(true,"Deleted Successfully",null),HttpStatus.OK);
         }else{
-            return "Couldn't Delete";
+            return new ResponseEntity<>(new APIResponse <>(true,"Couldn't Delete",null),HttpStatus.OK);
+
         }
 
     }
