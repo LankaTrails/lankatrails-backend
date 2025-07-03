@@ -45,7 +45,7 @@ public class AuthController {
     @PostMapping("/signup/tourist")
     public ResponseEntity<APIResponse<RegistrationResponse>> registerTourist(
             @Valid @RequestBody TouristRegistrationRequest request) {
-        APIResponse<RegistrationResponse> tourist = authService.registerTourist(request, null);
+        APIResponse<RegistrationResponse> tourist = authService.registerTourist(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(tourist);
     }
@@ -62,7 +62,7 @@ public class AuthController {
     @PostMapping("/signup/provider")
     public ResponseEntity<APIResponse<RegistrationResponse>> registerProvider(
             @Valid @RequestBody ProviderRegistrationRequest request) {
-        APIResponse<RegistrationResponse> provider = authService.registerProvider(request, null);
+        APIResponse<RegistrationResponse> provider = authService.registerProvider(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(provider);
     }

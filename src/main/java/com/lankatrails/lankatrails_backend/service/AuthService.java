@@ -14,9 +14,9 @@ import org.springframework.web.multipart.MultipartFile;
 public interface AuthService {
 //    RegistrationResponse registerUser(RegistrationRequest request);
 
-    APIResponse<RegistrationResponse> registerTourist(TouristRegistrationRequest request, MultipartFile profilePicture);
+    APIResponse<RegistrationResponse> registerTourist(TouristRegistrationRequest request);
 
-    APIResponse<RegistrationResponse> registerProvider(ProviderRegistrationRequest request, MultipartFile profilePicture);
+    APIResponse<RegistrationResponse> registerProvider(ProviderRegistrationRequest request);
 
     APIResponse<LoginResponse> authenticateUser(LoginRequest request, HttpServletRequest httpServletRequest);
 
