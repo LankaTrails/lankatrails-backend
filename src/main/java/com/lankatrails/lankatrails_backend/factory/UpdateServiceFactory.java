@@ -12,4 +12,6 @@ public class UpdateServiceFactory {
         transport.setVehicleQty(request.getVehicleQty());
         return transport;
     }
+
+
 }

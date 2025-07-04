@@ -7,7 +7,7 @@ import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse
 import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
-import com.lankatrails.lankatrails_backend.factory.ServiceFactory;
+import com.lankatrails.lankatrails_backend.factory.CreateServiceFactory;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import com.lankatrails.lankatrails_backend.repositories.*;
@@ -47,7 +47,7 @@ public class ServicesServiceImpl implements ServicesService {
     private PolicySectionRepository policySectionRepository;
 
     @Autowired
-    private ServiceFactory serviceFactory;
+    private CreateServiceFactory serviceFactory;
 
     @Autowired
     private TabsImpl tabsImpl;
