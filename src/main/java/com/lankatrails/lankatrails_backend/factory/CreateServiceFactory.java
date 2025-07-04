@@ -12,7 +12,7 @@ import java.util.List;
 
 @Component
 @AllArgsConstructor
-public class ServiceFactory {
+public class CreateServiceFactory {
     public ActivityServiceResponse createServiceResponse(
             ActivityServiceRequest services,
             List<TabSectionRequest> tabsReq,
