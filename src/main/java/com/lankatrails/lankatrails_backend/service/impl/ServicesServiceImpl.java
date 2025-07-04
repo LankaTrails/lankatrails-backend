@@ -3,6 +3,7 @@ package com.lankatrails.lankatrails_backend.service.impl;
 import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
@@ -165,12 +166,16 @@ public class ServicesServiceImpl implements ServicesService {
   }
 
   @Override
-  public Boolean removeTabs(Long id){
+  public APIResponse<String> removeTabs(Long id){
         tabsSectionRepository.findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("Activity Service Tabs",id));
 
         tabsSectionRepository.deleteById(id);
-        return true;
+        return  APIResponse.<String>builder()
+                .success(true)
+                .message("Tab Deleted Successfully")
+                .data("")
+                .build();
 
   }
 
@@ -329,11 +334,16 @@ public class ServicesServiceImpl implements ServicesService {
 
     }
 
-    public Boolean removePolicies(Long id){
+    @Override
+    public APIResponse<String> removePolicies(Long id){
         policySectionRepository.findById(id)
                         .orElseThrow(()->new ResourceNotFoundException("Activity Service Policy",id));
         policySectionRepository.deleteById(id);
-        return true;
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Policy removed successfully")
+                .data("")
+                .build();
     }
 
 }

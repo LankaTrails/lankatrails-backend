@@ -9,6 +9,7 @@ import com.lankatrails.lankatrails_backend.model.PolicySection;
 import com.lankatrails.lankatrails_backend.model.Services;
 import com.lankatrails.lankatrails_backend.model.TabsSection;
 import com.lankatrails.lankatrails_backend.service.ServicesService;
+import io.vavr.API;
 import jakarta.validation.Valid;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,16 +80,9 @@ public class ActivityServiceController {
     }
 
     @GetMapping("/delete/tabs/{id}")
-    public String removeTabs(@PathVariable Long id){
-        Boolean status=servicesService.removeTabs(id);
-
-        if (status==true){
-            return "successfully deleted";
-        }else{
-            return "Couldn't Delete";
-        }
-
-
+    public ResponseEntity<APIResponse<String>> removeTabs(@PathVariable Long id){
+        APIResponse<String> response=servicesService.removeTabs(id);
+        return new ResponseEntity<>(response,HttpStatus.OK);
     }
 
     //For Policies
@@ -100,15 +94,8 @@ public class ActivityServiceController {
 
     @GetMapping("/delete/policy/{id}")
     public ResponseEntity<APIResponse<String>> removePolicy(@PathVariable Long id){
-        Boolean status=servicesService.removePolicies(id);
-        if (status){
-
-            return new ResponseEntity<>(new APIResponse <>(true,"Deleted Successfully",null),HttpStatus.OK);
-        }else{
-            return new ResponseEntity<>(new APIResponse <>(true,"Couldn't Delete",null),HttpStatus.OK);
-
-        }
-
+        APIResponse<String> response=servicesService.removePolicies(id);
+        return new ResponseEntity<>(response,HttpStatus.OK);
     }
 
 
