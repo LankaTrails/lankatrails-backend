@@ -1,8 +1,10 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
 import com.lankatrails.lankatrails_backend.model.ActivityService;
 import com.lankatrails.lankatrails_backend.model.PolicySection;
+import com.lankatrails.lankatrails_backend.model.TabsSection;
 import com.lankatrails.lankatrails_backend.model.Transport;
 import com.lankatrails.lankatrails_backend.repositories.PolicySectionRepository;
 import com.lankatrails.lankatrails_backend.service.Policies;
@@ -74,5 +76,22 @@ public class PolicyImpl implements Policies {
 
         }
         return updatedPolicies;
+    }
+
+    @Override
+    public Boolean addPoliciesToTransport(List<PolicySectionRequest> policyReq, Transport lastTransportAdded) {
+        if (policyReq!=null){
+                for (PolicySectionRequest policy : policyReq){
+                    PolicySection policySection=new PolicySection();
+                    policySection.setHeading(policy.getHeading());
+                    policySection.setPolicy(policy.getPolicy());
+                    policySection.setService(lastTransportAdded);
+                    policySectionRepository.save(policySection);
+                }
+                return true;
+        }else {
+                return false;
+        }
+
     }
 }

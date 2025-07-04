@@ -81,4 +81,20 @@ public class TabsImpl implements Tabs {
         return updatedTabs;
     }
 
+    @Override
+    public Boolean addTabsToTransport(List<TabSectionRequest> tabsReq, Transport lastTransportAdded) {
+        if (tabsReq!=null){
+            for (TabSectionRequest tab : tabsReq){
+                TabsSection tabsSection=new TabsSection();
+                tabsSection.setHeading(tab.getHeading());
+                tabsSection.setContent(tab.getContent());
+                tabsSection.setService(lastTransportAdded);
+                tabsSectionRepository.save(tabsSection);
+            }
+            return true;
+        }else {
+            return false;
+        }
+    }
+
 }

@@ -14,4 +14,5 @@ public interface Policies {
     Boolean addPolicies(List<PolicySectionRequest> policyReq, ActivityService lastServiceAdded);
     List<PolicySectionRequest> getAllPolicies(Long Id);
     Set<PolicySection> updatePolicies(Set<PolicySection> tabs, List<PolicySectionRequest> reqTabs, Transport transport);
+    Boolean addPoliciesToTransport(List<PolicySectionRequest> policyReq,Transport transport);
 }

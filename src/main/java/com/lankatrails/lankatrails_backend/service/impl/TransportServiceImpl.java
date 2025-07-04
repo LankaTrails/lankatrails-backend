@@ -4,18 +4,21 @@ import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TransportRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TransportResponseDTO;
 import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
+import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
+import com.lankatrails.lankatrails_backend.factory.CreateServiceFactory;
 import com.lankatrails.lankatrails_backend.factory.UpdateServiceFactory;
-import com.lankatrails.lankatrails_backend.model.ActivityService;
-import com.lankatrails.lankatrails_backend.model.PolicySection;
-import com.lankatrails.lankatrails_backend.model.TabsSection;
-import com.lankatrails.lankatrails_backend.model.Transport;
+import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
+import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
 import com.lankatrails.lankatrails_backend.repositories.PolicySectionRepository;
 import com.lankatrails.lankatrails_backend.repositories.TabsSectionRepository;
 import com.lankatrails.lankatrails_backend.repositories.TransportRepository;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.TransportService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -35,6 +39,8 @@ public class TransportServiceImpl implements TransportService {
     @Autowired
     TransportRepository transportRepository;
 
+    @Autowired
+    CategoryRepository categoryRepository;
     @Autowired
     PolicySectionRepository policySectionRepository;
 
@@ -45,7 +51,13 @@ public class TransportServiceImpl implements TransportService {
     PolicyImpl policiesImpl;
 
     @Autowired
+    AuthUtils authUtils;
+
+    @Autowired
     UpdateServiceFactory updateServiceFactory;
+
+    @Autowired
+    CreateServiceFactory serviceFactory;
 
     @Autowired
     TabsSectionRepository tabsSectionRepository;
@@ -142,7 +154,50 @@ public class TransportServiceImpl implements TransportService {
 
     @Override
     public TransportResponseDTO addNewTransport(TransportRequestDTO transportRequestDTO) {
-        return null;
+        Category category=categoryRepository.findByCategoryName(ServiceCategory.TRANSPORT).orElseThrow(
+                ()->new ResourceNotFoundException("Category",2L)
+        );
+        Transport mappedObj=modelMapper.map(transportRequestDTO,Transport.class);
+        mappedObj.setCategory(category);
+        Provider provider=(Provider) authUtils.loggedInUser();
+        mappedObj.setProvider(provider);
+        Optional<Transport> checkDb=transportRepository.findByServiceName(mappedObj.getServiceName());
+        if (checkDb.isEmpty()){
+            Transport lastTransportAdded=transportRepository.save(mappedObj);
+            //set the tabs
+            List<TabSectionRequest> tabsReq=transportRequestDTO.getTabsSection();
+            Boolean tabAdditionStatus=tabsImpl.addTabsToTransport(tabsReq,lastTransportAdded);
+            //set the policies
+            List<PolicySectionRequest> policyReq=transportRequestDTO.getPolicySection();
+            Boolean policyAdditionStatus=policiesImpl.addPoliciesToTransport(policyReq,lastTransportAdded);
+            //set the response
+//            if(tabAdditionStatus && policyAdditionStatus){
+                TransportResponseDTO responseDTO=serviceFactory.createTransportResponse(transportRequestDTO,tabsReq,policyReq);
+                return responseDTO;
+//            }else{
+//                throw new APIException("Couldn't save the transport service");
+//            }
+
+        }else{
+            throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());
+        }
+
+
+    }
+
+    @Override
+    public APIResponse<String> deleteTransport(Long Id) {
+        Transport transport=transportRepository.findById(Id)
+                .orElseThrow(()->new ResourceNotFoundException("Transport Service",Id));
+        transport.setStatus(false);
+        transportRepository.save(transport);
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Transport Deleted Successfully")
+                .data("")
+                .build();
+
+
     }
 
 

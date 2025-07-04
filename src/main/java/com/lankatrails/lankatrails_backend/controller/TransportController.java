@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.controller;
 
 import com.lankatrails.lankatrails_backend.dtos.request.TransportRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TransportResponseDTO;
 import com.lankatrails.lankatrails_backend.service.TransportService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +44,11 @@ public class TransportController {
         TransportResponseDTO transportResponseDTO=transportService.addNewTransport(transportRequestDTO);
         return new ResponseEntity<>(transportResponseDTO,HttpStatus.OK);
 
+    }
+    @PutMapping("/remove/{id}")
+    public ResponseEntity<APIResponse<String>> deleteTransport(@PathVariable Long id){
+        APIResponse<String> response=transportService.deleteTransport(id);
+        return new ResponseEntity<>(response,HttpStatus.OK);
     }
 
 }
