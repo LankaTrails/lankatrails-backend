@@ -12,6 +12,7 @@ import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.jwt.JwtUtils;
 import com.lankatrails.lankatrails_backend.security.service.RefreshTokenRedisService;
 import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.AuthService;
 import com.lankatrails.lankatrails_backend.service.utils.EmailService;
 import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
@@ -60,6 +61,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private JwtUtils jwtUtils;
+
+    @Autowired
+    private AuthUtils authUtills;
 
     @Autowired
     private RefreshTokenRedisService refreshTokenRedisService;
@@ -438,6 +442,31 @@ public class AuthServiceImpl implements AuthService {
         return APIResponse.<String>builder()
                 .success(true)
                 .message("Email verified successfully.")
+                .build();
+    }
+
+    @Override
+    public APIResponse<String> changePassword(ChangePaswordRequest changePasswordRequest) {
+        User user = authUtills.loggedInUser();
+        log.info("Changing password for user: {}", user.getEmail());
+
+        if (changePasswordRequest.getNewPassword() == null || changePasswordRequest.getNewPassword().isEmpty()) {
+            log.error("Change password failed: New password is required.");
+            throw new BadRequestException("New password is required.", "newPassword", null);
+        }
+
+        if (!passwordEncoder.matches(changePasswordRequest.getOldPassword(), user.getPassword())) {
+            log.error("Change password failed: Current password is incorrect for user {}", user.getEmail());
+            throw new BadCredentialsException("Current password is incorrect.");
+        }
+
+        user.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
+        userRepository.save(user);
+        log.info("Password changed successfully for user: {}", user.getEmail());
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Password changed successfully.")
+                .data("Password changed successfully.")
                 .build();
     }
 

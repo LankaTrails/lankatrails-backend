@@ -2,6 +2,7 @@ package com.lankatrails.lankatrails_backend.controller;
 
 
 import com.lankatrails.lankatrails_backend.config.ApplicationRateLimiterConfig;
+import com.lankatrails.lankatrails_backend.dtos.request.ChangePaswordRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.LoginRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.ProviderRegistrationRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TouristRegistrationRequest;
@@ -124,6 +125,14 @@ public class AuthController {
     @GetMapping("/verify-email")
     public ResponseEntity<APIResponse<String>> verifyEmail(@RequestParam String token) {
         APIResponse<String> response = authService.verifyEmail(token);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<APIResponse<String>> changePassword(
+            @RequestBody ChangePaswordRequest changePasswordRequest,
+            HttpServletRequest request) {
+        APIResponse<String> response = authService.changePassword(changePasswordRequest);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
