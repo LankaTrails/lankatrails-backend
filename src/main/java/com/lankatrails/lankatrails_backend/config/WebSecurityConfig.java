@@ -68,7 +68,7 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/tourist/**").hasRole("TOURIST")
-                        .requestMatchers("/api/provider/**").hasRole("PROVIDER")
+                        .requestMatchers("/api/provider/**").permitAll()
                         .requestMatchers("/api/admin/**").permitAll()// Update to admin role
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/api/user/**").permitAll()

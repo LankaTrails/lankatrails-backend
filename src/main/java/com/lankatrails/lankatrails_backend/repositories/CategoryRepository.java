@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface CategoryRepository extends JpaRepository<Category, Long> {
     // Additional query methods can be defined here if needed
     Optional<Category> findByCategoryName(ServiceCategory name);
+
 }

@@ -3,11 +3,16 @@ package com.lankatrails.lankatrails_backend.service.impl;
 import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
+import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
+import com.lankatrails.lankatrails_backend.factory.CreateServiceFactory;
 import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import com.lankatrails.lankatrails_backend.repositories.*;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ServicesService;
 
 import org.modelmapper.ModelMapper;
@@ -42,22 +47,63 @@ public class ServicesServiceImpl implements ServicesService {
     @Autowired
     private PolicySectionRepository policySectionRepository;
 
+    @Autowired
+    private CreateServiceFactory serviceFactory;
+
+    @Autowired
+    private TabsImpl tabsImpl;
+
+    @Autowired
+    private PolicyImpl policyImpl;
+
+    @Autowired
+    private AuthUtils authUtils;
+
     @Override
     @Transactional
-    public ActivityServiceRequest addService(ActivityService services, Long categoryId, Long providerId) {
+    public ActivityServiceResponse addService(ActivityServiceRequest services) {
 
-        Category category=categoryRepository.findById(categoryId)
-                .orElseThrow(()->new ResourceNotFoundException("Category",categoryId));
+        Category category=categoryRepository.findByCategoryName(ServiceCategory.ACTIVITY).orElseThrow(
+                ()->new ResourceNotFoundException("Category",4L)
+        );
+        ActivityService mappedObj=modelMapper.map(services,ActivityService.class);
+        mappedObj.setCategory(category);
 
-        services.setCategory(category);
+        Provider provider=(Provider) authUtils.loggedInUser();
 
-        Provider provider=providerRepository.findById(providerId)
-                .orElseThrow(()->new ResourceNotFoundException("Provider",providerId));
+        mappedObj.setProvider(provider);
 
-        services.setProvider(provider);
+        Optional<ActivityService> checkDb=activityServiceRepository.findByServiceName(mappedObj.getServiceName());
 
-        Services saved_service=activityServiceRepository.save(services);
-        return modelMapper.map(saved_service,ActivityServiceRequest.class);
+        if(checkDb.isEmpty()){
+            ActivityService lastServiceAdded=activityServiceRepository.save(mappedObj);
+
+            //set the tabs
+            List<TabSectionRequest> tabsReq=services.getTabsSection();
+            Boolean tabAdditionStatus=tabsImpl.addTabs(tabsReq,lastServiceAdded);
+
+            //set the policies
+            List<PolicySectionRequest> policyReq=services.getPolicySection();
+            Boolean policyAdditionStatus=policyImpl.addPolicies(policyReq,lastServiceAdded);
+
+            //set the response
+            if(tabAdditionStatus && policyAdditionStatus){
+                ActivityServiceResponse responseDTO=serviceFactory.createServiceResponse(services,tabsReq,policyReq);
+
+                return responseDTO;
+            }else{
+                throw new APIException("Couldn't Save the Activity Service");
+            }
+
+
+
+        }else {
+            throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());
+        }
+
+
+
+
     }
 
     @Override
@@ -120,12 +166,16 @@ public class ServicesServiceImpl implements ServicesService {
   }
 
   @Override
-  public Boolean removeTabs(Long id){
+  public APIResponse<String> removeTabs(Long id){
         tabsSectionRepository.findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("Activity Service Tabs",id));
 
         tabsSectionRepository.deleteById(id);
-        return true;
+        return  APIResponse.<String>builder()
+                .success(true)
+                .message("Tab Deleted Successfully")
+                .data("")
+                .build();
 
   }
 
@@ -284,11 +334,16 @@ public class ServicesServiceImpl implements ServicesService {
 
     }
 
-    public Boolean removePolicies(Long id){
+    @Override
+    public APIResponse<String> removePolicies(Long id){
         policySectionRepository.findById(id)
                         .orElseThrow(()->new ResourceNotFoundException("Activity Service Policy",id));
         policySectionRepository.deleteById(id);
-        return true;
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Policy removed successfully")
+                .data("")
+                .build();
     }
 
 }

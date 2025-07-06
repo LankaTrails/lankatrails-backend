@@ -2,12 +2,14 @@ package com.lankatrails.lankatrails_backend.controller;
 
 import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.model.ActivityService;
 import com.lankatrails.lankatrails_backend.model.PolicySection;
 import com.lankatrails.lankatrails_backend.model.Services;
 import com.lankatrails.lankatrails_backend.model.TabsSection;
 import com.lankatrails.lankatrails_backend.service.ServicesService;
+import io.vavr.API;
 import jakarta.validation.Valid;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,21 +18,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth/activityService")
+@RequestMapping("/api")
 public class ActivityServiceController {
     @Autowired
     ServicesService servicesService;
 
 
 
-    @PostMapping("/add/{categoryId}/{providerId}")
-    public ResponseEntity<ActivityServiceRequest> addService
+    @PostMapping("/provider/activity-service/add")
+    public ResponseEntity<ActivityServiceResponse> addService
             (
-                    @RequestBody ActivityService service,
-                    @PathVariable Long categoryId,
-                    @PathVariable Long providerId
+                    @RequestBody ActivityServiceRequest service
             ){
-               ActivityServiceRequest ActivityServiceDTO =  servicesService.addService(service,categoryId,providerId);
+               ActivityServiceResponse ActivityServiceDTO =  servicesService.addService(service);
                //return ResponseEntity.status(HttpStatus.CREATED).body(ActivityServiceDTO);
                return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.CREATED);
     }
@@ -50,7 +50,7 @@ public class ActivityServiceController {
         return new ResponseEntity<>(activityServiceResponse,HttpStatus.OK);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("activity-service/{id}")
     public ResponseEntity<ActivityServiceRequest> searchById(@PathVariable Long id){
         ActivityServiceRequest activityService=servicesService.searchWithId(id);
         return new ResponseEntity<>(activityService,HttpStatus.OK);
@@ -80,16 +80,9 @@ public class ActivityServiceController {
     }
 
     @GetMapping("/delete/tabs/{id}")
-    public String removeTabs(@PathVariable Long id){
-        Boolean status=servicesService.removeTabs(id);
-
-        if (status==true){
-            return "successfully deleted";
-        }else{
-            return "Couldn't Delete";
-        }
-
-
+    public ResponseEntity<APIResponse<String>> removeTabs(@PathVariable Long id){
+        APIResponse<String> response=servicesService.removeTabs(id);
+        return new ResponseEntity<>(response,HttpStatus.OK);
     }
 
     //For Policies
@@ -100,14 +93,9 @@ public class ActivityServiceController {
     }
 
     @GetMapping("/delete/policy/{id}")
-    public String removePolicy(@PathVariable Long id){
-        Boolean status=servicesService.removePolicies(id);
-        if (status){
-            return "Successfully Deleted";
-        }else{
-            return "Couldn't Delete";
-        }
-
+    public ResponseEntity<APIResponse<String>> removePolicy(@PathVariable Long id){
+        APIResponse<String> response=servicesService.removePolicies(id);
+        return new ResponseEntity<>(response,HttpStatus.OK);
     }
 
 
