@@ -27,7 +27,7 @@ public class PolicyImpl implements Policies {
                 PolicySection policySection=new PolicySection();
                 policySection.setHeading(policy.getHeading());
                 policySection.setPolicy(policy.getPolicy());
-                policySection.setService(lastServiceAdded);
+                policySection.setProvider(lastServiceAdded.getProvider());
                 policySectionRepository.save(policySection);
             }
             return true;
@@ -70,7 +70,7 @@ public class PolicyImpl implements Policies {
                 policySection=new PolicySection();
                 policySection.setHeading(policy.getHeading());
                 policySection.setPolicy(policy.getPolicy());
-                policySection.setService(transport);
+                policySection.setProvider(transport.getProvider());
             }
             updatedPolicies.add(policySection);
 
@@ -85,7 +85,7 @@ public class PolicyImpl implements Policies {
                     PolicySection policySection=new PolicySection();
                     policySection.setHeading(policy.getHeading());
                     policySection.setPolicy(policy.getPolicy());
-                    policySection.setService(lastTransportAdded);
+                    policySection.setProvider(lastTransportAdded.getProvider());
                     policySectionRepository.save(policySection);
                 }
                 return true;

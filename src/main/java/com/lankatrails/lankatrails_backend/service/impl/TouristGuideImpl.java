@@ -100,7 +100,7 @@ public class TouristGuideImpl implements TouristGuideService {
                     PolicySection policySection=new PolicySection();
                     policySection.setHeading(policy.getHeading());
                     policySection.setPolicy(policy.getPolicy());
-                    policySection.setService(lastGuideAdded);
+                    policySection.setProvider(lastGuideAdded.getProvider());
                     policySectionRepository.save(policySection);
                 }
             }
@@ -253,7 +253,7 @@ public class TouristGuideImpl implements TouristGuideService {
                 policySection=new PolicySection();
                 policySection.setHeading(policy.getHeading());
                 policySection.setPolicy(policy.getPolicy());
-                policySection.setService(touristGuide);
+                policySection.setProvider(touristGuide.getProvider());
             }
             updatedPolicies.add(policySection);
 

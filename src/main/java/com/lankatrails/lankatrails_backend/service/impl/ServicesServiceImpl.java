@@ -193,7 +193,7 @@ public class ServicesServiceImpl implements ServicesService {
         ActivityService service=activityServiceRepository.findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("Activity Service",id));
 
-        policies.setService(service);
+        policies.setProvider(service.getProvider());
         policySectionRepository.save(policies);
 
         List<TabsSection> serviceTabs=tabsSectionRepository.findByService_ServiceId(id);
@@ -302,7 +302,7 @@ public class ServicesServiceImpl implements ServicesService {
               policySection=new PolicySection();
               policySection.setHeading(policy.getHeading());
               policySection.setPolicy(policy.getPolicy());
-              policySection.setService(activity);
+              policySection.setProvider(activity.getProvider());
           }
           updatedPolicies.add(policySection);
 
