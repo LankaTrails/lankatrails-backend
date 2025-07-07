@@ -46,5 +46,8 @@ public class Services {
     @JoinColumn(name = "location_id", referencedColumnName ="locationId" )
     private Location locationBased;
 
+    @OneToMany(mappedBy = "service" )
+    private Set<Image> images = new HashSet<>();
+
 
 }
