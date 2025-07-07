@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
 import com.lankatrails.lankatrails_backend.model.Category;
+import com.lankatrails.lankatrails_backend.model.Image;
 import com.lankatrails.lankatrails_backend.model.Location;
 import com.lankatrails.lankatrails_backend.model.Provider;
 import lombok.AllArgsConstructor;
@@ -21,6 +22,7 @@ public abstract class ServiceRequest {
     private Boolean status;
     private List<TabSectionRequest> tabsSection;
     private List<PolicySectionRequest> policySection;
+    private List<Image> images;
 
 
 }

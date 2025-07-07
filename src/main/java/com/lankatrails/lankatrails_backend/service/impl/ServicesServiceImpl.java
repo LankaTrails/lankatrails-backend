@@ -48,6 +48,9 @@ public class ServicesServiceImpl implements ServicesService {
     private PolicySectionRepository policySectionRepository;
 
     @Autowired
+    private ImageRepository imageRepository;
+
+    @Autowired
     private CreateServiceFactory serviceFactory;
 
     @Autowired
@@ -86,6 +89,12 @@ public class ServicesServiceImpl implements ServicesService {
             List<PolicySectionRequest> policyReq=services.getPolicySection();
             Boolean policyAdditionStatus=policyImpl.addPolicies(policyReq,lastServiceAdded);
 
+            //Set the images
+            List<Image> images=services.getImages();
+            for (Image img : images ){
+                img.setService(mappedObj);
+            }
+            imageRepository.saveAll(images);
             //set the response
             if(tabAdditionStatus && policyAdditionStatus){
                 ActivityServiceResponse responseDTO=serviceFactory.createServiceResponse(services,tabsReq,policyReq);
