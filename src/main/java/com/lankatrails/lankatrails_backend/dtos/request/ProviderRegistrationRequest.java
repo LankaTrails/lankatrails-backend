@@ -21,6 +21,8 @@ public class ProviderRegistrationRequest extends RegistrationRequest {
     @Size(max = 255)
     private String logoUrl;
 
+    private String contactNumber;
+
 //    @Setter
 //    @Getter
 //    private Set<String> categories;

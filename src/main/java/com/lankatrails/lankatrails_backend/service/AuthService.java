@@ -9,6 +9,7 @@ import com.lankatrails.lankatrails_backend.dtos.response.LoginResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.RegistrationResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.UserProfileDto;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface AuthService {
 //    RegistrationResponse registerUser(RegistrationRequest request);
@@ -26,4 +27,6 @@ public interface AuthService {
     APIResponse<LoginResponse> refreshToken(HttpServletRequest request);
 
     APIResponse<String> approveProvider(Long providerId);
+
+    APIResponse<String> verifyEmail(String token);
 }

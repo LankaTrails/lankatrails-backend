@@ -1,7 +1,22 @@
 package com.lankatrails.lankatrails_backend.security.jwt;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.util.Date;
+
+import javax.crypto.SecretKey;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+import org.springframework.web.util.WebUtils;
+
 import com.lankatrails.lankatrails_backend.exception.UnauthorizedException;
+import com.lankatrails.lankatrails_backend.model.User;
 import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
+
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
@@ -11,17 +26,6 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseCookie;
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-import org.springframework.web.util.WebUtils;
-
-import javax.crypto.SecretKey;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
-import java.util.Date;
 
 @Component
 @Slf4j
@@ -32,8 +36,14 @@ public class JwtUtils {
     @Value("${spring.app.jwtExpirationMs}")
     private int jwtExpirationMs;
 
+    @Value("${spring.app.emailVerificationTokenExpirationMs}")
+    private int emailVerificationTokenExpirationMs;
+
     @Value("${spring.app.jwtCookieName}")
     private String jwtCookie;
+
+    @Value("${spring.app.refreshTokenCookieName}")
+    private String refreshTokenCookie;
 
     public String generateToken(UserDetailsImpl userDetails) {
         return Jwts.builder()
@@ -50,6 +60,7 @@ public class JwtUtils {
                 .subject(userDetails.getEmail())
                 .issuedAt(new Date())
                 .expiration(new Date((new Date()).getTime() + jwtExpirationMs * 24L)) // 24x longer expiry
+                .claim("roles", userDetails.getAuthorities())
                 .signWith(key())
                 .compact();
     }
@@ -72,18 +83,18 @@ public class JwtUtils {
                 .path("/api")
                 .httpOnly(true)
                 .secure(true)
-                .sameSite("Lax")
-                .maxAge(24 * 60 * 60)
+                .sameSite("Lax")// "Lax" is more compatible with modern browsers
+                .maxAge(24 * 60 * 60)// 1 day
                 .build();
     }
 
     public ResponseCookie generateRefreshCookie(String refreshToken) {
-        return ResponseCookie.from("refresh_token", refreshToken)
+        return ResponseCookie.from(refreshTokenCookie, refreshToken)
                 .path("/api/auth/refresh-token")
                 .httpOnly(true)
                 .secure(true)
-                .sameSite("Strict")
-                .maxAge(7 * 24 * 60 * 60)
+                .sameSite("Strict")// "Strict" is more secure for refresh tokens
+                .maxAge(7 * 24 * 60 * 60)// 7 days  
                 .build();
     }
 
@@ -94,7 +105,7 @@ public class JwtUtils {
     }
 
     public ResponseCookie getCleanRefreshCookie() {
-        return ResponseCookie.from("refresh_token", null)
+        return ResponseCookie.from(refreshTokenCookie, null)
                 .path("/api/auth/refresh-token")
                 .build();
     }
@@ -128,7 +139,8 @@ public class JwtUtils {
     }
 
     public String getRefreshTokenFromCookies(HttpServletRequest request) {
-        Cookie cookie = WebUtils.getCookie(request, "refresh_token");
+        Cookie cookie = WebUtils.getCookie(request, refreshTokenCookie);
+//        System.out.println("Refresh Token Cookie: " + cookie);
         if (cookie != null) {
             try {
                 return URLDecoder.decode(cookie.getValue(), StandardCharsets.UTF_8);
@@ -168,6 +180,7 @@ public class JwtUtils {
 
     public String getRefreshTokenFromHeader(HttpServletRequest request) {
         String refreshToken = request.getHeader("X-Refresh-Token");
+//        System.out.println("Refresh Token: " + refreshToken);
         if (StringUtils.hasText(refreshToken)) {
             return refreshToken;
         }
@@ -207,4 +220,16 @@ public class JwtUtils {
 
         return refreshToken;
     }
+
+    public String generateEmailVerificationJwt(User user) {
+        return Jwts.builder()
+                .subject(user.getEmail())
+                .claim("userId", user.getUserId())
+                .claim("type", "EMAIL_VERIFICATION")
+                .issuedAt(new Date())
+                .expiration(new Date((new Date()).getTime() + emailVerificationTokenExpirationMs))
+                .signWith(key())  // You could have a separate key
+                .compact();
+    }
+
 }

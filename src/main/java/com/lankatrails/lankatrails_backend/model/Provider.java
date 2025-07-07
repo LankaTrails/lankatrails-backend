@@ -27,9 +27,12 @@ public class Provider extends User {
      @Column(name = "business_description")
      private String businessDescription;
 
-     @Size(max = 255)
-     @Column(name = "logo_url")
-     private String logoUrl;
+//     @Size(max = 255)
+//     @Column(name = "logo_url")
+//     private String logoUrl;
+
+     @Column(name = "contact_number")
+     private String contactNumber;
 
 //     @Getter
 //     @Setter

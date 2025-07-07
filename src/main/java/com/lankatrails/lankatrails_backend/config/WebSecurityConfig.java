@@ -24,6 +24,7 @@ import org.springframework.security.web.header.writers.XXssProtectionHeaderWrite
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 
 import java.util.Arrays;
 import java.util.List;
@@ -70,6 +71,8 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/provider/**").permitAll()
                         .requestMatchers("/api/admin/**").permitAll()// Update to admin role
                         .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/api/user/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll() // Allow access to uploads
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(authTokenFilter(), UsernamePasswordAuthenticationFilter.class);
@@ -139,4 +142,6 @@ public class WebSecurityConfig {
         return (web) -> web.ignoring()
                 .requestMatchers("/error", "/favicon.ico");
     }
+
+
 }
