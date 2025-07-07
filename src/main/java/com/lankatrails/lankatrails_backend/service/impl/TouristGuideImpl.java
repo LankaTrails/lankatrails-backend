@@ -163,7 +163,7 @@ public class TouristGuideImpl implements TouristGuideService {
 
         prepareResponse.setServiceName(touristGuide.getServiceName());
         prepareResponse.setContactNo(touristGuide.getContactNo());
-        prepareResponse.setLocationBased(touristGuide.getLocationBased());
+//        prepareResponse.setLocationBased(touristGuide.getLocationBased());
         prepareResponse.setPolicySection(policies);
         prepareResponse.setTabsSection(tabs);
         prepareResponse.setLanguages(touristGuide.getLanguages());
@@ -188,7 +188,7 @@ public class TouristGuideImpl implements TouristGuideService {
 
         //update the tourist guide
         touristGuide.setServiceName(requestDTO.getServiceName());
-        touristGuide.setLocationBased(requestDTO.getLocationBased());
+//        touristGuide.setLocationBased(requestDTO.getLocationBased());
         touristGuide.setContactNo(requestDTO.getContactNo());
         touristGuide.setStatus(requestDTO.getStatus());
         touristGuide.setLanguages(requestDTO.getLanguages());

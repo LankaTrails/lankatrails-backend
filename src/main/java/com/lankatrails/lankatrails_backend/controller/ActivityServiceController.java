@@ -56,13 +56,14 @@ public class ActivityServiceController {
         return new ResponseEntity<>(activityService,HttpStatus.OK);
     }
 
-    @PostMapping("/update/{id}")
-    public ResponseEntity<ActivityServiceRequest> updateActivityService
+
+    @PutMapping("/provider/activity-service/update/{id}")
+    public ResponseEntity<APIResponse<String>> updateActivityService
             (
              @RequestBody ActivityServiceRequest activityService,
              @PathVariable Long id
             ){
-        ActivityServiceRequest updatedService=servicesService.updateWithId(id,activityService);
+        APIResponse<String> updatedService=servicesService.updateWithId(id,activityService);
         return  new ResponseEntity<>(updatedService,HttpStatus.OK);
     }
 

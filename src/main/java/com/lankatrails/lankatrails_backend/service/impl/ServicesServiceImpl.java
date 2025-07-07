@@ -218,7 +218,7 @@ public class ServicesServiceImpl implements ServicesService {
 
   @Override
   @Transactional
-  public ActivityServiceRequest updateWithId(Long Id,ActivityServiceRequest activityService){
+  public APIResponse<String> updateWithId(Long Id,ActivityServiceRequest activityService){
 
       ActivityService activity=activityServiceRepository.findById(Id)
               .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
@@ -298,11 +298,13 @@ public class ServicesServiceImpl implements ServicesService {
           updatedPolicies.add(policySection);
 
       }
+      policySectionRepository.saveAll(updatedPolicies);
 
-      ActivityServiceRequest responseDTO=modelMapper.map(activityServiceRepository.findById(Id),ActivityServiceRequest.class);
-      responseDTO.setTabsSection(reqTabs);
-      responseDTO.setPolicySection(reqPolicies);
-      return responseDTO;
+      return APIResponse.<String>builder()
+              .success(true)
+              .message("Updated Successfully")
+              .data("")
+              .build();
 
 
 

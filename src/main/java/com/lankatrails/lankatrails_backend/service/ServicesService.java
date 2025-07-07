@@ -13,7 +13,7 @@ public interface ServicesService {
     ActivityServiceResponse getAll_ActivityServices(Integer pageNumber, Integer pageSize);
     ActivityServiceRequest searchWithId(Long Id);
     ActivityServiceRequest removeActivityService(Long Id,ActivityService activityService);
-    ActivityServiceRequest updateWithId(Long Id,ActivityServiceRequest activityService);
+    APIResponse<String> updateWithId(Long Id,ActivityServiceRequest activityService);
     ActivityServiceRequest addTabs(Long Id, TabsSection tabsSection);
     APIResponse<String> removeTabs(Long id);
     ActivityServiceRequest addNewPolicy(Long id, PolicySection policies);
