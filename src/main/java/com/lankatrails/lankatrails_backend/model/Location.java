@@ -21,8 +21,7 @@ public class Location {
     private Double latitude;
     private Double longitude;
 
-    @OneToOne(mappedBy = "locationBased")
-    private Services services;
+
 
 
 }

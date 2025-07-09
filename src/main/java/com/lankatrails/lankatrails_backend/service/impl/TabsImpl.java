@@ -9,6 +9,7 @@ import com.lankatrails.lankatrails_backend.service.Tabs;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.function.Function;
@@ -23,6 +24,7 @@ public class TabsImpl implements Tabs {
     public Boolean addTabs(List<TabSectionRequest> tabsReq, ActivityService lastServiceAdded){
         if (tabsReq!=null){
             for (TabSectionRequest tab : tabsReq){
+                System.out.println("testingTabOutput"+tab.getContent()+"  "+tab.getContent());
                 TabsSection tabsSection=new TabsSection();
                 tabsSection.setHeading(tab.getHeading());
                 tabsSection.setContent(tab.getContent());
