@@ -16,6 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public abstract class ServiceRequest {
+    private Long serviceId;
     private String serviceName;
     private Location locationBased;
     private String contactNo;
