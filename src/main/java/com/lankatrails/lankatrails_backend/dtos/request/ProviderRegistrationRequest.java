@@ -1,7 +1,7 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
-import com.lankatrails.lankatrails_backend.model.Category;
-import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
+import com.lankatrails.lankatrails_backend.model.enums.ApprovalStatus;
+import com.lankatrails.lankatrails_backend.model.enums.BusinessType;
 import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -18,41 +18,28 @@ public class ProviderRegistrationRequest extends RegistrationRequest {
     @Size(max = 100)
     private String businessDescription;
 
-    @Size(max = 255)
-    private String logoUrl;
+    private BusinessType businessType;
 
-    private String contactNumber;
+    private LocationDTO location;
 
-//    @Setter
-//    @Getter
-//    private Set<String> categories;
+    private String coverImageUrl;
 
-    public ProviderRegistrationRequest() {
-        this.setUserRole(UserRole.ROLE_PROVIDER);
-    }
+    private String businessRegistrationNumber;
 
-    public @Size(max = 50) String getBusinessName() {
-        return businessName;
-    }
+    private String businessRegistrationUrl;
 
-    public void setBusinessName(@Size(max = 50) String businessName) {
-        this.businessName = businessName;
-    }
+    private ApprovalStatus accommodationApprovalStatus;
 
-    public @Size(max = 100) String getBusinessDescription() {
-        return businessDescription;
-    }
+    private ApprovalStatus tourGuideApprovalStatus;
 
-    public void setBusinessDescription(@Size(max = 100) String businessDescription) {
-        this.businessDescription = businessDescription;
-    }
+    private ApprovalStatus transportApprovalStatus;
 
-    public @Size(max = 255) String getLogoUrl() {
-        return logoUrl;
-    }
+    private ApprovalStatus activityApprovalStatus;
 
-    public void setLogoUrl(@Size(max = 255) String logoUrl) {
-        this.logoUrl = logoUrl;
-    }
+    private ApprovalStatus foodApprovalStatus;
+
+    private ContactPersonDTO contactPerson;
+
+    private Set<LicenseDTO> licenses;
 
 }

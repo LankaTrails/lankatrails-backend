@@ -40,20 +40,25 @@ public class Provider extends User {
     @Column(name = "br_url")
     private String businessRegistrationUrl;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "accommodation_approval_status")
-    private ApprovalStatus accommodationApprovalStatus = ApprovalStatus.NOT_REQUESTED;
+    private ApprovalStatus accommodationApprovalStatus;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "tour_guide_approval_status")
-    private ApprovalStatus tourGuideApprovalStatus = ApprovalStatus.NOT_REQUESTED;
+    private ApprovalStatus tourGuideApprovalStatus;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "transport_approval_status")
-    private ApprovalStatus transportApprovalStatus = ApprovalStatus.NOT_REQUESTED;
+    private ApprovalStatus transportApprovalStatus;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "activity_approval_status")
-    private ApprovalStatus activityApprovalStatus = ApprovalStatus.NOT_REQUESTED;
+    private ApprovalStatus activityApprovalStatus;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "food_approval_status")
-    private ApprovalStatus foodApprovalStatus = ApprovalStatus.NOT_REQUESTED;
+    private ApprovalStatus foodApprovalStatus;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "contact_person_id", referencedColumnName = "contact_person_id")
