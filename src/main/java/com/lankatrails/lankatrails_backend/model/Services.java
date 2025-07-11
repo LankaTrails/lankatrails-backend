@@ -24,8 +24,6 @@ public class Services {
 
     private String serviceName;
 
-    private String locationBased;
-
     private String contactNo;
 
     private Boolean status;
@@ -43,6 +41,15 @@ public class Services {
 
     @OneToMany(mappedBy = "service")
     private Set<PolicySection> policies=new HashSet<>();
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "location_id", referencedColumnName ="locationId" )
+    private Location locationBased;
+
+    @OneToMany(mappedBy = "service" )
+    private Set<Image> images = new HashSet<>();
+
+
 
 
 }

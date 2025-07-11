@@ -1,10 +1,8 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
 import com.lankatrails.lankatrails_backend.model.ActivityService;
 import com.lankatrails.lankatrails_backend.model.PolicySection;
-import com.lankatrails.lankatrails_backend.model.TabsSection;
 import com.lankatrails.lankatrails_backend.model.Transport;
 import com.lankatrails.lankatrails_backend.repositories.PolicySectionRepository;
 import com.lankatrails.lankatrails_backend.service.Policies;
@@ -27,6 +25,7 @@ public class PolicyImpl implements Policies {
                 PolicySection policySection=new PolicySection();
                 policySection.setHeading(policy.getHeading());
                 policySection.setPolicy(policy.getPolicy());
+                policySection.setProvider(lastServiceAdded.getProvider());
                 policySection.setService(lastServiceAdded);
                 policySectionRepository.save(policySection);
             }
@@ -70,7 +69,7 @@ public class PolicyImpl implements Policies {
                 policySection=new PolicySection();
                 policySection.setHeading(policy.getHeading());
                 policySection.setPolicy(policy.getPolicy());
-                policySection.setService(transport);
+                policySection.setProvider(transport.getProvider());
             }
             updatedPolicies.add(policySection);
 
@@ -85,7 +84,7 @@ public class PolicyImpl implements Policies {
                     PolicySection policySection=new PolicySection();
                     policySection.setHeading(policy.getHeading());
                     policySection.setPolicy(policy.getPolicy());
-                    policySection.setService(lastTransportAdded);
+                    policySection.setProvider(lastTransportAdded.getProvider());
                     policySectionRepository.save(policySection);
                 }
                 return true;
