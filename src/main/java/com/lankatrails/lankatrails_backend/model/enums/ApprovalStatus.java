@@ -6,5 +6,5 @@ public enum ApprovalStatus {
     REJECTED,
     CANCELLED,
     EXPIRED,
-    NOT_REQUSTED,
+    NOT_REQUESTED,
 }
