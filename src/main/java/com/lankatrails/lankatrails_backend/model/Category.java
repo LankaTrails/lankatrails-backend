@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -28,7 +29,10 @@ public class Category {
     private ServiceCategory categoryName;
 
     @OneToMany(mappedBy = "category",cascade = CascadeType.ALL)
-    private Set<Services> services;
+    private Set<Services> services = new HashSet<>();
+
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
+    private Set<License> licenses = new HashSet<>();
 
     public Category(ServiceCategory categoryName) {
         this.categoryName = categoryName;

@@ -1,8 +1,6 @@
 package com.lankatrails.lankatrails_backend.model;
 
-import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
-import com.lankatrails.lankatrails_backend.model.enums.UserRole;
-import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
+import com.lankatrails.lankatrails_backend.model.enums.*;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -27,21 +25,40 @@ public class Provider extends User {
      @Column(name = "business_description")
      private String businessDescription;
 
-//     @Size(max = 255)
-//     @Column(name = "logo_url")
-//     private String logoUrl;
+     @Enumerated(EnumType.STRING)
+     @Column(name = "business_type")
+     private BusinessType businessType;
 
-     @Column(name = "contact_number")
-     private String contactNumber;
+     @Column(name = "cover_image_url")
+     private String coverImageUrl;
 
-//     @Getter
-//     @Setter
-//     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE},
-//             fetch = FetchType.EAGER)
-//     @JoinTable(name = "provider_categories",
-//             joinColumns = @JoinColumn(name = "user_id"),
-//             inverseJoinColumns = @JoinColumn(name = "category_id"))
-//     private Set<Category> categories = new HashSet<>();
+     @Column(name = "br_number")
+     private String businessRegistrationNumber;
+
+     @Column(name = "br_url")
+     private String businessRegistrationUrl;
+
+     @Column(name = "accommodation_approval_status")
+     private ApprovalStatus accommodationApprovalStatus = ApprovalStatus.NOT_REQUSTED;
+
+     @Column(name = "tour_guide_approval_status")
+     private ApprovalStatus tourGuideApprovalStatus = ApprovalStatus.NOT_REQUSTED;
+
+     @Column(name = "transport_approval_status")
+     private ApprovalStatus transportApprovalStatus = ApprovalStatus.NOT_REQUSTED;
+
+     @Column(name = "activity_approval_status")
+     private ApprovalStatus activityApprovalStatus = ApprovalStatus.NOT_REQUSTED;
+
+     @Column(name = "food_approval_status")
+     private ApprovalStatus foodApprovalStatus = ApprovalStatus.NOT_REQUSTED;
+
+     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+     @JoinColumn(name = "contact_person_id", referencedColumnName = "contact_person_id")
+     private ContactPerson contactPerson;
+
+     @OneToMany(mappedBy = "provider", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+     private Set<License> licenses = new HashSet<>();
 
      @OneToMany(mappedBy = "provider", cascade = CascadeType.ALL)
      private Set<Services> services = new HashSet<>();
