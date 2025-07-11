@@ -2,6 +2,7 @@ package com.lankatrails.lankatrails_backend.controller;
 
 
 import com.lankatrails.lankatrails_backend.dtos.request.TouristGuideRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TouristGuideResponseDTO;
 import com.lankatrails.lankatrails_backend.repositories.TouristGuideRepository;
 import com.lankatrails.lankatrails_backend.service.ServicesForAll;
@@ -12,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth/guide")
+@RequestMapping("/api/tour-guide")
 public class TourGuideController {
     @Autowired
     TouristGuideService touristGuideService;
@@ -31,8 +32,8 @@ public class TourGuideController {
             return new ResponseEntity<>(touristGuideResponseDTO, HttpStatus.OK);
     }
     @GetMapping("/{id}")
-    public ResponseEntity<TouristGuideResponseDTO> getGuideDetails(@PathVariable Long id){
-        TouristGuideResponseDTO touristGuideResponseDTO=touristGuideService.getGuideDetails(id);
+    public ResponseEntity<APIResponse<TouristGuideRequestDTO>> getGuideDetails(@PathVariable Long id){
+        APIResponse<TouristGuideRequestDTO> touristGuideResponseDTO=touristGuideService.getGuideDetails(id);
         return new ResponseEntity<>(touristGuideResponseDTO,HttpStatus.OK);
     }
     @PostMapping("/add")

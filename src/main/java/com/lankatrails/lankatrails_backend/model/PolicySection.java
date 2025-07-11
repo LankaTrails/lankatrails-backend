@@ -22,4 +22,9 @@ public class PolicySection {
     @JoinColumn(name = "service_id")
     private Services service;
 
+    @ManyToOne
+    @JoinColumn(name = "provider_id")
+    private Provider provider;
+
+
 }

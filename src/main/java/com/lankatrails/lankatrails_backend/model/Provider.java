@@ -27,29 +27,20 @@ public class Provider extends User {
      @Column(name = "business_description")
      private String businessDescription;
 
-//     @Size(max = 255)
-//     @Column(name = "logo_url")
-//     private String logoUrl;
-
      @Column(name = "contact_number")
      private String contactNumber;
 
-//     @Getter
-//     @Setter
-//     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE},
-//             fetch = FetchType.EAGER)
-//     @JoinTable(name = "provider_categories",
-//             joinColumns = @JoinColumn(name = "user_id"),
-//             inverseJoinColumns = @JoinColumn(name = "category_id"))
-//     private Set<Category> categories = new HashSet<>();
-
      @OneToMany(mappedBy = "provider", cascade = CascadeType.ALL)
      private Set<Services> services = new HashSet<>();
+
+     @OneToMany(mappedBy = "provider" , cascade = CascadeType.ALL)
+     private Set<PolicySection> policies = new HashSet<>();
 
      @PrePersist
      protected void onCreate() {
           super.setRole(UserRole.ROLE_PROVIDER);
           super.setStatus(UserStatus.PENDING);
      }
+
 
 }
