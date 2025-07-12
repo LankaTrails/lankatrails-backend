@@ -33,4 +33,8 @@ public class Category {
     public Category(ServiceCategory categoryName) {
         this.categoryName = categoryName;
     }
+
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
+    private Set<PolicySection> policies;
+
 }

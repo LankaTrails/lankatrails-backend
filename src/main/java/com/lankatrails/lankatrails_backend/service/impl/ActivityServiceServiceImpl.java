@@ -65,8 +65,6 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     @Override
     @Transactional
     public ActivityServiceResponse addService(ActivityServiceRequest services) {
-//        System.out.println("Pamali"+services.toString());
-
         Category category=categoryRepository.findByCategoryName(ServiceCategory.ACTIVITY).orElseThrow(
                 ()->new ResourceNotFoundException("Category",4L)
         );
@@ -87,28 +85,8 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
             Boolean tabAdditionStatus=tabsImpl.addTabs(tabsReq,lastServiceAdded);
 
             //set the policies
-            List<PolicySectionRequest> policyReq=services.getPolicySection();
-            Boolean policyAdditionStatus=policyImpl.addPolicies(policyReq,lastServiceAdded);
-//            if (!tabAdditionStatus) {
-//                System.out.println("Failed to add tabs");
-//            }
-//            if (!policyAdditionStatus) {
-//                System.out.println("Failed to add policies");
-//            }
-
-
-
-
-            //set the response
-//            if(tabAdditionStatus && policyAdditionStatus){
-//                ActivityServiceResponse responseDTO=serviceFactory.createServiceResponse(services,tabsReq,policyReq);
-//
-//                return responseDTO;
-//            }else{
-//                throw new APIException("Couldn't Save the Activity Service");
-//            }
-
-
+            List<PolicySectionRequest> policyReq = services.getPolicySection();
+            Boolean policyAdditionStatus = policyImpl.addPolicies(policyReq,lastServiceAdded,category);
 
         }else {
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());

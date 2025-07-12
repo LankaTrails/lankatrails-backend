@@ -4,11 +4,10 @@ import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.exception.PolicyExistsException;
-import com.lankatrails.lankatrails_backend.model.ActivityService;
-import com.lankatrails.lankatrails_backend.model.PolicySection;
-import com.lankatrails.lankatrails_backend.model.Provider;
-import com.lankatrails.lankatrails_backend.model.Transport;
+import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.repositories.ActivityServiceRepository;
 import com.lankatrails.lankatrails_backend.repositories.PolicySectionRepository;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.Policies;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,20 +24,46 @@ public class PolicyImpl implements Policies {
     PolicySectionRepository policySectionRepository;
     @Autowired
     ModelMapper modelMapper;
+    @Autowired
+    AuthUtils authUtils;
+    @Autowired
+    ActivityServiceRepository activityServiceRepository;
+
+    private Boolean status;
+
     @Override
-    public Boolean addPolicies(List<PolicySectionRequest> policyReq, ActivityService lastServiceAdded) {
-        if (policyReq!=null){
-            for (PolicySectionRequest policy:policyReq){
-                PolicySection policySection=new PolicySection();
-                policySection.setHeading(policy.getHeading());
-                policySection.setPolicy(policy.getPolicy());
-                policySection.setProvider(lastServiceAdded.getProvider());
-//                policySection.setService(lastServiceAdded);
-                policySectionRepository.save(policySection);
+    public Boolean addPolicies(List<PolicySectionRequest> policyReq,
+                               ActivityService lastServiceAdded,
+                               Category category) {
+
+
+        //check whether the policy exists
+        for (PolicySectionRequest policy : policyReq){
+            PolicySection policies = modelMapper.map(policy, PolicySection.class);
+            PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
+
+            if (policyCheck==null){
+                //Policy doesn't exist
+                policies.setProvider((Provider) authUtils.loggedInUser());
+                policies.getServices().add(lastServiceAdded);
+                policies.setCategory(category);
+                lastServiceAdded.getPolicies().add(policies);
+                policySectionRepository.save(policies);
+                status =true;
+
+            }else{
+//            Set<PolicySection> policy = policyCheck.stream().collect(Collectors.toSet());
+//            service.getPolicies().add(policy);
+                lastServiceAdded.getPolicies().add(policyCheck);
+                policyCheck.getServices().add(lastServiceAdded);
+                activityServiceRepository.save(lastServiceAdded);
+                status = true;
+
             }
-            return true;
         }
-        return false;
+
+        status = false;
+        return  status;
     }
     @Override
     public List<PolicySectionRequest> getAllPolicies(Long Id) {

@@ -19,8 +19,6 @@ public class ActivityServiceController {
     @Autowired
     ActivityServiceService activityServiceService;
 
-
-
     @PostMapping("/provider/activity-service/add")
     public ResponseEntity<ActivityServiceResponse> addService
             (
@@ -28,7 +26,6 @@ public class ActivityServiceController {
             ){
 
                ActivityServiceResponse ActivityServiceDTO =  activityServiceService.addService(service);
-               //return ResponseEntity.status(HttpStatus.CREATED).body(ActivityServiceDTO);
                return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.CREATED);
     }
     @GetMapping("/delete/{id}")
