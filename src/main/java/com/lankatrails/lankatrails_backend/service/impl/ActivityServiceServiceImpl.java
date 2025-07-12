@@ -170,7 +170,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
             tabs.add(tabReq);
         }
 
-        List<PolicySection> policySection = policySectionRepository.findByService_ServiceId(Id);
+        List<PolicySection> policySection = policySectionRepository.findByServices_ServiceId(Id);
         List<PolicySectionRequest> policies = new ArrayList<>();
 
         for (PolicySection policy : policySection){
@@ -234,7 +234,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         policySectionRepository.save(policies);
 
         List<TabsSection> serviceTabs=tabsSectionRepository.findByService_ServiceId(id);
-        List<PolicySection> servicePolicies=policySectionRepository.findByService_ServiceId(id);
+        List<PolicySection> servicePolicies=policySectionRepository.findByServices_ServiceId(id);
 
         ActivityServiceRequest responseDTO=modelMapper.map(service,ActivityServiceRequest.class);
 
