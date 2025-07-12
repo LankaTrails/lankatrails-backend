@@ -85,8 +85,8 @@ public class ActivityServiceController {
 
     //For Policies
     @PostMapping("/{id}/policies")
-    public ResponseEntity<ActivityServiceRequest> addPolicies(@PathVariable Long id, @RequestBody PolicySection policies){
-        ActivityServiceRequest responseDTO= activityServiceService.addNewPolicy(id,policies);
+    public ResponseEntity<APIResponse<String>> addPolicies(@PathVariable Long id, @RequestBody PolicySection policies){
+        APIResponse<String> responseDTO= activityServiceService.addNewPolicy(id,policies);
         return new ResponseEntity<>(responseDTO,HttpStatus.CREATED);
     }
 

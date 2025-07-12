@@ -8,5 +8,6 @@ import java.util.Optional;
 
 public interface PolicySectionRepository extends JpaRepository<PolicySection,Long> {
     List<PolicySection> findByServices_ServiceId(Long Id);
-    Optional<PolicySection> findByHeading(String heading);
+    PolicySection findByHeading(String heading);
+    List<PolicySection> findByProvider_UserId(Long providerId);
 }

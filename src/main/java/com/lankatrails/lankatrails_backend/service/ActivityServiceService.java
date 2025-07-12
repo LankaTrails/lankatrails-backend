@@ -15,7 +15,7 @@ public interface ActivityServiceService {
     APIResponse<String> updateWithId(Long Id,ActivityServiceRequest activityService);
     ActivityServiceRequest addTabs(Long Id, TabsSection tabsSection);
     APIResponse<String> removeTabs(Long id);
-    ActivityServiceRequest addNewPolicy(Long id, PolicySection policies);
+    APIResponse<String> addNewPolicy(Long id, PolicySection policies);
     APIResponse<String> removePolicies(Long id);
 
 }

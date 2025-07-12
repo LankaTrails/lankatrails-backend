@@ -105,8 +105,8 @@ public class PolicyImpl implements Policies {
     public APIResponse<String> providerAddPolicies
             (PolicySectionRequest policyReq) {
             PolicySection mappedObj = modelMapper.map(policyReq,PolicySection.class);
-            Optional<PolicySection> checkDb = policySectionRepository.findByHeading(mappedObj.getHeading());
-            if (checkDb.isEmpty()){
+            PolicySection checkDb = policySectionRepository.findByHeading(mappedObj.getHeading());
+            if (checkDb == null){
                 PolicySection savedObj = policySectionRepository.save(mappedObj);
                 return APIResponse.<String>builder()
                         .success(true)
@@ -114,7 +114,7 @@ public class PolicyImpl implements Policies {
                         .data("")
                         .build();
             }else{
-               throw new PolicyExistsException(checkDb.get().getId());
+               throw new PolicyExistsException(checkDb.getId());
             }
 
 
