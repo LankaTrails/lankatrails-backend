@@ -32,8 +32,11 @@ public class Trip {
     @Column(name = "number_of_people", nullable = false)
     private Integer numberOfPeople = 1;
 
-    @Column(name = "total_cost", nullable = false)
-    private Double totalCost = 0.0;
+    @Column(name = "total_budget", nullable = false)
+    private Double totalBudget = 0.0;
+
+    @Column(name = "total_budget_limit", nullable = false)
+    private Double totalBudgetLimit = 0.0;
 
     @Column(name = "total_distance", nullable = false)
     private Double totalDistance = 0.0;
@@ -48,4 +51,10 @@ public class Trip {
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("startTime ASC")
     private List<TripItem> tripItems;
+
+    @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<TripExpense> tripExpenses;
+
+    @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<TripBudgetCategoryLimit> tripBudgetCategoryLimits;
 }
