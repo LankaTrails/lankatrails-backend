@@ -1,15 +1,15 @@
 package com.lankatrails.lankatrails_backend.model;
 
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Table(name = "location")
 @Getter
 @Setter
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Location {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

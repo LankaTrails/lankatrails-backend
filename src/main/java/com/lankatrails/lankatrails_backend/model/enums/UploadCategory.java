@@ -6,7 +6,12 @@ import lombok.Getter;
 public enum UploadCategory {
     PROFILE_PICTURE("profile-pictures"),
     SERVICE_PICTURE("service-pictures"),
-    DOCUMENT("documents");
+    DOCUMENT("documents"),
+    COVER_PICTURE("cover-pictures"),
+    BUSINESS_REGISTRATION("business-registration"),
+    IDENTIFICATION("identification"),
+    LICENCE("licence");
+
 
     private final String directory;
 

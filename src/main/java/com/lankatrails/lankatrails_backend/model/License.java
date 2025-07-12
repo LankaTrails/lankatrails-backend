@@ -27,7 +27,7 @@ public class License {
     @Column(name = "expiry_date", nullable = false)
     private LocalDate expiryDate;
 
-    @Column(name = "license_url", nullable = false)
+    @Column(name = "license_url")
     private String licenseUrl;
 
     @ManyToOne

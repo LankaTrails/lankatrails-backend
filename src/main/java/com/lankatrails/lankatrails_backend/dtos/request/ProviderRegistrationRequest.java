@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -40,6 +41,6 @@ public class ProviderRegistrationRequest extends RegistrationRequest {
 
     private ContactPersonDTO contactPerson;
 
-    private Set<LicenseDTO> licenses;
+    private List<LicenseDTO> licenses;
 
 }

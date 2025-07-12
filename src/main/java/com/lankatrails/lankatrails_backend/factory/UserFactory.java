@@ -36,6 +36,7 @@ public class UserFactory {
         provider.setEmail(request.getEmail().toLowerCase());
         provider.setRole(UserRole.ROLE_PROVIDER);
         provider.setStatus(UserStatus.PENDING);
+        provider.setProfilePictureUrl(request.getProfilePictureUrl());
 
         // Set provider-specific info
         provider.setBusinessName(request.getBusinessName());
