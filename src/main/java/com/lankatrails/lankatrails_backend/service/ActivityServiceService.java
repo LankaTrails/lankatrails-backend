@@ -8,7 +8,7 @@ import com.lankatrails.lankatrails_backend.model.PolicySection;
 import com.lankatrails.lankatrails_backend.model.TabsSection;
 
 public interface ActivityServiceService {
-    ActivityServiceResponse addService(ActivityServiceRequest activityService );
+    APIResponse<String> addService(ActivityServiceRequest activityService );
     ActivityServiceResponse getAll_ActivityServices(Integer pageNumber, Integer pageSize);
     APIResponse<ActivityServiceRequest> searchWithId(Long Id);
     ActivityServiceRequest removeActivityService(Long Id,ActivityService activityService);

@@ -4,6 +4,7 @@ import com.lankatrails.lankatrails_backend.model.Category;
 import com.lankatrails.lankatrails_backend.model.Image;
 import com.lankatrails.lankatrails_backend.model.Location;
 import com.lankatrails.lankatrails_backend.model.Provider;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,6 +18,7 @@ import java.util.List;
 @AllArgsConstructor
 public abstract class ServiceRequest {
     private Long serviceId;
+    @NotBlank(message = "Service name is blank")
     private String serviceName;
     private Location locationBased;
     private String contactNo;

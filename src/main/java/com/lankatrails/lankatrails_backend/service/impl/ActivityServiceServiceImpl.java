@@ -64,7 +64,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
     @Override
     @Transactional
-    public ActivityServiceResponse addService(ActivityServiceRequest services) {
+    public APIResponse<String> addService(ActivityServiceRequest services) {
         Category category=categoryRepository.findByCategoryName(ServiceCategory.ACTIVITY).orElseThrow(
                 ()->new ResourceNotFoundException("Category",4L)
         );
@@ -94,14 +94,19 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
 
         //testing
-        ActivityServiceRequest prepareResponse = modelMapper.map(services, ActivityServiceRequest.class);
-        List<ActivityServiceRequest> response = new ArrayList<>();
-        ActivityServiceResponse responseDTO = new ActivityServiceResponse();
-        prepareResponse.setServiceId(lastServiceAdded.getServiceId());
-        response.add(prepareResponse);
-        responseDTO.setContent(response);
+//        ActivityServiceRequest prepareResponse = modelMapper.map(services, ActivityServiceRequest.class);
+//        List<ActivityServiceRequest> response = new ArrayList<>();
+//        ActivityServiceResponse responseDTO = new ActivityServiceResponse();
+//        prepareResponse.setServiceId(lastServiceAdded.getServiceId());
+//        response.add(prepareResponse);
+//        responseDTO.setContent(response);
 
-        return responseDTO;
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Service Added Successfully")
+                .data("")
+                .build();
 
     }
 

@@ -11,7 +11,11 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -20,13 +24,27 @@ public class ActivityServiceController {
     ActivityServiceService activityServiceService;
 
     @PostMapping("/provider/activity-service/add")
-    public ResponseEntity<ActivityServiceResponse> addService
+    public ResponseEntity<APIResponse<String>> addService
             (
-                    @RequestBody ActivityServiceRequest service
+                  @Valid @RequestBody ActivityServiceRequest service,
+                  BindingResult result
             ){
+               if (result.hasErrors()){
+                  Map<String,String> errors = new HashMap<>();
+                  result.getFieldErrors().forEach(field ->{
+                      errors.put(field.getField(), field.getDefaultMessage());
+                  });
+                  APIResponse<String> errorResponse = APIResponse.<String>builder()
+                          .success(false)
+                          .message("Validation Failed")
+                          .details(errors)
+                          .build();
+                  return  new ResponseEntity<>(errorResponse,HttpStatus.BAD_REQUEST);
+               }else{
+                   APIResponse<String> ActivityServiceDTO =  activityServiceService.addService(service);
+                   return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.CREATED);
+               }
 
-               ActivityServiceResponse ActivityServiceDTO =  activityServiceService.addService(service);
-               return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.CREATED);
     }
     @GetMapping("/delete/{id}")
     public ResponseEntity<ActivityServiceRequest> removeActivityService(@PathVariable Long id,@Valid @RequestBody ActivityService activityService){
