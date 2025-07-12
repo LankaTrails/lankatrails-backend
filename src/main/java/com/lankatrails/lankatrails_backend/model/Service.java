@@ -16,7 +16,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @SuperBuilder
-public class Services {
+public class Service {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -49,7 +49,7 @@ public class Services {
     @OneToMany(mappedBy = "service" )
     private Set<Image> images = new HashSet<>();
 
-
-
+    @OneToMany(mappedBy = "service")
+    private Set<TripItem> tripItems = new HashSet<>();
 
 }

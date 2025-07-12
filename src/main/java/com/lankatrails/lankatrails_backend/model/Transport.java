@@ -6,7 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.checkerframework.checker.units.qual.N;
 
 @Entity
 @Table(name = "transport")
@@ -14,7 +13,7 @@ import org.checkerframework.checker.units.qual.N;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Transport extends Services{
+public class Transport extends Service {
 
     private String vehicleType;
     private Integer vehicleQty;

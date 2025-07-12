@@ -1,28 +1,22 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.ProfilePicResponse;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.Image;
-import com.lankatrails.lankatrails_backend.model.Services;
-import com.lankatrails.lankatrails_backend.model.User;
+import com.lankatrails.lankatrails_backend.model.Service;
 import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
-import com.lankatrails.lankatrails_backend.repositories.ActivityServiceRepository;
 import com.lankatrails.lankatrails_backend.repositories.ImageRepository;
 import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
 import com.lankatrails.lankatrails_backend.service.ServicesService;
 import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-@Service
+@org.springframework.stereotype.Service
 public class ServicesServiceImpl implements ServicesService {
     @Autowired
     ServiceRepository serviceRepository;
@@ -38,7 +32,7 @@ public class ServicesServiceImpl implements ServicesService {
             throw new BadRequestException("Service images cannot be null or empty", "ServiceImages", null);
         }
 
-        Services service = serviceRepository.findById(serviceId)
+        Service service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new ResourceNotFoundException("serviceID", serviceId));
 
         Set<Image> images = new HashSet<>(fileUploadService.storeImages(serviceImages, UploadCategory.SERVICE_PICTURE));

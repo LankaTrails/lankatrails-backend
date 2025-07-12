@@ -20,7 +20,7 @@ public class PolicySection {
 
     @ManyToOne
     @JoinColumn(name = "service_id")
-    private Services service;
+    private Service service;
 
     @ManyToOne
     @JoinColumn(name = "provider_id")

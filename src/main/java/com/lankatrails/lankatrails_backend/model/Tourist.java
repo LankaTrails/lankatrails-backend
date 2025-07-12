@@ -7,6 +7,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.util.Set;
+
 @Entity
 @Table(name = "tourists")
 @Getter
@@ -30,6 +32,12 @@ public class Tourist extends User {
         super.setRole(UserRole.ROLE_TOURIST);
         super.setStatus(UserStatus.ACTIVE);
     }
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "trip_tourists",
+            joinColumns = @JoinColumn(name = "tourist_id"),
+            inverseJoinColumns = @JoinColumn(name = "trip_id"))
+    private Set<Trip> trips;
 
     public @Size(max = 20) String getFirstName() {
         return firstName;
