@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Slf4j
@@ -84,6 +85,23 @@ public class TripServiceImpl implements TripService {
         TripResponseDTO responseDTO = modelMapper.map(savedTrip, TripResponseDTO.class);
 
         return new APIResponse<>(true, "Trip created successfully", responseDTO);
+    }
+
+    @Override
+    public APIResponse<List<TripResponseDTO>> getAllMyTrips() {
+        log.info("Fetching all trips for the logged-in user");
+        User currentUser = authUtils.loggedInUser();
+        if (!(currentUser instanceof Tourist tourist)) {
+            throw new IllegalStateException("Only tourists can fetch their trips");
+        }
+
+        List<Trip> trips = tripRepository.findByTouristsContaining(tourist);
+        List<TripResponseDTO> responseDTOs = new ArrayList<>();
+        for (Trip trip : trips) {
+            responseDTOs.add(modelMapper.map(trip, TripResponseDTO.class));
+        }
+
+        return new APIResponse<>(true, "Trips fetched successfully", responseDTOs);
     }
 
     private Set<TripBudgetCategoryLimit> initializeCategoryLimits(TripRequestDTO tripRequestDTO, Trip trip) {
