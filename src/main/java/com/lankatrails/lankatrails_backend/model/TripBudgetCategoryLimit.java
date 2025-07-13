@@ -20,6 +20,7 @@ public class TripBudgetCategoryLimit {
     @Column(name = "limit_id")
     private Long limitId;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "budget_category", nullable = false)
     private BudgetCategory budgetCategory;
 
@@ -29,5 +30,11 @@ public class TripBudgetCategoryLimit {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trip_id", nullable = false)
     private Trip trip;
+
+    public TripBudgetCategoryLimit(BudgetCategory category, Double limit, Trip trip) {
+        this.budgetCategory = category;
+        this.limitAmount = limit;
+        this.trip = trip;
+    }
 
 }

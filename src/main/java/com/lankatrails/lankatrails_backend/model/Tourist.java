@@ -33,11 +33,8 @@ public class Tourist extends User {
         super.setStatus(UserStatus.ACTIVE);
     }
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "trip_tourists",
-            joinColumns = @JoinColumn(name = "tourist_id"),
-            inverseJoinColumns = @JoinColumn(name = "trip_id"))
-    private Set<Trip> trips;
+    @ManyToMany(mappedBy = "tourists", fetch = FetchType.LAZY)
+    private Set<Trip> tourists;
 
     public @Size(max = 20) String getFirstName() {
         return firstName;

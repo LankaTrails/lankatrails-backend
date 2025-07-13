@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -20,33 +21,36 @@ public class Trip {
     @Column(name = "trip_id")
     private Long tripId;
 
-    @Column(name = "trip_name", nullable = false)
+    @Column(name = "trip_name")
     private String tripName;
 
-    @Column(name = "start_date", nullable = false)
+    @Column(name = "start_date")
     private LocalDate startDate;
 
-    @Column(name = "end_date", nullable = false)
+    @Column(name = "end_date")
     private LocalDate endDate;
 
-    @Column(name = "number_of_people", nullable = false)
+    @Column(name = "number_of_people")
     private Integer numberOfPeople = 1;
 
-    @Column(name = "total_budget", nullable = false)
+    @Column(name = "total_budget")
     private Double totalBudget = 0.0;
 
-    @Column(name = "total_budget_limit", nullable = false)
+    @Column(name = "total_budget_limit")
     private Double totalBudgetLimit = 0.0;
 
-    @Column(name = "total_distance", nullable = false)
+    @Column(name = "total_distance")
     private Double totalDistance = 0.0;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lead_tourist_id", referencedColumnName = "user_id")
     private Tourist leadTourist;
 
-    @ManyToMany(mappedBy = "trips", fetch = FetchType.LAZY)
-    private Set<Tourist> tourists;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "trip_tourists",
+            joinColumns = @JoinColumn(name = "trip_id"),
+            inverseJoinColumns = @JoinColumn(name = "tourist_id"))
+    private Set<Tourist> tourists = new HashSet<>();
 
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("startTime ASC")
