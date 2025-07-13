@@ -82,7 +82,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
             //set the tabs
             List<TabSectionRequest> tabsReq=services.getTabsSection();
-            Boolean tabAdditionStatus=tabsImpl.addTabs(tabsReq,lastServiceAdded);
+            tabsImpl.addTabs(tabsReq,lastServiceAdded);
 
             //set the policies
             List<PolicySectionRequest> policyReq = services.getPolicySection();
