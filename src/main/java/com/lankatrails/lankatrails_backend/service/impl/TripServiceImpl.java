@@ -96,12 +96,28 @@ public class TripServiceImpl implements TripService {
         }
 
         List<Trip> trips = tripRepository.findByTouristsContaining(tourist);
+        if (trips.isEmpty()) {
+            return new APIResponse<>(false, "No trips found for the user", new ArrayList<>());
+        }
+
         List<TripResponseDTO> responseDTOs = new ArrayList<>();
         for (Trip trip : trips) {
             responseDTOs.add(modelMapper.map(trip, TripResponseDTO.class));
         }
 
         return new APIResponse<>(true, "Trips fetched successfully", responseDTOs);
+    }
+
+    @Override
+    public APIResponse<TripResponseDTO> getTripById(Long tripId) {
+        log.info("Fetching trip with ID: {}", tripId);
+        Trip trip = tripRepository.findByTripId(tripId);
+        if (trip == null) {
+            return new APIResponse<>(false, "Trip not found", null);
+        }
+
+        TripResponseDTO responseDTO = modelMapper.map(trip, TripResponseDTO.class);
+        return new APIResponse<>(true, "Trip fetched successfully", responseDTO);
     }
 
     private Set<TripBudgetCategoryLimit> initializeCategoryLimits(TripRequestDTO tripRequestDTO, Trip trip) {

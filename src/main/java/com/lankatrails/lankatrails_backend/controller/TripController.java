@@ -38,4 +38,13 @@ public class TripController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
     }
+
+    @GetMapping("/{tripId}")
+    public ResponseEntity<APIResponse<TripResponseDTO>> getTripById(@PathVariable Long tripId) {
+        log.info("Fetching trip with ID: {}", tripId);
+        APIResponse<TripResponseDTO> response = tripService.getTripById(tripId);
+        log.info("Fetched trip: {}", response.getData());
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
+    }
 }
