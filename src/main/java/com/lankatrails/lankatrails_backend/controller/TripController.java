@@ -1,8 +1,10 @@
 package com.lankatrails.lankatrails_backend.controller;
 
+import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TripResponseDTO;
+import com.lankatrails.lankatrails_backend.service.TripItemService;
 import com.lankatrails.lankatrails_backend.service.TripService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,9 @@ public class TripController {
 
     @Autowired
     private TripService tripService;
+
+    @Autowired
+    private TripItemService tripItemService;
 
     @PostMapping("/create")
     public ResponseEntity<APIResponse<TripResponseDTO>> createTrip(@Valid @RequestBody TripRequestDTO tripRequest) {
@@ -45,6 +50,15 @@ public class TripController {
         APIResponse<TripResponseDTO> response = tripService.getTripById(tripId);
         log.info("Fetched trip: {}", response.getData());
         return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
+    }
+
+    @PostMapping("/add-trip-item/{tripId}")
+    public ResponseEntity<APIResponse<TripItemDTO>> addTripItem(@PathVariable Long tripId, @Valid @RequestBody TripItemDTO tripItemDTO) {
+        log.info("Adding trip item to trip with ID: {}", tripId);
+        APIResponse<TripItemDTO> response = tripItemService.addTripItem(tripId, tripItemDTO);
+        log.info("Trip item added successfully: {}", response.getData());
+        return ResponseEntity.status(HttpStatus.CREATED)
                 .body(response);
     }
 }

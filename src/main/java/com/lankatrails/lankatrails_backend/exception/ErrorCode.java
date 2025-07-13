@@ -7,6 +7,7 @@ public enum ErrorCode {
     // Validation Errors
     VALIDATION_FAILED("VALIDATION_001", "Validation failed"),
     INVALID_EMAIL("VALIDATION_002", "Invalid email format"),
+    ILLEGAL_ARGUMENT("VALIDATION_003", "Illegal argument provided"),
 
     // Authentication Errors
     AUTHENTICATION_FAILED("AUTH_001", "Authentication failed"),

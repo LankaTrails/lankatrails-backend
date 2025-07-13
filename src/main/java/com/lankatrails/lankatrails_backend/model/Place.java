@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "location")
+@Table(name = "place")
 @Getter
 @Setter
 @Builder
