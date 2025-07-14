@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.function.Function;
@@ -21,21 +22,21 @@ public class TabsImpl implements Tabs {
     TabsSectionRepository tabsSectionRepository;
 
     @Override
-    public Boolean addTabs(List<TabSectionRequest> tabsReq, ActivityService lastServiceAdded){
-        if (tabsReq!=null){
+    public void addTabs(List<TabSectionRequest> tabsReq, ActivityService lastServiceAdded){
+        if (!tabsReq.isEmpty()){
             for (TabSectionRequest tab : tabsReq){
-                System.out.println("testingTabOutput"+tab.getContent()+"  "+tab.getContent());
-                TabsSection tabsSection=new TabsSection();
-                tabsSection.setHeading(tab.getHeading());
-                tabsSection.setContent(tab.getContent());
-                tabsSection.setService(lastServiceAdded);
-                tabsSectionRepository.save(tabsSection);
-            }
-            return true;
-        }else {
-            return false;
-        }
+                if (StringUtils.hasText(tab.getHeading()) && StringUtils.hasText(tab.getContent())){
+                    System.out.println("testingTabOutput"+tab.getContent()+"  "+tab.getContent());
+                    TabsSection tabsSection=new TabsSection();
+                    tabsSection.setHeading(tab.getHeading());
+                    tabsSection.setContent(tab.getContent());
+                    tabsSection.setService(lastServiceAdded);
+                    tabsSectionRepository.save(tabsSection);
+                }
 
+            }
+
+        }
     }
 
     @Override

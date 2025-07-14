@@ -39,7 +39,14 @@ public class Services {
     @OneToMany(mappedBy = "service")
     private Set<TabsSection> tabs=new HashSet<>();
 
-    @OneToMany(mappedBy = "service")
+
+    @ManyToMany
+    @JoinTable(
+          name = "service_policy",
+          joinColumns = @JoinColumn(name = "service_id"),
+          inverseJoinColumns = @JoinColumn(name = "policy_id")
+
+    )
     private Set<PolicySection> policies=new HashSet<>();
 
     @OneToOne(cascade = CascadeType.ALL)

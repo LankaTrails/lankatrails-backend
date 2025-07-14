@@ -50,11 +50,15 @@ public class TouristGuideImpl implements TouristGuideService {
         List<TouristGuideRequestDTO> responseList=new ArrayList<>();
         for (TouristGuide guide : allGuides){
             TouristGuideRequestDTO response=new TouristGuideRequestDTO();
-            Optional<Language> languages=languageRepository.findById(guide.getServiceId());
-//            response.setLanguages(languages);
             response.setServiceAreas(guide.getServiceAreas());
             response.setServiceName(guide.getServiceName());
             response.setContactNo(guide.getContactNo());
+
+            //find the languages provided by a respective tour guide
+            List<Language> languages=languageRepository.findByTouristGuide_ServiceId(guide.getServiceId());
+//            if (!languages.isEmpty()){
+                response.setLanguages(languages);
+//            }
             responseList.add(response);
 
         }
@@ -146,7 +150,7 @@ public class TouristGuideImpl implements TouristGuideService {
             tabs.add(tabReq);
         }
 
-        List<PolicySection> policySection=policySectionRepository.findByService_ServiceId(id);
+        List<PolicySection> policySection=policySectionRepository.findByServices_ServiceId(id);
         List<PolicySectionRequest> policies=new ArrayList<>();
 
         //get the policies

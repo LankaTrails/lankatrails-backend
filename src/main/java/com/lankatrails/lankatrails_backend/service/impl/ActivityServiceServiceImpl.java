@@ -64,9 +64,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
     @Override
     @Transactional
-    public ActivityServiceResponse addService(ActivityServiceRequest services) {
-//        System.out.println("Pamali"+services.toString());
-
+    public APIResponse<String> addService(ActivityServiceRequest services) {
         Category category=categoryRepository.findByCategoryName(ServiceCategory.ACTIVITY).orElseThrow(
                 ()->new ResourceNotFoundException("Category",4L)
         );
@@ -84,31 +82,11 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
             //set the tabs
             List<TabSectionRequest> tabsReq=services.getTabsSection();
-            Boolean tabAdditionStatus=tabsImpl.addTabs(tabsReq,lastServiceAdded);
+            tabsImpl.addTabs(tabsReq,lastServiceAdded);
 
             //set the policies
-            List<PolicySectionRequest> policyReq=services.getPolicySection();
-            Boolean policyAdditionStatus=policyImpl.addPolicies(policyReq,lastServiceAdded);
-//            if (!tabAdditionStatus) {
-//                System.out.println("Failed to add tabs");
-//            }
-//            if (!policyAdditionStatus) {
-//                System.out.println("Failed to add policies");
-//            }
-
-
-
-
-            //set the response
-//            if(tabAdditionStatus && policyAdditionStatus){
-//                ActivityServiceResponse responseDTO=serviceFactory.createServiceResponse(services,tabsReq,policyReq);
-//
-//                return responseDTO;
-//            }else{
-//                throw new APIException("Couldn't Save the Activity Service");
-//            }
-
-
+            List<PolicySectionRequest> policyReq = services.getPolicySection();
+            Boolean policyAdditionStatus = policyImpl.addPolicies(policyReq,lastServiceAdded,category);
 
         }else {
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());
@@ -116,14 +94,19 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
 
         //testing
-        ActivityServiceRequest prepareResponse = modelMapper.map(services, ActivityServiceRequest.class);
-        List<ActivityServiceRequest> response = new ArrayList<>();
-        ActivityServiceResponse responseDTO = new ActivityServiceResponse();
-        prepareResponse.setServiceId(lastServiceAdded.getServiceId());
-        response.add(prepareResponse);
-        responseDTO.setContent(response);
+//        ActivityServiceRequest prepareResponse = modelMapper.map(services, ActivityServiceRequest.class);
+//        List<ActivityServiceRequest> response = new ArrayList<>();
+//        ActivityServiceResponse responseDTO = new ActivityServiceResponse();
+//        prepareResponse.setServiceId(lastServiceAdded.getServiceId());
+//        response.add(prepareResponse);
+//        responseDTO.setContent(response);
 
-        return responseDTO;
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Service Added Successfully")
+                .data("")
+                .build();
 
     }
 
@@ -170,9 +153,10 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
             tabs.add(tabReq);
         }
 
-        List<PolicySection> policySection = policySectionRepository.findByService_ServiceId(Id);
-        List<PolicySectionRequest> policies = new ArrayList<>();
+        List<PolicySection> policySection = policySectionRepository.findByProvider_UserId(authUtils.loggedInUserId());
 
+        List<PolicySectionRequest> policies = new ArrayList<>();
+//
         for (PolicySection policy : policySection){
             PolicySectionRequest policyReq = new PolicySectionRequest();
             policyReq.setId(policy.getId());
@@ -226,40 +210,39 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
   }
 
   @Override
-  public ActivityServiceRequest addNewPolicy(Long id,PolicySection policies) {
+  @Transactional
+  public APIResponse<String> addNewPolicy(Long id,PolicySection policies) {
         ActivityService service=activityServiceRepository.findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("Activity Service",id));
 
-        policies.setProvider(service.getProvider());
-        policySectionRepository.save(policies);
+        //check whether the policy exists
+        PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
+        if (policyCheck==null){
+            //Policy doesn't exist
+            policies.setProvider((Provider) authUtils.loggedInUser());
+            policies.getServices().add(service);
+            service.getPolicies().add(policies);
+            policySectionRepository.save(policies);
 
-        List<TabsSection> serviceTabs=tabsSectionRepository.findByService_ServiceId(id);
-        List<PolicySection> servicePolicies=policySectionRepository.findByService_ServiceId(id);
+            return APIResponse.<String>builder()
+                    .success(true)
+                    .message("Policy Added Successfully")
+                    .data("")
+                    .build();
+        }else{
+//            Set<PolicySection> policy = policyCheck.stream().collect(Collectors.toSet());
+//            service.getPolicies().add(policy);
+            service.getPolicies().add(policyCheck);
+            policyCheck.getServices().add(service);
+            activityServiceRepository.save(service);
+            return APIResponse.<String>builder()
+                    .success(true)
+                    .message("Policy Added Successfully to the service_policy")
+                    .data("")
+                    .build();
 
-        ActivityServiceRequest responseDTO=modelMapper.map(service,ActivityServiceRequest.class);
-
-        List<PolicySectionRequest> policiesForDTO=new ArrayList<>();
-        for (PolicySection policy: servicePolicies){
-            PolicySectionRequest policySectionRequest=new PolicySectionRequest();
-            policySectionRequest.setId(policy.getId());
-            policySectionRequest.setHeading(policy.getHeading());
-            policySectionRequest.setPolicy(policy.getPolicy());
-            policiesForDTO.add(policySectionRequest);
         }
 
-        List<TabSectionRequest> tabsDTO=new ArrayList<>();
-        for (TabsSection tab:serviceTabs){
-            TabSectionRequest tabSectionRequest=new TabSectionRequest();
-            tabSectionRequest.setId(tab.getId());
-            tabSectionRequest.setHeading(tab.getHeading());
-            tabSectionRequest.setContent(tab.getContent());
-            tabsDTO.add(tabSectionRequest);
-        }
-
-        responseDTO.setPolicySection(policiesForDTO);
-        responseDTO.setTabsSection(tabsDTO);
-
-        return responseDTO;
   }
 
   @Override

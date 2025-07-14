@@ -8,14 +8,14 @@ import com.lankatrails.lankatrails_backend.model.PolicySection;
 import com.lankatrails.lankatrails_backend.model.TabsSection;
 
 public interface ActivityServiceService {
-    ActivityServiceResponse addService(ActivityServiceRequest activityService );
+    APIResponse<String> addService(ActivityServiceRequest activityService );
     ActivityServiceResponse getAll_ActivityServices(Integer pageNumber, Integer pageSize);
     APIResponse<ActivityServiceRequest> searchWithId(Long Id);
     ActivityServiceRequest removeActivityService(Long Id,ActivityService activityService);
     APIResponse<String> updateWithId(Long Id,ActivityServiceRequest activityService);
     ActivityServiceRequest addTabs(Long Id, TabsSection tabsSection);
     APIResponse<String> removeTabs(Long id);
-    ActivityServiceRequest addNewPolicy(Long id, PolicySection policies);
+    APIResponse<String> addNewPolicy(Long id, PolicySection policies);
     APIResponse<String> removePolicies(Long id);
 
 }
