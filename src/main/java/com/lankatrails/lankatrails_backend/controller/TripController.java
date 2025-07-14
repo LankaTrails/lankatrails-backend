@@ -61,4 +61,13 @@ public class TripController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(response);
     }
+
+    @GetMapping("/{tripId}/items")
+    public ResponseEntity<APIResponse<List<TripItemDTO>>> getTripItemsByTripId(@PathVariable Long tripId) {
+        log.info("Fetching trip items for trip with ID: {}", tripId);
+        APIResponse<List<TripItemDTO>> response = tripService.getTripItemsByTripId(tripId);
+        log.info("Fetched {} trip items", response.getData().size());
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
+    }
 }

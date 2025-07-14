@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.service;
 
+import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TripResponseDTO;
@@ -12,4 +13,6 @@ public interface TripService {
     APIResponse<List<TripResponseDTO>> getAllMyTrips();
 
     APIResponse<TripResponseDTO> getTripById(Long tripId);
+
+    APIResponse<List<TripItemDTO>> getTripItemsByTripId(Long tripId);
 }

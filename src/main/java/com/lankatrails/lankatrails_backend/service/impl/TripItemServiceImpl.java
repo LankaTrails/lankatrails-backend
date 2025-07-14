@@ -14,10 +14,15 @@ import com.lankatrails.lankatrails_backend.repositories.TripItemRepository;
 import com.lankatrails.lankatrails_backend.repositories.TripRepository;
 import com.lankatrails.lankatrails_backend.service.TripItemService;
 import com.lankatrails.lankatrails_backend.service.TripService;
+import com.lankatrails.lankatrails_backend.service.utils.TripItemMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @org.springframework.stereotype.Service
@@ -37,6 +42,9 @@ public class TripItemServiceImpl implements TripItemService {
 
     @Autowired
     private ServiceRepository serviceRepository;
+
+    @Autowired
+    private TripItemMapper tripItemMapper;
 
     @Override
     public APIResponse<TripItemDTO> addTripItem(Long tripId, TripItemDTO tripItemDTO) {

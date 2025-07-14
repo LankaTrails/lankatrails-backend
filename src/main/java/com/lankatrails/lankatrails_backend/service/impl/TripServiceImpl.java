@@ -1,12 +1,11 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TripResponseDTO;
-import com.lankatrails.lankatrails_backend.model.Tourist;
-import com.lankatrails.lankatrails_backend.model.Trip;
-import com.lankatrails.lankatrails_backend.model.TripBudgetCategoryLimit;
-import com.lankatrails.lankatrails_backend.model.User;
+import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
+import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.BudgetCategory;
 import com.lankatrails.lankatrails_backend.repositories.TripRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
@@ -16,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -118,6 +118,23 @@ public class TripServiceImpl implements TripService {
 
         TripResponseDTO responseDTO = modelMapper.map(trip, TripResponseDTO.class);
         return new APIResponse<>(true, "Trip fetched successfully", responseDTO);
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<List<TripItemDTO>> getTripItemsByTripId(Long tripId) {
+        log.info("Fetching trip items for trip with ID: {}", tripId);
+        Trip trip = tripRepository.findByTripId(tripId);
+        if (trip == null) {
+            throw  new ResourceNotFoundException("Trip", tripId);
+        }
+
+        List<TripItemDTO> tripItemDTOs = new ArrayList<>();
+        for (TripItem item : trip.getTripItems()) {
+            tripItemDTOs.add(modelMapper.map(item, TripItemDTO.class));
+        }
+
+        return new APIResponse<>(true, "Trip items fetched successfully", tripItemDTOs);
     }
 
     private Set<TripBudgetCategoryLimit> initializeCategoryLimits(TripRequestDTO tripRequestDTO, Trip trip) {
