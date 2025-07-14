@@ -9,7 +9,7 @@ import com.lankatrails.lankatrails_backend.model.TabsSection;
 
 public interface ActivityServiceService {
     APIResponse<String> addService(ActivityServiceRequest activityService );
-    ActivityServiceResponse getAll_ActivityServices(Integer pageNumber, Integer pageSize);
+    APIResponse<ActivityServiceResponse> getAll_ActivityServices(Integer pageNumber, Integer pageSize);
     APIResponse<ActivityServiceRequest> searchWithId(Long Id);
     ActivityServiceRequest removeActivityService(Long Id,ActivityService activityService);
     APIResponse<String> updateWithId(Long Id,ActivityServiceRequest activityService);

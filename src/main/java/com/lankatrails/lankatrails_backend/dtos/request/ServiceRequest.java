@@ -39,10 +39,14 @@ public abstract class ServiceRequest {
 //    @NotBlank(message = "Cancellation Policy is required")
     private List<PolicySectionRequest> policySection;
 
+//    private List<PolicySectionRequest> providerPolicies;
+
 
 //    @Valid
 //    @NotEmpty(message = "Should be at least one image")
     private List<ImageRequestDTO> images;
+
+
 
 
 }

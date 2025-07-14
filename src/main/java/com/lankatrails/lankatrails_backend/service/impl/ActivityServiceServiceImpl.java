@@ -111,7 +111,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     }
 
     @Override
-    public ActivityServiceResponse getAll_ActivityServices(Integer pageNumber, Integer pageSize){
+    public APIResponse<ActivityServiceResponse> getAll_ActivityServices(Integer pageNumber, Integer pageSize){
 
         Pageable pageDetails= PageRequest.of(pageNumber,pageSize);
 
@@ -122,9 +122,14 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         if (activityServices.isEmpty())
             throw new APIException("No Activity Service created till now");
 
-        List<ActivityServiceRequest> activityServices_DTOs=activityServices.stream()
-                .map(activityService -> modelMapper.map(activityService,ActivityServiceRequest.class))
-                .toList();
+        List<ActivityServiceRequest> activityServices_DTOs= new ArrayList<>();
+
+        for (ActivityService activity :activityServicePage){
+            ActivityServiceRequest activityServiceRequest = new ActivityServiceRequest();
+            activityServiceRequest.setServiceName(activity.getServiceName());
+            activityServiceRequest.setStatus(activity.getStatus());
+            activityServices_DTOs.add(activityServiceRequest);
+        }
 
         ActivityServiceResponse activityServiceResponse=new ActivityServiceResponse();
 
@@ -134,7 +139,11 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         activityServiceResponse.setPageSize(activityServicePage.getSize());
         activityServiceResponse.setTotalElements(activityServicePage.getTotalElements());
         activityServiceResponse.setTotalPages(activityServicePage.getTotalPages());
-        return activityServiceResponse;
+        return  APIResponse.<ActivityServiceResponse>builder()
+                .success(true)
+                .message("Activity Services Fetched")
+                .data(activityServiceResponse)
+                .build();
     }
 
   @Override
@@ -158,6 +167,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         List<PolicySectionRequest> policies = new ArrayList<>();
 //
         for (PolicySection policy : policySection){
+
             PolicySectionRequest policyReq = new PolicySectionRequest();
             policyReq.setId(policy.getId());
             policyReq.setHeading(policy.getHeading());
