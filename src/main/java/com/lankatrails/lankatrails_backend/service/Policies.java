@@ -15,5 +15,6 @@ public interface Policies {
     Set<PolicySection> updatePolicies(Set<PolicySection> tabs, List<PolicySectionRequest> reqTabs, Transport transport);
     Boolean addPoliciesToTransport(List<PolicySectionRequest> policyReq,Transport transport);
     APIResponse<String> providerAddPolicies(PolicySectionRequest policyReq);
+    List<PolicySectionRequest> getProviderPolicies(Long userId);
 
 }

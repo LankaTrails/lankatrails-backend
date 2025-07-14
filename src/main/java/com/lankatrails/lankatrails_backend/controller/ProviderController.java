@@ -8,10 +8,7 @@ import com.lankatrails.lankatrails_backend.service.impl.PolicyImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -23,6 +20,7 @@ public class ProviderController {
 
     @Autowired
     AuthUtils authUtils;
+
     @PostMapping("/add/policy")
     public ResponseEntity<APIResponse<String>> addPublicPolicy
             (@RequestBody PolicySectionRequest policyReq){
@@ -30,5 +28,21 @@ public class ProviderController {
         policyReq.setProvider(provider);
         APIResponse<String> response = policyImplementation.providerAddPolicies(policyReq);
         return new ResponseEntity<>(response,HttpStatus.CREATED);
+    }
+
+
+    @GetMapping("/policies")
+    public ResponseEntity<APIResponse<List<PolicySectionRequest>>> providerPolicies (){
+        Provider provider = (Provider) authUtils.loggedInUser();
+        List<PolicySectionRequest> policies = policyImplementation.getProviderPolicies(provider.getUserId());
+        APIResponse<List<PolicySectionRequest>> response =APIResponse.<List<PolicySectionRequest>>builder()
+                .success(true)
+                .message("Found Provider Policies")
+                .data(policies)
+                .build();
+
+        return new ResponseEntity<>(response,HttpStatus.OK);
+
+
     }
 }
