@@ -46,19 +46,19 @@ public class ActivityServiceController {
                }
 
     }
-    @GetMapping("/delete/{id}")
+    @GetMapping("activity-service/delete/{id}")
     public ResponseEntity<ActivityServiceRequest> removeActivityService(@PathVariable Long id,@Valid @RequestBody ActivityService activityService){
         ActivityServiceRequest activityServiceResponse= activityServiceService.removeActivityService(id,activityService);
         return new ResponseEntity<>(activityServiceResponse,HttpStatus.OK);
     }
 
-    @GetMapping("/getAll")
-    public ResponseEntity<ActivityServiceResponse> getAll_ActivityServices(
+    @GetMapping("/activity-service/getAll")
+    public ResponseEntity<APIResponse<ActivityServiceResponse>> getAll_ActivityServices(
             @RequestParam(name = "pageNumber") Integer pageNumber,
             @RequestParam(name = "pageSize") Integer pageSize
     ){
 
-        ActivityServiceResponse activityServiceResponse= activityServiceService.getAll_ActivityServices(pageNumber,pageSize);
+        APIResponse<ActivityServiceResponse> activityServiceResponse= activityServiceService.getAll_ActivityServices(pageNumber,pageSize);
         return new ResponseEntity<>(activityServiceResponse,HttpStatus.OK);
     }
 
