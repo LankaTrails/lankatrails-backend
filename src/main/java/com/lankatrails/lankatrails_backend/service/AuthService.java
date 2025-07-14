@@ -16,7 +16,12 @@ public interface AuthService {
 
     APIResponse<RegistrationResponse> registerTourist(TouristRegistrationRequest request);
 
-    APIResponse<RegistrationResponse> registerProvider(ProviderRegistrationRequest request);
+    APIResponse<RegistrationResponse> registerProvider(ProviderRegistrationRequest request,
+                                                       MultipartFile profilePicture,
+                                                       MultipartFile coverPhoto,
+                                                       MultipartFile businessRegistrationFile,
+                                                       MultipartFile contactPersonIdentityFile,
+                                                       MultipartFile[] licenseFiles);
 
     APIResponse<LoginResponse> authenticateUser(LoginRequest request, HttpServletRequest httpServletRequest);
 

@@ -29,7 +29,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -126,22 +129,75 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public APIResponse<RegistrationResponse> registerProvider(ProviderRegistrationRequest request) {
+    public APIResponse<RegistrationResponse> registerProvider(ProviderRegistrationRequest request,
+                                                              MultipartFile profilePicture,
+                                                              MultipartFile coverPhoto,
+                                                              MultipartFile businessRegistrationFile,
+                                                              MultipartFile contactPersonIdentityFile,
+                                                              MultipartFile[] licenseFiles) {
         log.info("Attempting provider registration for email: {}", request.getEmail());
 
         if (userRepository.existsByEmail(request.getEmail().toLowerCase())) {
             throw new EmailAlreadyExistsException(request.getEmail());
         }
 
+        // Handle profile picture upload if provided
+        if (profilePicture != null && !profilePicture.isEmpty()) {
+            String profilePictureUrl = fileUploadService.storeFile(profilePicture, UploadCategory.PROFILE_PICTURE, null);
+            log.info("Profile picture uploaded successfully: {}", profilePictureUrl);
+            request.setProfilePictureUrl(profilePictureUrl);
+        }
+
+        // Handle cover photo upload if provided
+        if (coverPhoto != null && !coverPhoto.isEmpty()) {
+            String coverPhotoUrl = fileUploadService.storeFile(coverPhoto, UploadCategory.COVER_PICTURE, null);
+            log.info("Cover photo uploaded successfully: {}", coverPhotoUrl);
+            request.setCoverImageUrl(coverPhotoUrl);
+        }
+
+        // Handle business registration file upload
+        if (businessRegistrationFile != null && !businessRegistrationFile.isEmpty()) {
+            String businessRegistrationUrl = fileUploadService.storeFile(businessRegistrationFile, UploadCategory.BUSINESS_REGISTRATION, null);
+            log.info("Business registration file uploaded successfully: {}", businessRegistrationUrl);
+            request.setBusinessRegistrationUrl(businessRegistrationUrl);
+        } else {
+            log.warn("No business registration file provided for provider registration.");
+            throw new BadRequestException("Business registration file is required for provider registration.", "businessRegistrationFile", null);
+        }
+
+        // Handle contact person identity file upload
+        if (contactPersonIdentityFile != null && !contactPersonIdentityFile.isEmpty()) {
+            String contactPersonIdentityUrl = fileUploadService.storeFile(contactPersonIdentityFile, UploadCategory.IDENTIFICATION, null);
+            log.info("Contact person identity file uploaded successfully: {}", contactPersonIdentityUrl);
+            request.getContactPerson().setIdentityDocumentUrl(contactPersonIdentityUrl);
+        } else {
+            log.warn("No contact person identity file provided for provider registration.");
+            throw new BadRequestException("Contact person identity file is required for provider registration.", "contactPersonIdentityFile", null);
+        }
+
+        // Handle license files upload
+        List<LicenseDTO> licenses = new ArrayList<>(request.getLicenses());
+        for (int i = 0; i < licenseFiles.length; i++) {
+            LicenseDTO license = licenses.get(i);
+            MultipartFile licenseFile = licenseFiles[i];
+
+            license.setLicenseUrl(fileUploadService.storeFile(licenseFile, UploadCategory.LICENCE, license.getCategory().getDisplayName().toLowerCase()));
+            log.info("License file uploaded successfully for license number {}: {}", license.getLicenseNumber(), license.getLicenseUrl());
+
+            // Additional validation
+            if (license.getExpiryDate().isBefore(LocalDate.now())) {
+                throw new BadRequestException(
+                        String.format("License %s expired on %s",
+                                license.getLicenseNumber(),
+                                license.getExpiryDate()),
+                        "licenses[" + i + "].expiryDate",
+                        null
+                );
+            }
+        }
+
         User user = userFactory.createUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-
-        // Handle profile picture upload if provided
-//        if (profilePicture != null && !profilePicture.isEmpty()) {
-//            String profilePictureUrl = fileUploadService.storeFile(profilePicture, UploadCategory.PROFILE_PICTURE);
-//            user.setProfilePictureUrl(profilePictureUrl);
-//        }
-
         User savedUser = userRepository.save(user);
         log.info("Provider registered successfully with ID: {}", savedUser.getUserId());
 

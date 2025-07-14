@@ -14,9 +14,10 @@ import java.util.UUID;
 @Service
 public class FileUploadService {
 
-    private static final String UPLOAD_ROOT = "E:\\LankaTrails\\lankatrails-backend\\uploads";
+//    private static final String UPLOAD_ROOT = "E:\\LankaTrails\\lankatrails-backend\\uploads";
+    private static final String UPLOAD_ROOT = "D:\\LankaTrails\\lankatrails\\lankatrails-backend\\uploads";
 
-    public String storeFile(MultipartFile file, UploadCategory category) {
+    public String storeFile(MultipartFile file, UploadCategory category, String prefix) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("File is empty");
         }
@@ -37,7 +38,7 @@ public class FileUploadService {
             }
 
             // Generate unique filename
-            String uniqueFilename = UUID.randomUUID().toString() + extension;
+            String uniqueFilename = UUID.randomUUID().toString() + (prefix != null ? "_" + prefix : "") + extension;
 
             // Save file
             Path filePath = dirPath.resolve(uniqueFilename);
@@ -59,7 +60,7 @@ public class FileUploadService {
 
         String[] fileUrls = new String[files.length];
         for (int i = 0; i < files.length; i++) {
-            fileUrls[i] = storeFile(files[i], category);
+            fileUrls[i] = storeFile(files[i], category, null);
         }
 
         return Set.of(fileUrls);
@@ -72,7 +73,7 @@ public class FileUploadService {
 
         Set<Image> images = Set.of();
         for (MultipartFile file : files) {
-            String fileUrl = storeFile(file, category);
+            String fileUrl = storeFile(file, category, null);
             Image image = new Image();
             image.setImageUrl(fileUrl);
             images.add(image);

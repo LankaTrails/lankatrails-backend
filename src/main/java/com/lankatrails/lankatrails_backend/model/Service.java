@@ -16,7 +16,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @SuperBuilder
-public class Services {
+public class Service {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -50,13 +50,13 @@ public class Services {
     private Set<PolicySection> policies=new HashSet<>();
 
     @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "location_id", referencedColumnName ="locationId" )
+    @JoinColumn(name = "location_id", referencedColumnName ="location_id" )
     private Location locationBased;
 
     @OneToMany(mappedBy = "service" )
     private Set<Image> images = new HashSet<>();
 
-
-
+    @OneToMany(mappedBy = "service")
+    private Set<TripItem> tripItems = new HashSet<>();
 
 }

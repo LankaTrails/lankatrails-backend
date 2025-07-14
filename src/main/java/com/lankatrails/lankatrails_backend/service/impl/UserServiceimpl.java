@@ -93,7 +93,7 @@ public class UserServiceimpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("UserID", userId));
 
-        String fileUrl = fileUploadService.storeFile(profilePicture, UploadCategory.PROFILE_PICTURE);
+        String fileUrl = fileUploadService.storeFile(profilePicture, UploadCategory.PROFILE_PICTURE, null);
 
         user.setProfilePictureUrl(fileUrl);
         userRepository.save(user);

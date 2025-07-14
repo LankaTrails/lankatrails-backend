@@ -10,7 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class ActivityService extends Services{
+public class ActivityService extends Service {
     private  String activityType;
 
     private String activityDetails;

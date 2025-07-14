@@ -21,12 +21,8 @@ public class PolicySection {
     private String heading;
     private String policy;
 
-//    @ManyToOne
-//    @JoinColumn(name = "service_id")
-//    private Services service;
-
     @ManyToMany(mappedBy = "policies")
-    private Set<Services> services = new HashSet<>();
+    private Set<Service> services = new HashSet<>();
 
     @ManyToOne
     @JoinColumn(name = "provider_id")
