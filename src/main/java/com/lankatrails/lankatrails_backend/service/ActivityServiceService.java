@@ -11,7 +11,7 @@ public interface ActivityServiceService {
     APIResponse<String> addService(ActivityServiceRequest activityService );
     APIResponse<ActivityServiceResponse> getAll_ActivityServices(Integer pageNumber, Integer pageSize);
     APIResponse<ActivityServiceRequest> searchWithId(Long Id);
-    ActivityServiceRequest removeActivityService(Long Id,ActivityService activityService);
+    APIResponse<ActivityServiceRequest> removeActivityService(Long Id);
     APIResponse<String> updateWithId(Long Id,ActivityServiceRequest activityService);
     ActivityServiceRequest addTabs(Long Id, TabsSection tabsSection);
     APIResponse<String> removeTabs(Long id);

@@ -194,14 +194,22 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
   }
   @Override
-  public ActivityServiceRequest removeActivityService(Long Id,ActivityService activityService){
+  public APIResponse<ActivityServiceRequest> removeActivityService(Long Id){
         ActivityService activity=activityServiceRepository.findById(Id)
                 .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
         activity.setStatus(false);
 
-        activityServiceRepository.save(activity);
+        ActivityService activityService=activityServiceRepository.save(activity);
 
-        return modelMapper.map(activityServiceRepository.findById(Id),ActivityServiceRequest.class);
+        ActivityServiceRequest activityServiceResponse=new ActivityServiceRequest();
+        activityServiceResponse.setServiceId(activity.getServiceId());
+        activityServiceResponse.setStatus(activityService.getStatus());
+
+        return APIResponse.<ActivityServiceRequest>builder()
+                .success(true)
+                .message("Successfully Deleted")
+                .data(activityServiceResponse)
+                .build();
 
   }
 
