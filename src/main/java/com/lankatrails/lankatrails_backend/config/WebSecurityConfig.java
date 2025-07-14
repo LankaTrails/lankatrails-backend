@@ -68,6 +68,7 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/tourist/**").hasRole("TOURIST")
+                        .requestMatchers("/api/trip/**").hasRole("TOURIST")
                         .requestMatchers("/api/service").hasRole("PROVIDER")
                         .requestMatchers("/api/provider/**").permitAll()
                         .requestMatchers("/api/admin/**").permitAll()// Update to admin role

@@ -19,5 +19,5 @@ public class Image {
 
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "service_id",referencedColumnName = "serviceId")
-    private Services service;
+    private Service service;
 }
