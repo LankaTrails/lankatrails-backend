@@ -126,9 +126,13 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
         for (ActivityService activity :activityServicePage){
             ActivityServiceRequest activityServiceRequest = new ActivityServiceRequest();
-            activityServiceRequest.setServiceName(activity.getServiceName());
-            activityServiceRequest.setStatus(activity.getStatus());
-            activityServices_DTOs.add(activityServiceRequest);
+            if (activity.getStatus()){
+                activityServiceRequest.setServiceId(activity.getServiceId());
+                activityServiceRequest.setServiceName(activity.getServiceName());
+                activityServiceRequest.setStatus(activity.getStatus());
+                activityServices_DTOs.add(activityServiceRequest);
+            }
+
         }
 
         ActivityServiceResponse activityServiceResponse=new ActivityServiceResponse();
@@ -202,6 +206,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         ActivityService activityService=activityServiceRepository.save(activity);
 
         ActivityServiceRequest activityServiceResponse=new ActivityServiceRequest();
+        activityServiceResponse.setServiceName(activity.getServiceName());
         activityServiceResponse.setServiceId(activity.getServiceId());
         activityServiceResponse.setStatus(activityService.getStatus());
 
