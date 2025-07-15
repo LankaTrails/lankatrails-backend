@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
@@ -185,7 +186,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         prepareResponse.setActivityType(activityService.getActivityType());
         prepareResponse.setActivityDetails(activityService.getActivityDetails());
         prepareResponse.setSafetyInstructions(activityService.getSafetyInstructions());
-        prepareResponse.setLocationBased(activityService.getLocationBased());
+        prepareResponse.setLocationBased(modelMapper.map(activityService.getLocationBased(), LocationDTO.class));
         prepareResponse.setContactNo(activityService.getContactNo());
         prepareResponse.setTabsSection(tabs);
         prepareResponse.setPolicySection(policies);
@@ -278,7 +279,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
       //update the activity service
       activity.setServiceName(activityService.getServiceName());
-      activity.setLocationBased(activityService.getLocationBased());
+      activity.setLocationBased(modelMapper.map(activityService.getLocationBased(), Location.class));
       activity.setContactNo(activityService.getContactNo());
       activity.setStatus(activityService.getStatus());
       activity.setActivityType(activityService.getActivityType());

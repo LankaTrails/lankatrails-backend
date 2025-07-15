@@ -14,5 +14,4 @@ public class ServiceDTO {
     private Long serviceId;
     private String serviceName;
     private Location locationBased;
-    private ProviderProfileDto provider;
 }

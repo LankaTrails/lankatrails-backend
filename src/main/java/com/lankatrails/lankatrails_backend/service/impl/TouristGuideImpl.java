@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TouristGuideRequestDTO;
@@ -168,7 +169,7 @@ public class TouristGuideImpl implements TouristGuideService {
 
         prepareResponse.setServiceName(touristGuide.getServiceName());
         prepareResponse.setContactNo(touristGuide.getContactNo());
-        prepareResponse.setLocationBased(touristGuide.getLocationBased());
+        prepareResponse.setLocationBased(modelMapper.map(touristGuide.getLocationBased(), LocationDTO.class));
         prepareResponse.setPolicySection(policies);
         prepareResponse.setTabsSection(tabs);
 //        prepareResponse.setLanguages(touristGuide.getLanguages());
