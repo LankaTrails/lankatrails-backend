@@ -51,14 +51,31 @@
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
+			<version>42.7.7</version>
 			<scope>runtime</scope>
 		</dependency>
-		<!-- For development/testing -->
+
+		<!-- Hibernate Spatial: adds spatial support to JPA -->
 		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
-			<scope>runtime</scope>
+			<groupId>org.hibernate.orm</groupId>
+			<artifactId>hibernate-spatial</artifactId>
+			<version>6.5.2.Final</version> <!-- ✅ Match Hibernate version in Spring Boot 3.5.0 -->
 		</dependency>
+
+
+		<!-- JTS Core: Java Topology Suite (used by Hibernate Spatial) -->
+		<dependency>
+			<groupId>org.locationtech.jts</groupId>
+			<artifactId>jts-core</artifactId>
+			<version>1.18.2</version>
+		</dependency>
+
+		<!-- For development/testing -->
+<!--		<dependency>-->
+<!--			<groupId>com.h2database</groupId>-->
+<!--			<artifactId>h2</artifactId>-->
+<!--			<scope>runtime</scope>-->
+<!--		</dependency>-->
 
 		<!-- JWT -->
 		<dependency>
