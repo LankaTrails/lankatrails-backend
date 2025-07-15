@@ -76,7 +76,7 @@ public class ActivityServiceController {
     }
 
 
-    @GetMapping("activity-service/delete/{id}")
+    @PutMapping("/activity-service/delete/{id}")
     public ResponseEntity<APIResponse<ActivityServiceRequest>> removeActivityService(@PathVariable Long id){
         APIResponse<ActivityServiceRequest> activityServiceResponse= activityServiceService.removeActivityService(id);
         return new ResponseEntity<>(activityServiceResponse,HttpStatus.OK);

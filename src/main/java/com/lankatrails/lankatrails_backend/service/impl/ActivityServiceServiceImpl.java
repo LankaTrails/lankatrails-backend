@@ -214,12 +214,11 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         ActivityService activity=activityServiceRepository.findById(Id)
                 .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
         activity.setStatus(false);
-
         ActivityService activityService=activityServiceRepository.save(activity);
 
         ActivityServiceRequest activityServiceResponse=new ActivityServiceRequest();
-        activityServiceResponse.setServiceName(activity.getServiceName());
-        activityServiceResponse.setServiceId(activity.getServiceId());
+        activityServiceResponse.setServiceName(activityService.getServiceName());
+        activityServiceResponse.setServiceId(activityService.getServiceId());
         activityServiceResponse.setStatus(activityService.getStatus());
 
         return APIResponse.<ActivityServiceRequest>builder()
