@@ -11,4 +11,5 @@ public class PlaceDTO {
     private String photoReference;
     private Double latitude;
     private Double longitude;
+    private Double rating;
 }

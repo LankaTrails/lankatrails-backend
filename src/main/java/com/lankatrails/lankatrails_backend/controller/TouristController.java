@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.controller;
 
+import com.lankatrails.lankatrails_backend.dtos.request.FavouriteItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TouristProfileDto;
 import com.lankatrails.lankatrails_backend.dtos.response.UserProfileDto;
@@ -10,10 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/tourist")
@@ -28,5 +26,13 @@ public class TouristController {
             HttpServletRequest request) {
         APIResponse<TouristProfileDto> updatedProfile = touristService.updateUserProfile(touristProfileDto, null);
         return ResponseEntity.status(HttpStatus.OK).body(updatedProfile);
+    }
+
+    @PostMapping("/add-favourites")
+    public ResponseEntity<APIResponse<FavouriteItemDTO>> addFavourites(
+            @Valid @RequestBody FavouriteItemDTO favouriteItemDTO,
+            HttpServletRequest request) {
+        APIResponse<FavouriteItemDTO> response = touristService.addFavourites(favouriteItemDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
