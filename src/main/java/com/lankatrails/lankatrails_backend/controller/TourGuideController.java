@@ -7,13 +7,18 @@ import com.lankatrails.lankatrails_backend.dtos.response.TouristGuideResponseDTO
 import com.lankatrails.lankatrails_backend.repositories.TouristGuideRepository;
 import com.lankatrails.lankatrails_backend.service.ServicesForAll;
 import com.lankatrails.lankatrails_backend.service.TouristGuideService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
-@RequestMapping("/api/tour-guide")
+@RequestMapping("/api")
 public class TourGuideController {
     @Autowired
     TouristGuideService touristGuideService;
@@ -26,35 +31,42 @@ public class TourGuideController {
             (
                     @RequestParam(name = "pageNumber") Integer pageNumber,
                     @RequestParam(name = "pageSize") Integer pageSize
-            ){
+            ) {
 
-            TouristGuideResponseDTO touristGuideResponseDTO = touristGuideService.getAllTourGuides();
-            return new ResponseEntity<>(touristGuideResponseDTO, HttpStatus.OK);
+        TouristGuideResponseDTO touristGuideResponseDTO = touristGuideService.getAllTourGuides();
+        return new ResponseEntity<>(touristGuideResponseDTO, HttpStatus.OK);
     }
+
     @GetMapping("/{id}")
-    public ResponseEntity<APIResponse<TouristGuideRequestDTO>> getGuideDetails(@PathVariable Long id){
-        APIResponse<TouristGuideRequestDTO> touristGuideResponseDTO=touristGuideService.getGuideDetails(id);
-        return new ResponseEntity<>(touristGuideResponseDTO,HttpStatus.OK);
+    public ResponseEntity<APIResponse<TouristGuideRequestDTO>> getGuideDetails(@PathVariable Long id) {
+        APIResponse<TouristGuideRequestDTO> touristGuideResponseDTO = touristGuideService.getGuideDetails(id);
+        return new ResponseEntity<>(touristGuideResponseDTO, HttpStatus.OK);
     }
-    @PostMapping("/add")
-    public ResponseEntity<TouristGuideResponseDTO> addNewTourGuide(@RequestBody TouristGuideRequestDTO requestDTO){
-        TouristGuideResponseDTO touristGuideRequestDTO=touristGuideService.addNewTouristGuide(requestDTO);
 
-        return new ResponseEntity<>(touristGuideRequestDTO,HttpStatus.CREATED);
+    @PostMapping(value = "/provider/tour-guide/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<TouristGuideResponseDTO> addNewTourGuide
+            (
+                    @RequestPart("service") @Valid TouristGuideRequestDTO requestDTO,
+                    @RequestPart(value = "images", required = false) List<MultipartFile> images
+            ) {
+        TouristGuideResponseDTO touristGuideRequestDTO = touristGuideService.addNewTouristGuide(requestDTO, images);
+
+        return new ResponseEntity<>(touristGuideRequestDTO, HttpStatus.CREATED);
     }
 
     @GetMapping("/delete/{id}")
-    public String deleteTourGuide(@PathVariable Long id){
-        Boolean removeStatus=servicesForAll.removeService(id);
+    public String deleteTourGuide(@PathVariable Long id) {
+        Boolean removeStatus = servicesForAll.removeService(id);
         if (removeStatus)
             return "successfull";
         else
             return "unsuccessfull";
 
     }
+
     @PostMapping("/{id}")
-    public ResponseEntity<TouristGuideResponseDTO> updateTourGuide(@PathVariable Long id, @RequestBody TouristGuideRequestDTO requestDTO){
-        TouristGuideResponseDTO touristGuideResponseDTO=touristGuideService.updateTourGuide(id,requestDTO);
-        return  new ResponseEntity<>(touristGuideResponseDTO,HttpStatus.OK);
+    public ResponseEntity<TouristGuideResponseDTO> updateTourGuide(@PathVariable Long id, @RequestBody TouristGuideRequestDTO requestDTO) {
+        TouristGuideResponseDTO touristGuideResponseDTO = touristGuideService.updateTourGuide(id, requestDTO);
+        return new ResponseEntity<>(touristGuideResponseDTO, HttpStatus.OK);
     }
 }

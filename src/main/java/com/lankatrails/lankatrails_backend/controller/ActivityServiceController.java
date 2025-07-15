@@ -54,7 +54,7 @@ public class ActivityServiceController {
     public ResponseEntity<APIResponse<String>> addService
             (
                     @RequestPart("service") @Valid  ActivityServiceRequest service,
-                    @RequestPart("images") List<MultipartFile> images,
+                    @RequestPart(value = "images", required = false) List<MultipartFile> images,
                     BindingResult result
             ){
         if (result.hasErrors()){
