@@ -42,4 +42,11 @@ public class TouristController {
         APIResponse<Set<FavouriteItemDTO>> favourites = touristService.getFavourites();
         return ResponseEntity.status(HttpStatus.OK).body(favourites);
     }
+
+    @DeleteMapping("/remove-favourite")
+    public ResponseEntity<APIResponse<String>> removeFavourite(
+            @Valid @RequestBody FavouriteItemDTO favouriteItemDTO) {
+        APIResponse<String> response = touristService.removeFavourite(favouriteItemDTO);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
 }

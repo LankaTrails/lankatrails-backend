@@ -14,4 +14,6 @@ public interface TouristService {
     APIResponse<FavouriteItemDTO> addFavourites(FavouriteItemDTO favouriteItemDTO);
 
     APIResponse<Set<FavouriteItemDTO>> getFavourites();
+
+    APIResponse<String> removeFavourite(FavouriteItemDTO favouriteItemDTO);
 }

@@ -148,4 +148,44 @@ public class TouristServiceImpl implements TouristService {
                 .build();
     }
 
+    @Override
+    @Transactional
+    public APIResponse<String> removeFavourite(FavouriteItemDTO favouriteItemDTO) {
+        Tourist tourist = (Tourist) authUtils.loggedInUser();
+        if (tourist == null) {
+            log.error("Tourist not found for removing favourites");
+            throw new UserNotFoundException("Tourist not found");
+        }
+
+        switch (favouriteItemDTO.getType()) {
+            case PLACE:
+                if (favouriteItemDTO.getPlace() == null || favouriteItemDTO.getPlace().getPlaceId() == null) {
+                    throw new IllegalParamsException("Place ID cannot be null");
+                }
+                Place placeToRemove = placeRepository.findById(favouriteItemDTO.getPlace().getPlaceId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Place not found with ID: ", favouriteItemDTO.getPlace().getPlaceId()));
+                tourist.getFavouritePlaces().remove(placeToRemove);
+                log.info("Removed place from favourites: {} for User: {}", placeToRemove.getPlaceName(), tourist.getUserId());
+                break;
+            case SERVICE:
+                if (favouriteItemDTO.getService() == null || favouriteItemDTO.getService().getServiceId() == null) {
+                    throw new IllegalParamsException("Service ID cannot be null");
+                }
+                Service serviceToRemove = serviceRepository.findById(favouriteItemDTO.getService().getServiceId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Service not found with ID: ", favouriteItemDTO.getService().getServiceId()));
+                tourist.getFavouriteServices().remove(serviceToRemove);
+                log.info("Removed service from favourites: {} for User: {}", serviceToRemove.getServiceName(), tourist.getUserId());
+                break;
+            default:
+                throw new IllegalParamsException("Invalid favourite item type");
+        }
+        touristRepository.save(tourist);
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Favourite item removed successfully")
+                .data("Favourite item removed successfully")
+                .build();
+    }
+
 }
