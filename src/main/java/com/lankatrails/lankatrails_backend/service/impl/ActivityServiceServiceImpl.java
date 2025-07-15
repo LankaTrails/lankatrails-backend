@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
@@ -11,10 +12,12 @@ import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsExcepti
 import com.lankatrails.lankatrails_backend.factory.CreateServiceFactory;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
+import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ActivityServiceService;
 
+import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -22,6 +25,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 import java.util.function.Function;
@@ -62,52 +66,60 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     @Autowired
     private AuthUtils authUtils;
 
+    @Autowired
+    private FileUploadService fileUploadService;
+
     @Override
     @Transactional
-    public APIResponse<String> addService(ActivityServiceRequest services) {
-        Category category=categoryRepository.findByCategoryName(ServiceCategory.ACTIVITY).orElseThrow(
-                ()->new ResourceNotFoundException("Category",4L)
-        );
-        ActivityService mappedObj=modelMapper.map(services,ActivityService.class);
+    public APIResponse<String> addService(ActivityServiceRequest services, List<MultipartFile> images) {
+        Category category = categoryRepository.findByCategoryName(ServiceCategory.ACTIVITY)
+                .orElseThrow(() -> new ResourceNotFoundException("Category", 4L));
+
+        ActivityService mappedObj = modelMapper.map(services, ActivityService.class);
         mappedObj.setCategory(category);
 
-        Provider provider=(Provider) authUtils.loggedInUser();
-
+        Provider provider = (Provider) authUtils.loggedInUser();
         mappedObj.setProvider(provider);
 
-        Optional<ActivityService> checkDb=activityServiceRepository.findByServiceName(mappedObj.getServiceName());
+        Optional<ActivityService> checkDb = activityServiceRepository.findByServiceName(mappedObj.getServiceName());
         ActivityService lastServiceAdded;
-        if(checkDb.isEmpty()){
-            lastServiceAdded=activityServiceRepository.save(mappedObj);
 
-            //set the tabs
-            List<TabSectionRequest> tabsReq=services.getTabsSection();
-            tabsImpl.addTabs(tabsReq,lastServiceAdded);
+        if (checkDb.isEmpty()) {
+            // Save the base service object first
+            lastServiceAdded = activityServiceRepository.save(mappedObj);
 
-            //set the policies
+            // Set Tabs
+            List<TabSectionRequest> tabsReq = services.getTabsSection();
+            tabsImpl.addTabs(tabsReq, lastServiceAdded);
+
+            // Set Policies
             List<PolicySectionRequest> policyReq = services.getPolicySection();
-            Boolean policyAdditionStatus = policyImpl.addPolicies(policyReq,lastServiceAdded,category);
+            Boolean policyAdditionStatus = policyImpl.addPolicies(policyReq, lastServiceAdded, category);
 
-        }else {
+            // Upload and associate images
+            Set<Image> savedImages = new HashSet<>();
+            for (MultipartFile file : images) {
+                String imageUrl = fileUploadService.storeFile(file, UploadCategory.SERVICE_PICTURE, "service");
+
+                Image image = new Image();
+                image.setImageUrl(imageUrl);
+                image.setService(lastServiceAdded);
+
+                savedImages.add(image); // Collect images
+            }
+
+            // Persist images
+            imageRepository.saveAll(savedImages);
+
+        } else {
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());
         }
-
-
-        //testing
-//        ActivityServiceRequest prepareResponse = modelMapper.map(services, ActivityServiceRequest.class);
-//        List<ActivityServiceRequest> response = new ArrayList<>();
-//        ActivityServiceResponse responseDTO = new ActivityServiceResponse();
-//        prepareResponse.setServiceId(lastServiceAdded.getServiceId());
-//        response.add(prepareResponse);
-//        responseDTO.setContent(response);
-
 
         return APIResponse.<String>builder()
                 .success(true)
                 .message("Service Added Successfully")
                 .data("")
                 .build();
-
     }
 
     @Override
@@ -126,9 +138,13 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
         for (ActivityService activity :activityServicePage){
             ActivityServiceRequest activityServiceRequest = new ActivityServiceRequest();
-            activityServiceRequest.setServiceName(activity.getServiceName());
-            activityServiceRequest.setStatus(activity.getStatus());
-            activityServices_DTOs.add(activityServiceRequest);
+            if (activity.getStatus()){
+                activityServiceRequest.setServiceId(activity.getServiceId());
+                activityServiceRequest.setServiceName(activity.getServiceName());
+                activityServiceRequest.setStatus(activity.getStatus());
+                activityServices_DTOs.add(activityServiceRequest);
+            }
+
         }
 
         ActivityServiceResponse activityServiceResponse=new ActivityServiceResponse();
@@ -181,7 +197,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         prepareResponse.setActivityType(activityService.getActivityType());
         prepareResponse.setActivityDetails(activityService.getActivityDetails());
         prepareResponse.setSafetyInstructions(activityService.getSafetyInstructions());
-        prepareResponse.setLocationBased(activityService.getLocationBased());
+        prepareResponse.setLocationBased(modelMapper.map(activityService.getLocationBased(), LocationDTO.class));
         prepareResponse.setContactNo(activityService.getContactNo());
         prepareResponse.setTabsSection(tabs);
         prepareResponse.setPolicySection(policies);
@@ -194,14 +210,23 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
   }
   @Override
-  public ActivityServiceRequest removeActivityService(Long Id,ActivityService activityService){
+  public APIResponse<ActivityServiceRequest> removeActivityService(Long Id){
         ActivityService activity=activityServiceRepository.findById(Id)
                 .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
         activity.setStatus(false);
 
-        activityServiceRepository.save(activity);
+        ActivityService activityService=activityServiceRepository.save(activity);
 
-        return modelMapper.map(activityServiceRepository.findById(Id),ActivityServiceRequest.class);
+        ActivityServiceRequest activityServiceResponse=new ActivityServiceRequest();
+        activityServiceResponse.setServiceName(activity.getServiceName());
+        activityServiceResponse.setServiceId(activity.getServiceId());
+        activityServiceResponse.setStatus(activityService.getStatus());
+
+        return APIResponse.<ActivityServiceRequest>builder()
+                .success(true)
+                .message("Successfully Deleted")
+                .data(activityServiceResponse)
+                .build();
 
   }
 
@@ -265,7 +290,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
       //update the activity service
       activity.setServiceName(activityService.getServiceName());
-      activity.setLocationBased(activityService.getLocationBased());
+      activity.setLocationBased(modelMapper.map(activityService.getLocationBased(), Location.class));
       activity.setContactNo(activityService.getContactNo());
       activity.setStatus(activityService.getStatus());
       activity.setActivityType(activityService.getActivityType());

@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TouristGuideRequestDTO;
@@ -9,13 +10,16 @@ import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
+import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.TouristGuideService;
+import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 import java.util.function.Function;
@@ -39,10 +43,16 @@ public class TouristGuideImpl implements TouristGuideService {
     private LanguageRepository languageRepository;
 
     @Autowired
+    private ImageRepository imageRepository;
+
+    @Autowired
     private ModelMapper modelMapper;
 
     @Autowired
     private AuthUtils authUtils;
+
+    @Autowired
+    private FileUploadService fileUploadService;
 
     @Override
     public TouristGuideResponseDTO getAllTourGuides() {
@@ -70,26 +80,28 @@ public class TouristGuideImpl implements TouristGuideService {
     }
 
     @Override
-    public TouristGuideResponseDTO addNewTouristGuide(TouristGuideRequestDTO requestDTO) {
-        TouristGuide mappedObj=modelMapper.map(requestDTO,TouristGuide.class);
+    @Transactional
+    public TouristGuideResponseDTO addNewTouristGuide(TouristGuideRequestDTO requestDTO, List<MultipartFile> images) {
+        TouristGuide mappedObj = modelMapper.map(requestDTO, TouristGuide.class);
 
-        Category category=categoryRepository.findByCategoryName(ServiceCategory.TOUR_GUIDE)
-                .orElseThrow(()->new ResourceNotFoundException("Category",4L));
+        Category category = categoryRepository.findByCategoryName(ServiceCategory.TOUR_GUIDE)
+                .orElseThrow(() -> new ResourceNotFoundException("Category", 4L));
 
-        Provider provider=(Provider) authUtils.loggedInUser();
+        Provider provider = (Provider) authUtils.loggedInUser();
         mappedObj.setCategory(category);
         mappedObj.setProvider(provider);
 
-        Optional<TouristGuide> checkDb=touristGuideRepository.findByServiceName(mappedObj.getServiceName());
+        Optional<TouristGuide> checkDb = touristGuideRepository.findByServiceName(mappedObj.getServiceName());
 
-        if (checkDb.isEmpty()){
-            TouristGuide lastGuideAdded=touristGuideRepository.save(mappedObj);
+        if (checkDb.isEmpty()) {
+            // Save Tourist Guide first
+            TouristGuide lastGuideAdded = touristGuideRepository.save(mappedObj);
 
-            //set the tabs
-            List<TabSectionRequest> tabsReq=requestDTO.getTabsSection();
-            if (tabsReq!=null){
-                for (TabSectionRequest tab : tabsReq){
-                    TabsSection tabsSection=new TabsSection();
+            // Set Tabs
+            List<TabSectionRequest> tabsReq = requestDTO.getTabsSection();
+            if (tabsReq != null) {
+                for (TabSectionRequest tab : tabsReq) {
+                    TabsSection tabsSection = new TabsSection();
                     tabsSection.setHeading(tab.getHeading());
                     tabsSection.setContent(tab.getContent());
                     tabsSection.setService(lastGuideAdded);
@@ -97,13 +109,11 @@ public class TouristGuideImpl implements TouristGuideService {
                 }
             }
 
-
-            //set the policies
-            List<PolicySectionRequest> policyReq=requestDTO.getPolicySection();
-
-            if (policyReq!=null){
-                for (PolicySectionRequest policy:policyReq){
-                    PolicySection policySection=new PolicySection();
+            // Set Policies
+            List<PolicySectionRequest> policyReq = requestDTO.getPolicySection();
+            if (policyReq != null) {
+                for (PolicySectionRequest policy : policyReq) {
+                    PolicySection policySection = new PolicySection();
                     policySection.setHeading(policy.getHeading());
                     policySection.setPolicy(policy.getPolicy());
                     policySection.setProvider(lastGuideAdded.getProvider());
@@ -111,8 +121,22 @@ public class TouristGuideImpl implements TouristGuideService {
                 }
             }
 
-            //set the response
-            TouristGuideRequestDTO responseDTO=new TouristGuideRequestDTO();
+            // Upload and associate images
+            Set<Image> savedImages = new HashSet<>();
+            for (MultipartFile file : images) {
+                String imageUrl = fileUploadService.storeFile(file, UploadCategory.SERVICE_PICTURE, "service");
+
+                Image image = new Image();
+                image.setImageUrl(imageUrl);
+                image.setService(lastGuideAdded);
+
+                savedImages.add(image);
+            }
+
+            imageRepository.saveAll(savedImages); // Persist images
+
+            // Prepare response
+            TouristGuideRequestDTO responseDTO = new TouristGuideRequestDTO();
             responseDTO.setServiceName(requestDTO.getServiceName());
             responseDTO.setLocationBased(requestDTO.getLocationBased());
             responseDTO.setContactNo(requestDTO.getContactNo());
@@ -121,16 +145,13 @@ public class TouristGuideImpl implements TouristGuideService {
             responseDTO.setTabsSection(tabsReq);
             responseDTO.setPolicySection(policyReq);
 
-            TouristGuideResponseDTO response=new TouristGuideResponseDTO();
-            List<TouristGuideRequestDTO> responseList=new ArrayList<>();
-            responseList.add(responseDTO);
-            response.setContent(responseList);
+            TouristGuideResponseDTO response = new TouristGuideResponseDTO();
+            response.setContent(List.of(responseDTO));
             return response;
 
-        }else{
+        } else {
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());
         }
-
     }
 
     @Override
@@ -168,7 +189,7 @@ public class TouristGuideImpl implements TouristGuideService {
 
         prepareResponse.setServiceName(touristGuide.getServiceName());
         prepareResponse.setContactNo(touristGuide.getContactNo());
-        prepareResponse.setLocationBased(touristGuide.getLocationBased());
+        prepareResponse.setLocationBased(modelMapper.map(touristGuide.getLocationBased(), LocationDTO.class));
         prepareResponse.setPolicySection(policies);
         prepareResponse.setTabsSection(tabs);
 //        prepareResponse.setLanguages(touristGuide.getLanguages());
