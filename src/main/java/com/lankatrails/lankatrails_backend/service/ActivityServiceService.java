@@ -6,9 +6,12 @@ import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse
 import com.lankatrails.lankatrails_backend.model.ActivityService;
 import com.lankatrails.lankatrails_backend.model.PolicySection;
 import com.lankatrails.lankatrails_backend.model.TabsSection;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 public interface ActivityServiceService {
-    APIResponse<String> addService(ActivityServiceRequest activityService );
+    APIResponse<String> addService(ActivityServiceRequest activityService, List<MultipartFile> images);
     APIResponse<ActivityServiceResponse> getAll_ActivityServices(Integer pageNumber, Integer pageSize);
     APIResponse<ActivityServiceRequest> searchWithId(Long Id);
     APIResponse<ActivityServiceRequest> removeActivityService(Long Id);

@@ -134,7 +134,7 @@ public class AuthServiceImpl implements AuthService {
                                                               MultipartFile coverPhoto,
                                                               MultipartFile businessRegistrationFile,
                                                               MultipartFile contactPersonIdentityFile,
-                                                              MultipartFile[] licenseFiles) {
+                                                              List<MultipartFile> licenseFiles) {
         log.info("Attempting provider registration for email: {}", request.getEmail());
 
         if (userRepository.existsByEmail(request.getEmail().toLowerCase())) {
@@ -177,9 +177,9 @@ public class AuthServiceImpl implements AuthService {
 
         // Handle license files upload
         List<LicenseDTO> licenses = new ArrayList<>(request.getLicenses());
-        for (int i = 0; i < licenseFiles.length; i++) {
+        for (int i = 0; i < licenseFiles.size(); i++) {
             LicenseDTO license = licenses.get(i);
-            MultipartFile licenseFile = licenseFiles[i];
+            MultipartFile licenseFile = licenseFiles.get(i);
 
             license.setLicenseUrl(fileUploadService.storeFile(licenseFile, UploadCategory.LICENCE, license.getCategory().getDisplayName().toLowerCase()));
             log.info("License file uploaded successfully for license number {}: {}", license.getLicenseNumber(), license.getLicenseUrl());

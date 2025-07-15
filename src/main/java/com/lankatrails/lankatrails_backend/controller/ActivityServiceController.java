@@ -10,11 +10,14 @@ import com.lankatrails.lankatrails_backend.service.ActivityServiceService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -23,29 +26,56 @@ public class ActivityServiceController {
     @Autowired
     ActivityServiceService activityServiceService;
 
-    @PostMapping("/provider/activity-service/add")
+//    @PostMapping("/provider/activity-service/add")
+//    public ResponseEntity<APIResponse<String>> addService
+//            (
+//                  @Valid @RequestBody ActivityServiceRequest service,
+//                  BindingResult result
+//            ){
+//               if (result.hasErrors()){
+//                  Map<String,String> errors = new HashMap<>();
+//                  result.getFieldErrors().forEach(field ->{
+//                      errors.put(field.getField(), field.getDefaultMessage());
+//                  });
+//                  APIResponse<String> errorResponse = APIResponse.<String>builder()
+//                          .success(false)
+//                          .message("Validation Failed")
+//                          .details(errors)
+//                          .build();
+//                  return  new ResponseEntity<>(errorResponse,HttpStatus.BAD_REQUEST);
+//               }else{
+//                   APIResponse<String> ActivityServiceDTO =  activityServiceService.addService(service);
+//                   return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.CREATED);
+//               }
+//
+//    }
+
+    @PostMapping(value = "/provider/activity-service/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<APIResponse<String>> addService
             (
-                  @Valid @RequestBody ActivityServiceRequest service,
-                  BindingResult result
+                    @RequestPart("service") @Valid  ActivityServiceRequest service,
+                    @RequestPart("images") List<MultipartFile> images,
+                    BindingResult result
             ){
-               if (result.hasErrors()){
-                  Map<String,String> errors = new HashMap<>();
-                  result.getFieldErrors().forEach(field ->{
-                      errors.put(field.getField(), field.getDefaultMessage());
-                  });
-                  APIResponse<String> errorResponse = APIResponse.<String>builder()
-                          .success(false)
-                          .message("Validation Failed")
-                          .details(errors)
-                          .build();
-                  return  new ResponseEntity<>(errorResponse,HttpStatus.BAD_REQUEST);
-               }else{
-                   APIResponse<String> ActivityServiceDTO =  activityServiceService.addService(service);
-                   return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.CREATED);
-               }
+        if (result.hasErrors()){
+            Map<String,String> errors = new HashMap<>();
+            result.getFieldErrors().forEach(field ->{
+                errors.put(field.getField(), field.getDefaultMessage());
+            });
+            APIResponse<String> errorResponse = APIResponse.<String>builder()
+                    .success(false)
+                    .message("Validation Failed")
+                    .details(errors)
+                    .build();
+            return  new ResponseEntity<>(errorResponse,HttpStatus.BAD_REQUEST);
+        }else{
+            APIResponse<String> ActivityServiceDTO =  activityServiceService.addService(service, images);
+            return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.CREATED);
+        }
 
     }
+
+
     @GetMapping("activity-service/delete/{id}")
     public ResponseEntity<APIResponse<ActivityServiceRequest>> removeActivityService(@PathVariable Long id){
         APIResponse<ActivityServiceRequest> activityServiceResponse= activityServiceService.removeActivityService(id);

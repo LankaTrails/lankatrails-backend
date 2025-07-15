@@ -20,6 +20,7 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -57,7 +58,7 @@ public class AuthController {
             @RequestPart(value = "coverPhoto", required = false) MultipartFile coverPhoto,
             @RequestPart(value = "businessRegistrationFile", required = false) MultipartFile businessRegistrationFile,
             @RequestPart(value = "contactPersonIdentityFile", required = false) MultipartFile contactPersonIdentityFile,
-            @RequestPart(value = "licenseFiles", required = false) MultipartFile[] licenseFiles) {
+            @RequestPart(value = "licenseFiles", required = false) List<MultipartFile> licenseFiles) {
         APIResponse<RegistrationResponse> provider = authService.registerProvider(request, profilePicture, coverPhoto, businessRegistrationFile, contactPersonIdentityFile, licenseFiles);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(provider);

@@ -11,6 +11,8 @@ import com.lankatrails.lankatrails_backend.dtos.response.UserProfileDto;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 public interface AuthService {
 //    RegistrationResponse registerUser(RegistrationRequest request);
 
@@ -21,7 +23,7 @@ public interface AuthService {
                                                        MultipartFile coverPhoto,
                                                        MultipartFile businessRegistrationFile,
                                                        MultipartFile contactPersonIdentityFile,
-                                                       MultipartFile[] licenseFiles);
+                                                       List<MultipartFile> licenseFiles);
 
     APIResponse<LoginResponse> authenticateUser(LoginRequest request, HttpServletRequest httpServletRequest);
 
