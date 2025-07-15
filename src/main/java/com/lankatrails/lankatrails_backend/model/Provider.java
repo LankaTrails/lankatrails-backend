@@ -24,7 +24,7 @@ public class Provider extends User {
     private String businessDescription;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "business_type")
+    @Column(name = "business_type", columnDefinition = "VARCHAR(20)")
     private BusinessType businessType;
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -41,23 +41,23 @@ public class Provider extends User {
     private String businessRegistrationUrl;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "accommodation_approval_status")
+    @Column(name = "accommodation_approval_status", columnDefinition = "VARCHAR(20)")
     private ApprovalStatus accommodationApprovalStatus;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tour_guide_approval_status")
+    @Column(name = "tour_guide_approval_status", columnDefinition = "VARCHAR(20)")
     private ApprovalStatus tourGuideApprovalStatus;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "transport_approval_status")
+    @Column(name = "transport_approval_status", columnDefinition = "VARCHAR(20)")
     private ApprovalStatus transportApprovalStatus;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "activity_approval_status")
+    @Column(name = "activity_approval_status", columnDefinition = "VARCHAR(20)")
     private ApprovalStatus activityApprovalStatus;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "food_approval_status")
+    @Column(name = "food_approval_status", columnDefinition = "VARCHAR(20)")
     private ApprovalStatus foodApprovalStatus;
 
     @OneToOne(cascade = CascadeType.ALL)
