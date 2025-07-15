@@ -1,68 +1,111 @@
 package com.lankatrails.lankatrails_backend.controller;
 
 import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.model.ActivityService;
 import com.lankatrails.lankatrails_backend.model.PolicySection;
-import com.lankatrails.lankatrails_backend.model.Services;
 import com.lankatrails.lankatrails_backend.model.TabsSection;
-import com.lankatrails.lankatrails_backend.service.ServicesService;
+import com.lankatrails.lankatrails_backend.service.ActivityServiceService;
 import jakarta.validation.Valid;
-import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/auth/activityService")
+@RequestMapping("/api")
 public class ActivityServiceController {
     @Autowired
-    ServicesService servicesService;
+    ActivityServiceService activityServiceService;
 
+//    @PostMapping("/provider/activity-service/add")
+//    public ResponseEntity<APIResponse<String>> addService
+//            (
+//                  @Valid @RequestBody ActivityServiceRequest service,
+//                  BindingResult result
+//            ){
+//               if (result.hasErrors()){
+//                  Map<String,String> errors = new HashMap<>();
+//                  result.getFieldErrors().forEach(field ->{
+//                      errors.put(field.getField(), field.getDefaultMessage());
+//                  });
+//                  APIResponse<String> errorResponse = APIResponse.<String>builder()
+//                          .success(false)
+//                          .message("Validation Failed")
+//                          .details(errors)
+//                          .build();
+//                  return  new ResponseEntity<>(errorResponse,HttpStatus.BAD_REQUEST);
+//               }else{
+//                   APIResponse<String> ActivityServiceDTO =  activityServiceService.addService(service);
+//                   return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.CREATED);
+//               }
+//
+//    }
 
-
-    @PostMapping("/add/{categoryId}/{providerId}")
-    public ResponseEntity<ActivityServiceRequest> addService
+    @PostMapping(value = "/provider/activity-service/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<APIResponse<String>> addService
             (
-                    @RequestBody ActivityService service,
-                    @PathVariable Long categoryId,
-                    @PathVariable Long providerId
+                    @RequestPart("service") @Valid  ActivityServiceRequest service,
+                    @RequestPart(value = "images", required = false) List<MultipartFile> images,
+                    BindingResult result
             ){
-               ActivityServiceRequest ActivityServiceDTO =  servicesService.addService(service,categoryId,providerId);
-               //return ResponseEntity.status(HttpStatus.CREATED).body(ActivityServiceDTO);
-               return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.CREATED);
+        if (result.hasErrors()){
+            Map<String,String> errors = new HashMap<>();
+            result.getFieldErrors().forEach(field ->{
+                errors.put(field.getField(), field.getDefaultMessage());
+            });
+            APIResponse<String> errorResponse = APIResponse.<String>builder()
+                    .success(false)
+                    .message("Validation Failed")
+                    .details(errors)
+                    .build();
+            return  new ResponseEntity<>(errorResponse,HttpStatus.BAD_REQUEST);
+        }else{
+            APIResponse<String> ActivityServiceDTO =  activityServiceService.addService(service, images);
+            return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.CREATED);
+        }
+
     }
-    @GetMapping("/delete/{id}")
-    public ResponseEntity<ActivityServiceRequest> removeActivityService(@PathVariable Long id,@Valid @RequestBody ActivityService activityService){
-        ActivityServiceRequest activityServiceResponse=servicesService.removeActivityService(id,activityService);
+
+
+    @GetMapping("activity-service/delete/{id}")
+    public ResponseEntity<APIResponse<ActivityServiceRequest>> removeActivityService(@PathVariable Long id){
+        APIResponse<ActivityServiceRequest> activityServiceResponse= activityServiceService.removeActivityService(id);
         return new ResponseEntity<>(activityServiceResponse,HttpStatus.OK);
     }
 
-    @GetMapping("/getAll")
-    public ResponseEntity<ActivityServiceResponse> getAll_ActivityServices(
+    @GetMapping("/activity-service/getAll")
+    public ResponseEntity<APIResponse<ActivityServiceResponse>> getAll_ActivityServices(
             @RequestParam(name = "pageNumber") Integer pageNumber,
             @RequestParam(name = "pageSize") Integer pageSize
     ){
 
-        ActivityServiceResponse activityServiceResponse=servicesService.getAll_ActivityServices(pageNumber,pageSize);
+        APIResponse<ActivityServiceResponse> activityServiceResponse= activityServiceService.getAll_ActivityServices(pageNumber,pageSize);
         return new ResponseEntity<>(activityServiceResponse,HttpStatus.OK);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ActivityServiceRequest> searchById(@PathVariable Long id){
-        ActivityServiceRequest activityService=servicesService.searchWithId(id);
+    @GetMapping("activity-service/{id}")
+    public ResponseEntity<APIResponse<ActivityServiceRequest>> searchById(@PathVariable Long id){
+        APIResponse<ActivityServiceRequest> activityService= activityServiceService.searchWithId(id);
         return new ResponseEntity<>(activityService,HttpStatus.OK);
     }
 
-    @PostMapping("/update/{id}")
-    public ResponseEntity<ActivityServiceRequest> updateActivityService
+
+    @PutMapping("/provider/activity-service/update/{id}")
+    public ResponseEntity<APIResponse<String>> updateActivityService
             (
              @RequestBody ActivityServiceRequest activityService,
              @PathVariable Long id
             ){
-        ActivityServiceRequest updatedService=servicesService.updateWithId(id,activityService);
+        APIResponse<String> updatedService= activityServiceService.updateWithId(id,activityService);
         return  new ResponseEntity<>(updatedService,HttpStatus.OK);
     }
 
@@ -74,40 +117,28 @@ public class ActivityServiceController {
                     @RequestBody TabsSection tabsSection
             ){
 
-        ActivityServiceRequest addTabs=servicesService.addTabs(id,tabsSection);
+        ActivityServiceRequest addTabs= activityServiceService.addTabs(id,tabsSection);
         return new ResponseEntity<>(addTabs,HttpStatus.CREATED);
 
     }
 
     @GetMapping("/delete/tabs/{id}")
-    public String removeTabs(@PathVariable Long id){
-        Boolean status=servicesService.removeTabs(id);
-
-        if (status==true){
-            return "successfully deleted";
-        }else{
-            return "Couldn't Delete";
-        }
-
-
+    public ResponseEntity<APIResponse<String>> removeTabs(@PathVariable Long id){
+        APIResponse<String> response= activityServiceService.removeTabs(id);
+        return new ResponseEntity<>(response,HttpStatus.OK);
     }
 
     //For Policies
     @PostMapping("/{id}/policies")
-    public ResponseEntity<ActivityServiceRequest> addPolicies(@PathVariable Long id, @RequestBody PolicySection policies){
-        ActivityServiceRequest responseDTO=servicesService.addNewPolicy(id,policies);
+    public ResponseEntity<APIResponse<String>> addPolicies(@PathVariable Long id, @RequestBody PolicySection policies){
+        APIResponse<String> responseDTO= activityServiceService.addNewPolicy(id,policies);
         return new ResponseEntity<>(responseDTO,HttpStatus.CREATED);
     }
 
     @GetMapping("/delete/policy/{id}")
-    public String removePolicy(@PathVariable Long id){
-        Boolean status=servicesService.removePolicies(id);
-        if (status){
-            return "Successfully Deleted";
-        }else{
-            return "Couldn't Delete";
-        }
-
+    public ResponseEntity<APIResponse<String>> removePolicy(@PathVariable Long id){
+        APIResponse<String> response= activityServiceService.removePolicies(id);
+        return new ResponseEntity<>(response,HttpStatus.OK);
     }
 
 

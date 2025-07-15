@@ -43,19 +43,16 @@ public class User {
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "role")
+    @Column(name = "role", nullable = false, columnDefinition = "VARCHAR(20)")
     private UserRole role;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status")
+    @Column(name = "status", nullable = false, columnDefinition = "VARCHAR(20)")
     private UserStatus status;
 
     @Builder.Default
     @Column(name = "email_verified")
-    private boolean emailVerified = true;
-
-    @Column(name = "email_verification_token")
-    private String emailVerificationToken;
+    private boolean emailVerified = false;
 
     @Column(name = "profile_picture_url")
     private String profilePictureUrl;

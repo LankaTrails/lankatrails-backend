@@ -7,6 +7,7 @@ public enum ErrorCode {
     // Validation Errors
     VALIDATION_FAILED("VALIDATION_001", "Validation failed"),
     INVALID_EMAIL("VALIDATION_002", "Invalid email format"),
+    ILLEGAL_ARGUMENT("VALIDATION_003", "Illegal argument provided"),
 
     // Authentication Errors
     AUTHENTICATION_FAILED("AUTH_001", "Authentication failed"),
@@ -20,7 +21,8 @@ public enum ErrorCode {
     RESOURCE_NOT_FOUND("RESOURCE_001", "Resource not found"),
     EMAIL_ALREADY_EXISTS("RESOURCE_002", "Email already in use"),
     BAD_REQUEST("RESOURCE_003", "Bad request"),
-
+    SERVICE_ALREADY_EXISTS("RESOURCE_004","Service already in use"),
+    POLICY_HEADING_ALREADY_EXISTS("RESOURCE_005","Policy heading already exists"),
     // System Errors
     INTERNAL_ERROR("SYSTEM_001", "Internal server error"),
 

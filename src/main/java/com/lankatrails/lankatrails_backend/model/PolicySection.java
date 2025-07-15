@@ -5,6 +5,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "policy_section")
 @Getter
@@ -18,8 +21,16 @@ public class PolicySection {
     private String heading;
     private String policy;
 
+    @ManyToMany(mappedBy = "policies")
+    private Set<Service> services = new HashSet<>();
+
     @ManyToOne
-    @JoinColumn(name = "service_id")
-    private Services service;
+    @JoinColumn(name = "provider_id")
+    private Provider provider;
+
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
+
 
 }

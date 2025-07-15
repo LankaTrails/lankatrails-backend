@@ -6,7 +6,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -16,15 +18,13 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @SuperBuilder
-public class Services {
+public class Service {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long serviceId;
 
     private String serviceName;
-
-    private String locationBased;
 
     private String contactNo;
 
@@ -41,8 +41,24 @@ public class Services {
     @OneToMany(mappedBy = "service")
     private Set<TabsSection> tabs=new HashSet<>();
 
-    @OneToMany(mappedBy = "service")
+
+    @ManyToMany
+    @JoinTable(
+          name = "service_policy",
+          joinColumns = @JoinColumn(name = "service_id"),
+          inverseJoinColumns = @JoinColumn(name = "policy_id")
+
+    )
     private Set<PolicySection> policies=new HashSet<>();
 
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "location_id", referencedColumnName ="location_id" )
+    private Location locationBased;
+
+    @OneToMany(mappedBy = "service" )
+    private List<Image> images = new ArrayList<>();
+
+    @OneToMany(mappedBy = "service")
+    private Set<TripItem> tripItems = new HashSet<>();
 
 }

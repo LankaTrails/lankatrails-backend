@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -24,13 +24,20 @@ public class Category {
 
     @ToString.Exclude
     @Enumerated(EnumType.STRING)
-    @Column(length = 20, name = "name")
+    @Column(length = 20, name = "name", nullable = false, unique = true, columnDefinition = "VARCHAR(20)")
     private ServiceCategory categoryName;
 
     @OneToMany(mappedBy = "category",cascade = CascadeType.ALL)
-    private Set<Services> services;
+    private Set<Service> services = new HashSet<>();
+
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
+    private Set<License> licenses = new HashSet<>();
 
     public Category(ServiceCategory categoryName) {
         this.categoryName = categoryName;
     }
+
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
+    private Set<PolicySection> policies;
+
 }

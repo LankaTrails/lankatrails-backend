@@ -21,6 +21,7 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -46,16 +47,20 @@ public class AuthController {
     @PostMapping("/signup/tourist")
     public ResponseEntity<APIResponse<RegistrationResponse>> registerTourist(
             @Valid @RequestBody TouristRegistrationRequest request) {
-        APIResponse<RegistrationResponse> tourist = authService.registerTourist(request, null);
+        APIResponse<RegistrationResponse> tourist = authService.registerTourist(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(tourist);
     }
 
     @PostMapping(value = "/signup/provider", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<APIResponse<RegistrationResponse>> registerProvider(
-            @RequestPart("user") @Valid ProviderRegistrationRequest request,
-            @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture) {
-        APIResponse<RegistrationResponse> provider = authService.registerProvider(request, profilePicture);
+            @RequestPart("provider") @Valid ProviderRegistrationRequest request,
+            @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture,
+            @RequestPart(value = "coverPhoto", required = false) MultipartFile coverPhoto,
+            @RequestPart(value = "businessRegistrationFile", required = false) MultipartFile businessRegistrationFile,
+            @RequestPart(value = "contactPersonIdentityFile", required = false) MultipartFile contactPersonIdentityFile,
+            @RequestPart(value = "licenseFiles", required = false) List<MultipartFile> licenseFiles) {
+        APIResponse<RegistrationResponse> provider = authService.registerProvider(request, profilePicture, coverPhoto, businessRegistrationFile, contactPersonIdentityFile, licenseFiles);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(provider);
     }
@@ -63,7 +68,7 @@ public class AuthController {
 //    @PostMapping("/signup/provider")
 //    public ResponseEntity<APIResponse<RegistrationResponse>> registerProvider(
 //            @Valid @RequestBody ProviderRegistrationRequest request) {
-//        APIResponse<RegistrationResponse> provider = authService.registerProvider(request, null);
+//        APIResponse<RegistrationResponse> provider = authService.registerProvider(request);
 //        return ResponseEntity.status(HttpStatus.CREATED)
 //                .body(provider);
 //    }

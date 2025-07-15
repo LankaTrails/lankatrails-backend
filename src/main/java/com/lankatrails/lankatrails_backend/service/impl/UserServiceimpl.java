@@ -1,9 +1,6 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.ProviderProfileDto;
-import com.lankatrails.lankatrails_backend.dtos.response.TouristProfileDto;
-import com.lankatrails.lankatrails_backend.dtos.response.UserProfileDto;
+import com.lankatrails.lankatrails_backend.dtos.response.*;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.UnauthorizedException;
@@ -11,11 +8,13 @@ import com.lankatrails.lankatrails_backend.exception.UserNotFoundException;
 import com.lankatrails.lankatrails_backend.model.Provider;
 import com.lankatrails.lankatrails_backend.model.Tourist;
 import com.lankatrails.lankatrails_backend.model.User;
+import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
 import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import com.lankatrails.lankatrails_backend.repositories.ProviderRepository;
 import com.lankatrails.lankatrails_backend.repositories.TouristRepository;
 import com.lankatrails.lankatrails_backend.repositories.UserRepository;
 import com.lankatrails.lankatrails_backend.service.UserService;
+import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +35,9 @@ public class UserServiceimpl implements UserService {
 
     @Autowired
     private ProviderRepository providerRepository;
+
+    @Autowired
+    private FileUploadService fileUploadService;
 
     @Override
     public APIResponse<UserProfileDto> updateUserProfile(UserProfileDto userProfileDto, MultipartFile profilePic, HttpServletRequest request) {
@@ -80,5 +82,30 @@ public class UserServiceimpl implements UserService {
                 throw new UnauthorizedException( "Invalid user role: " + userProfileDto.getRole());
         }
 
+    }
+
+    @Override
+    public APIResponse<ProfilePicResponse> addProfilePicture(Long userId, MultipartFile profilePicture) {
+        if (profilePicture == null || profilePicture.isEmpty()) {
+            throw new BadRequestException("Profile picture cannot be null or empty", "ProfilePicture", null);
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("UserID", userId));
+
+        String fileUrl = fileUploadService.storeFile(profilePicture, UploadCategory.PROFILE_PICTURE, null);
+
+        user.setProfilePictureUrl(fileUrl);
+        userRepository.save(user);
+
+        ProfilePicResponse response = new ProfilePicResponse();
+        response.setProfilePicUrl(fileUrl);
+        response.setUserId(userId);
+
+        return APIResponse.<ProfilePicResponse>builder()
+                .success(true)
+                .message("Profile picture added successfully")
+                .data(response)
+                .build();
     }
 }

@@ -15,8 +15,7 @@ public class ActivityServiceRequest extends ServiceRequest {
     private String activityType;
     private String activityDetails;
     private String safetyInstructions;
-    private List<TabSectionRequest> tabsSection;
-    private List<PolicySectionRequest> policySection;
+
 
 
 }

@@ -1,0 +1,62 @@
+package com.lankatrails.lankatrails_backend.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
+
+import java.awt.*;
+
+@Entity
+@Table(name = "location")
+@Getter
+@Setter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class Location {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "location_id")
+    private Long locationId;
+
+    @Column(name = "formatted_address", nullable = false)
+    private String formattedAddress;
+
+    @Column(name = "city")
+    private String city;
+
+    @Column(name = "district")
+    private String district;
+
+    @Column(name = "province")
+    private String province;
+
+    @Column(name = "country")
+    private String country;
+
+    @Column(name = "postal_code")
+    private String postalCode;
+
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
+    @Column(name = "coordinates", columnDefinition = "geography(Point,4326)")
+    private Point coordinates;
+
+    //Auto-set coordinates before saving or updating
+    @PrePersist
+    @PreUpdate
+    private void setPointFromLatLng() {
+        if (latitude != null && longitude != null) {
+            GeometryFactory geometryFactory = new GeometryFactory();
+            this.coordinates = geometryFactory.createPoint(new Coordinate(longitude, latitude));
+            this.coordinates.setSRID(4326);
+        }
+    }
+
+}
