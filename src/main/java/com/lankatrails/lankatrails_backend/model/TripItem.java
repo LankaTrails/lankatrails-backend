@@ -26,7 +26,7 @@ public class TripItem {
     private LocalDateTime endTime;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "trip_item_type", nullable = false)
+    @Column(name = "trip_item_type", nullable = false, columnDefinition = "VARCHAR(20)")
     private TripItemType tripItemType;
 
     @ManyToOne(fetch = FetchType.LAZY)

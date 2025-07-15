@@ -21,7 +21,7 @@ public class TripBudgetCategoryLimit {
     private Long limitId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "budget_category", nullable = false)
+    @Column(name = "budget_category", nullable = false, columnDefinition = "VARCHAR(20)")
     private BudgetCategory budgetCategory;
 
     @Column(name = "limit_amount", nullable = false)

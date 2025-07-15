@@ -24,7 +24,7 @@ public class Category {
 
     @ToString.Exclude
     @Enumerated(EnumType.STRING)
-    @Column(length = 20, name = "name")
+    @Column(length = 20, name = "name", nullable = false, unique = true, columnDefinition = "VARCHAR(20)")
     private ServiceCategory categoryName;
 
     @OneToMany(mappedBy = "category",cascade = CascadeType.ALL)

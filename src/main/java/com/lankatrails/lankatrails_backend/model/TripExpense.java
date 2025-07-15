@@ -25,7 +25,8 @@ public class TripExpense {
     @Column(name = "amount", nullable = false)
     private Double amount;
 
-    @Column(name = "category", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category", nullable = false, columnDefinition = "VARCHAR(20)")
     private BudgetCategory budgetCategory;
 
     @Column(name = "expense_date_time", nullable = false)
