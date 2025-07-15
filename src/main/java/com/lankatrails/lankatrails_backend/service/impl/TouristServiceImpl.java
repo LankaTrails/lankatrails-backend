@@ -1,6 +1,8 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.request.FavouriteItemDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.PlaceDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TouristProfileDto;
@@ -10,6 +12,7 @@ import com.lankatrails.lankatrails_backend.exception.UserNotFoundException;
 import com.lankatrails.lankatrails_backend.model.Place;
 import com.lankatrails.lankatrails_backend.model.Service;
 import com.lankatrails.lankatrails_backend.model.Tourist;
+import com.lankatrails.lankatrails_backend.model.enums.TripItemType;
 import com.lankatrails.lankatrails_backend.repositories.PlaceRepository;
 import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
 import com.lankatrails.lankatrails_backend.repositories.TouristRepository;
@@ -22,6 +25,10 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @org.springframework.stereotype.Service
@@ -117,4 +124,28 @@ public class TouristServiceImpl implements TouristService {
                 .data(favouriteItemDTO)
                 .build();
     }
+
+    @Override
+    @Transactional
+    public APIResponse<Set<FavouriteItemDTO>> getFavourites() {
+        Tourist tourist = (Tourist) authUtils.loggedInUser();
+        if (tourist == null) {
+            log.error("Tourist not found for fetching favourites");
+            throw new UserNotFoundException("Tourist not found");
+        }
+
+        Set<FavouriteItemDTO> favouriteItems = Stream.concat(
+                tourist.getFavouritePlaces().stream()
+                        .map(place -> new FavouriteItemDTO(TripItemType.PLACE, modelMapper.map(place, PlaceDTO.class), null)),
+                tourist.getFavouriteServices().stream()
+                        .map(service -> new FavouriteItemDTO(TripItemType.SERVICE, null, modelMapper.map(service, ServiceDTO.class)))
+        ).collect(Collectors.toSet());
+
+        return APIResponse.<Set<FavouriteItemDTO>>builder()
+                .success(true)
+                .message("Favourite items fetched successfully")
+                .data(favouriteItems)
+                .build();
+    }
+
 }

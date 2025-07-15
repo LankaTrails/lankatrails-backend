@@ -13,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Set;
+
 @RestController
 @RequestMapping("/api/tourist")
 @RequiredArgsConstructor
@@ -30,9 +32,14 @@ public class TouristController {
 
     @PostMapping("/add-favourites")
     public ResponseEntity<APIResponse<FavouriteItemDTO>> addFavourites(
-            @Valid @RequestBody FavouriteItemDTO favouriteItemDTO,
-            HttpServletRequest request) {
+            @Valid @RequestBody FavouriteItemDTO favouriteItemDTO) {
         APIResponse<FavouriteItemDTO> response = touristService.addFavourites(favouriteItemDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/favourites")
+    public ResponseEntity<APIResponse<Set<FavouriteItemDTO>>> getFavourites() {
+        APIResponse<Set<FavouriteItemDTO>> favourites = touristService.getFavourites();
+        return ResponseEntity.status(HttpStatus.OK).body(favourites);
     }
 }
