@@ -16,7 +16,7 @@ public class TouristProfileDto extends UserProfileDto {
     private String firstName;
     private String lastName;
     private String country;
-//    private String phoneNumber;
+    private String phoneNumber;
 //    private String profilePictureUrl;
 //    private String bio;
 
