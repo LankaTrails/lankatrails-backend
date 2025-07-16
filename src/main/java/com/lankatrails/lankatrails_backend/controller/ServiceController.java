@@ -1,21 +1,30 @@
 package com.lankatrails.lankatrails_backend.controller;
 
+import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.ProfilePicResponse;
-import com.lankatrails.lankatrails_backend.service.ServicesService;
+import com.lankatrails.lankatrails_backend.service.ServiceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/service")
 public class ServiceController {
     @Autowired
-    ServicesService servicesService;
+    ServiceService serviceService;
 
-    @PostMapping(value = "/{userId}/add-service-images", consumes = "multipart/form-data")
-    public APIResponse<String> addServiceImages(@PathVariable Long userId, @RequestParam("serviceImages") MultipartFile[] serviceImages) {
-        return servicesService.addServiceImages(userId, serviceImages);
+    @GetMapping("/search")
+    public APIResponse<List<ServiceDTO>> searchServices(
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng,
+            @RequestParam(required = false) Double radiusKm,
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String district,
+            @RequestParam(required = false) String province,
+            @RequestParam(required = false) String country
+    ) {
+        return serviceService.searchServices(lat, lng, radiusKm, city, district, province, country);
     }
 
 }

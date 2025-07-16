@@ -69,7 +69,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/tourist/**").hasRole("TOURIST")
                         .requestMatchers("/api/trip/**").hasRole("TOURIST")
-                        .requestMatchers("/api/service").hasRole("PROVIDER")
+                        .requestMatchers("/api/service/**").permitAll() // Allow search without auth
                         .requestMatchers("/api/provider/**").permitAll()
                         .requestMatchers("/api/admin/**").permitAll()// Update to admin role
                         .requestMatchers("/h2-console/**").permitAll()

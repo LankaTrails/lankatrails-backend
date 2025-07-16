@@ -1,0 +1,19 @@
+package com.lankatrails.lankatrails_backend.service;
+
+import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+
+public interface ServiceService {
+    APIResponse<List<ServiceDTO>> searchServices(
+            Double lat,
+            Double lng,
+            Double radiusKm,
+            String city,
+            String district,
+            String province,
+            String country
+    );
+}
