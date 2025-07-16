@@ -2,8 +2,10 @@ package com.lankatrails.lankatrails_backend.controller;
 
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.BusinessDetailDTO;
 import com.lankatrails.lankatrails_backend.model.Provider;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
+import com.lankatrails.lankatrails_backend.service.ProviderService;
 import com.lankatrails.lankatrails_backend.service.impl.PolicyImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,9 @@ public class ProviderController {
 
     @Autowired
     AuthUtils authUtils;
+
+    @Autowired
+    ProviderService providerService;
 
     @PostMapping("/add/policy")
     public ResponseEntity<APIResponse<String>> addPublicPolicy
@@ -43,5 +48,12 @@ public class ProviderController {
 
         return new ResponseEntity<>(response,HttpStatus.OK);
 
+    }
+
+    @GetMapping("/business-details")
+    public ResponseEntity<APIResponse<BusinessDetailDTO>> getBusinessDetails() {
+        APIResponse<BusinessDetailDTO> response = providerService.getBusinessDetails();
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
     }
 }
