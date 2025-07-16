@@ -17,6 +17,7 @@ import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ActivityServiceService;
 
+import com.lankatrails.lankatrails_backend.service.ImageService;
 import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,6 +59,9 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     private CreateServiceFactory serviceFactory;
 
     @Autowired
+    private ImageService imageService;
+
+    @Autowired
     private TabsImpl tabsImpl;
 
     @Autowired
@@ -97,19 +101,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
             Boolean policyAdditionStatus = policyImpl.addPolicies(policyReq, lastServiceAdded, category);
 
             // Upload and associate images
-            Set<Image> savedImages = new HashSet<>();
-            for (MultipartFile file : images) {
-                String imageUrl = fileUploadService.storeFile(file, UploadCategory.SERVICE_PICTURE, "service");
-
-                Image image = new Image();
-                image.setImageUrl(imageUrl);
-                image.setService(lastServiceAdded);
-
-                savedImages.add(image); // Collect images
-            }
-
-            // Persist images
-            imageRepository.saveAll(savedImages);
+            imageService.uploadImagesForService(images, lastServiceAdded);
 
         } else {
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());
