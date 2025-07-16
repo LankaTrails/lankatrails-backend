@@ -26,14 +26,14 @@ public class TourGuideController {
     @Autowired
     ServicesForAll servicesForAll;
 
-    @GetMapping("/all")
-    public ResponseEntity<TouristGuideResponseDTO> getAllTourGuides
+    @GetMapping("/tour-guide/getAll")
+    public ResponseEntity<APIResponse<TouristGuideResponseDTO>> getAllTourGuides
             (
                     @RequestParam(name = "pageNumber") Integer pageNumber,
                     @RequestParam(name = "pageSize") Integer pageSize
             ) {
 
-        TouristGuideResponseDTO touristGuideResponseDTO = touristGuideService.getAllTourGuides();
+        APIResponse<TouristGuideResponseDTO> touristGuideResponseDTO = touristGuideService.getAllTourGuides(pageNumber,pageSize);
         return new ResponseEntity<>(touristGuideResponseDTO, HttpStatus.OK);
     }
 

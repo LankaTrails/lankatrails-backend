@@ -13,6 +13,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TouristGuideRequestDTO extends ServiceRequest{
-    private String serviceAreas;
-    private List<Language> languages;
+    private List<String> serviceAreas;
+    private List<String> languages;
 }

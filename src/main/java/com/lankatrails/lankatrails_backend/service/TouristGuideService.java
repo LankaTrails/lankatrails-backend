@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface TouristGuideService {
-    TouristGuideResponseDTO getAllTourGuides();
+    APIResponse<TouristGuideResponseDTO> getAllTourGuides(Integer pageNumber, Integer pageSize);
     TouristGuideResponseDTO addNewTouristGuide(TouristGuideRequestDTO requestDTO, List<MultipartFile> images);
     APIResponse<TouristGuideRequestDTO> getGuideDetails(Long id);
     TouristGuideResponseDTO updateTourGuide(Long id,TouristGuideRequestDTO requestDTO);
