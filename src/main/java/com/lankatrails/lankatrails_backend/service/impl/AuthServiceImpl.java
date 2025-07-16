@@ -203,6 +203,7 @@ public class AuthServiceImpl implements AuthService {
         User user = userFactory.createUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         User savedUser = userRepository.save(user);
+        sendVerificationEmail(savedUser);
         log.info("Provider registered successfully with ID: {}", savedUser.getUserId());
 
         return APIResponse.<RegistrationResponse>builder()

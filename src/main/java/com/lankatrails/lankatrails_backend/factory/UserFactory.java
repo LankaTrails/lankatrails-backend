@@ -25,6 +25,7 @@ public class UserFactory {
         tourist.setFirstName(request.getFirstName());
         tourist.setLastName(request.getLastName());
         tourist.setCountry(request.getCountry().toLowerCase());
+        tourist.setPhoneNumber(request.getPhoneNumber());
         tourist.setRole(UserRole.ROLE_TOURIST);
         return tourist;
     }
