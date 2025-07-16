@@ -27,10 +27,6 @@ public abstract class UserProfileDto {
     private String email;
     private UserRole role;
     private UserStatus status;
-//    private String firstName;
-//    private String lastName;
-//    private String phoneNumber;
     private String profilePictureUrl;
-//    private String bio;
     private boolean emailVerified;
 }

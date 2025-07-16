@@ -19,6 +19,7 @@ import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -76,6 +77,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private ModelMapper modelMapper;
 
     private void sendVerificationEmail(User user) {
         String jwtToken = jwtUtils.generateEmailVerificationJwt(user);
@@ -305,6 +309,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public APIResponse<UserProfileDto> getLoggedUserProfile(HttpServletRequest request) {
         log.info("Fetching logged user profile for request: {}", request.getRequestURI());
 
@@ -355,7 +360,13 @@ public class AuthServiceImpl implements AuthService {
                         .emailVerified(user.getEmailVerified())
                         .businessName(provider.getBusinessName())
                         .businessDescription(provider.getBusinessDescription())
-                        .logoUrl(provider.getProfilePictureUrl())
+                        .coverImageUrl(provider.getCoverImageUrl())
+                        .location(modelMapper.map(provider.getLocation(), LocationDTO.class))
+                        .accommodationApprovalStatus(provider.getAccommodationApprovalStatus())
+                        .tourGuideApprovalStatus(provider.getTourGuideApprovalStatus())
+                        .transportApprovalStatus(provider.getTransportApprovalStatus())
+                        .activityApprovalStatus(provider.getActivityApprovalStatus())
+                        .foodApprovalStatus(provider.getFoodApprovalStatus())
                         .build();
 
                 return APIResponse.<UserProfileDto>builder()

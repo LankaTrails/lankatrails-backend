@@ -43,6 +43,5 @@ public class ProviderController {
 
         return new ResponseEntity<>(response,HttpStatus.OK);
 
-
     }
 }
