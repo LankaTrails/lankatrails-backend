@@ -1,6 +1,8 @@
 package com.lankatrails.lankatrails_backend.model;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -15,6 +17,11 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Transport extends Service {
 
-    private String vehicleType;
+    private Integer vehicleCapacity;
     private Integer vehicleQty;
+    private Double pricePerKm;
+
+    @ManyToOne
+    @JoinColumn(name = "vehicleCategory_id")
+    private  VehicleCategory vehicleCategory;
 }

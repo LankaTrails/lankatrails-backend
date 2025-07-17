@@ -16,4 +16,6 @@ public interface ServiceService {
             String province,
             String country
     );
+
+    APIResponse<String> addServiceImages(Long serviceId, MultipartFile[] serviceImages);
 }

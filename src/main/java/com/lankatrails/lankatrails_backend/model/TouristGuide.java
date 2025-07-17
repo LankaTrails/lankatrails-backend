@@ -1,9 +1,7 @@
 package com.lankatrails.lankatrails_backend.model;
 
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -21,5 +19,7 @@ public class TouristGuide extends Service {
 
     @OneToMany(mappedBy = "touristGuide")
     private Set<Language> languages = new HashSet<>();
+
+
 
 }

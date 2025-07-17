@@ -29,6 +29,12 @@ public class ServiceServiceImpl implements ServiceService {
     @Autowired
     ModelMapper modelMapper;
 
+    @Autowired
+    ImageRepository imageRepository;
+
+    @Autowired
+    FileUploadService fileUploadService;
+
     @Transactional
     @Override
     public APIResponse<List<ServiceDTO>> searchServices(Double lat, Double lng, Double radiusKm, String city, String district, String province, String country) {
@@ -68,4 +74,47 @@ public class ServiceServiceImpl implements ServiceService {
                 .message("Services found")
                 .data(serviceDTOs).build();
     }
+
+    @Override
+    public APIResponse<String> addServiceImages(Long serviceId, MultipartFile[] serviceImages) {
+        if (serviceImages == null || serviceImages.length == 0) {
+            throw new BadRequestException("Service images cannot be null or empty", "ServiceImages", null);
+        }
+
+        Service service = serviceRepository.findById(serviceId)
+                .orElseThrow(() -> new ResourceNotFoundException("serviceID", serviceId));
+
+        Set<Image> images = new HashSet<>(fileUploadService.storeImages(serviceImages, UploadCategory.SERVICE_PICTURE));
+
+        for(Image img : images){
+            img.setService(service);
+            imageRepository.save(img);
+        }
+
+        return  APIResponse.<String>builder()
+                .success(true)
+                .message("Successfully Added")
+                .data("")
+                .build();
+    }
+
+//    @Override
+//    public APIResponse<ServiceRequest> removeAService(Long Id){
+//        Service service=serviceRepository.findById(Id)
+//                .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
+//        service.setStatus(false);
+//        Service updatedService=serviceRepository.save(service);
+//
+//        ServiceRequest activityServiceResponse=new ServiceRequest();
+//        activityServiceResponse.setServiceName(activityService.getServiceName());
+//        activityServiceResponse.setServiceId(activityService.getServiceId());
+//        activityServiceResponse.setStatus(activityService.getStatus());
+//
+//        return APIResponse.<ActivityServiceRequest>builder()
+//                .success(true)
+//                .message("Successfully Deleted")
+//                .data(activityServiceResponse)
+//                .build();
+//
+//    }
 }

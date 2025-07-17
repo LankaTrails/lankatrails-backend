@@ -1,7 +1,6 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
 import com.lankatrails.lankatrails_backend.model.Service;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

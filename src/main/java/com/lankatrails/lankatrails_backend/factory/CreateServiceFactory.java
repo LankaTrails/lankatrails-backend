@@ -52,7 +52,7 @@ public class CreateServiceFactory {
         prepareResponse.setContactNo(transportRequestDTO.getContactNo());
         prepareResponse.setLocationBased(transportRequestDTO.getLocationBased());
         prepareResponse.setVehicleQty(transportRequestDTO.getVehicleQty());
-        prepareResponse.setVehicleType(transportRequestDTO.getVehicleType());
+//        prepareResponse.setVehicleType(transportRequestDTO.getVehicleType());
 
         List<TransportRequestDTO> responseList=new ArrayList<>();
         responseList.add(prepareResponse);

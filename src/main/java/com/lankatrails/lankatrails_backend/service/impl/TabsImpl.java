@@ -1,28 +1,25 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
-import com.lankatrails.lankatrails_backend.model.ActivityService;
+import com.lankatrails.lankatrails_backend.model.Service;
 import com.lankatrails.lankatrails_backend.model.TabsSection;
 import com.lankatrails.lankatrails_backend.model.Transport;
 import com.lankatrails.lankatrails_backend.repositories.TabsSectionRepository;
 import com.lankatrails.lankatrails_backend.service.Tabs;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@Service
+@org.springframework.stereotype.Service
 public class TabsImpl implements Tabs {
     @Autowired
     TabsSectionRepository tabsSectionRepository;
 
     @Override
-    public void addTabs(List<TabSectionRequest> tabsReq, ActivityService lastServiceAdded){
+    public void addTabs(List<TabSectionRequest> tabsReq, Service lastServiceAdded){
         if (!tabsReq.isEmpty()){
             for (TabSectionRequest tab : tabsReq){
                 if (StringUtils.hasText(tab.getHeading()) && StringUtils.hasText(tab.getContent())){
