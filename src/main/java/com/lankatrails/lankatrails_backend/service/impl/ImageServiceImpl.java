@@ -1,7 +1,7 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.model.Image;
-import com.lankatrails.lankatrails_backend.model.Services;
+import com.lankatrails.lankatrails_backend.model.Service;
 import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
 import com.lankatrails.lankatrails_backend.repositories.ImageRepository;
 import com.lankatrails.lankatrails_backend.service.ImageService;
@@ -21,7 +21,7 @@ public class ImageServiceImpl implements ImageService {
     private ImageRepository imageRepository;
 
     @Override
-    public void uploadImagesForService(List<MultipartFile> images, Services service) {
+    public void uploadImagesForService(List<MultipartFile> images, Service service) {
         List<Image> imageList = new ArrayList<>();
         for (MultipartFile file : images) {
             String imageUrl = fileUploadService.storeFile(file, UploadCategory.SERVICE_PICTURE, "service");

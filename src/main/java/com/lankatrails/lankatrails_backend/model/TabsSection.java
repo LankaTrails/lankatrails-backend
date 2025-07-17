@@ -26,6 +26,6 @@ public class TabsSection {
 
     @ManyToOne
     @JoinColumn(name = "service_id")
-    private Services service;
+    private Service service;
 
 }
