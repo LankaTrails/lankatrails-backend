@@ -27,6 +27,10 @@ public class Tourist extends User {
     @Column(name = "country")
     private String country;
 
+    @Size(max = 15)
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
     @PrePersist
     protected void onCreate() {
         super.setRole(UserRole.ROLE_TOURIST);
