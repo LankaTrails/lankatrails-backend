@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 public class UpdateServiceFactory {
 
     public Transport updateTransport(Transport transport,Transport request){
-        transport.setVehicleType(request.getVehicleType());
+//        transport.setVehicleType(request.getVehicleType());
         transport.setVehicleQty(request.getVehicleQty());
         return transport;
     }

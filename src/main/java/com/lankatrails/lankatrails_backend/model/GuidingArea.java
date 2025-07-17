@@ -6,18 +6,20 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "image")
+@Table(name = "service_area")
 @Getter
 @Setter
 @NoArgsConstructor
-public class Image {
+public class GuidingArea {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long imageId;
+    private Long serviceAreaId;
 
-    private String imageUrl;
+    private String serviceArea;
 
     @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "service_id",referencedColumnName = "serviceId")
-    private Services service;
+    @JoinColumn(name = "touristGuide_id")
+    private TouristGuide touristGuide;
+
+
 }

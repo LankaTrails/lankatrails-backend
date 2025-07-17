@@ -10,6 +10,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransportRequestDTO extends ServiceRequest{
-    private  String vehicleType;
+    private Integer vehicleCapacity;
     private Integer vehicleQty;
+    private Double pricePerKm;
+    private String vehicleCategory;
 }

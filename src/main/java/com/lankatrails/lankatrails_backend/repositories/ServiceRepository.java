@@ -1,13 +1,9 @@
 package com.lankatrails.lankatrails_backend.repositories;
 
-import com.lankatrails.lankatrails_backend.model.Service;
+import com.lankatrails.lankatrails_backend.model.Services;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
-import java.util.List;
-
-public interface ServiceRepository extends JpaRepository<Service,Long> {
+public interface ServiceRepository extends JpaRepository<Services,Long> {
     //Search by distance using PostGIS
 //    @Query(value = """
 //        SELECT s.*

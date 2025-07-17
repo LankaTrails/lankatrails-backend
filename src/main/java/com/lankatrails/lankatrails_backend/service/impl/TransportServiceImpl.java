@@ -14,11 +14,9 @@ import com.lankatrails.lankatrails_backend.factory.CreateServiceFactory;
 import com.lankatrails.lankatrails_backend.factory.UpdateServiceFactory;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
-import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
-import com.lankatrails.lankatrails_backend.repositories.PolicySectionRepository;
-import com.lankatrails.lankatrails_backend.repositories.TabsSectionRepository;
-import com.lankatrails.lankatrails_backend.repositories.TransportRepository;
+import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
+import com.lankatrails.lankatrails_backend.service.ImageService;
 import com.lankatrails.lankatrails_backend.service.TransportService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +25,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +40,9 @@ public class TransportServiceImpl implements TransportService {
 
     @Autowired
     CategoryRepository categoryRepository;
+
+    @Autowired
+    VehicleCategoryRepository vehicleCategoryRepository;
     @Autowired
     PolicySectionRepository policySectionRepository;
 
@@ -49,6 +51,9 @@ public class TransportServiceImpl implements TransportService {
 
     @Autowired
     PolicyImpl policiesImpl;
+
+    @Autowired
+    ImageService imageService;
 
     @Autowired
     AuthUtils authUtils;
@@ -66,19 +71,33 @@ public class TransportServiceImpl implements TransportService {
     ModelMapper modelMapper;
 
     @Override
-    public TransportResponseDTO getAll(Integer pageNumber, Integer pageSize){
+    public APIResponse<TransportResponseDTO> getAll(Integer pageNumber, Integer pageSize){
         Pageable pageDetails= PageRequest.of(pageNumber,pageSize);
+
         Page<Transport> transportPage=transportRepository.findAll(pageDetails);
+
         List<Transport> transports=transportPage.getContent();
 
         if (transports.isEmpty()){
             throw new APIException("No Transport Created Until Now");
         }
 
-        List<TransportRequestDTO>  transport_DTOs=transports.stream()
-                .map(transport -> modelMapper.map(transport, TransportRequestDTO.class))
-                .toList();
+//        List<TransportRequestDTO>  transport_DTOs=transports.stream()
+//                .map(transport -> modelMapper.map(transport, TransportRequestDTO.class))
+//                .toList();
 
+        List<TransportRequestDTO> transport_DTOs = new ArrayList<>();
+
+        for (Transport transport : transportPage){
+            TransportRequestDTO transportRequestDTO = new TransportRequestDTO();
+            if (transport.getStatus()){
+                transportRequestDTO.setServiceId(transport.getServiceId());
+                transportRequestDTO.setServiceName(transport.getServiceName());
+                transportRequestDTO.setStatus(transport.getStatus());
+                transport_DTOs.add(transportRequestDTO);
+
+            }
+        }
         TransportResponseDTO transportResponseDTO=new TransportResponseDTO();
 
         transportResponseDTO.setContent(transport_DTOs);
@@ -88,7 +107,11 @@ public class TransportServiceImpl implements TransportService {
         transportResponseDTO.setTotalElements(transportPage.getTotalElements());
         transportResponseDTO.setTotalPages(transportPage.getTotalPages());
 
-        return transportResponseDTO;
+        return APIResponse.<TransportResponseDTO>builder()
+                .success(true)
+                .message("Transport Services Fetched")
+                .data(transportResponseDTO)
+                .build();
 
     }
 
@@ -153,35 +176,50 @@ public class TransportServiceImpl implements TransportService {
     }
 
     @Override
-    public TransportResponseDTO addNewTransport(TransportRequestDTO transportRequestDTO) {
+    @Transactional
+    public APIResponse<String> addNewTransport(TransportRequestDTO transportRequestDTO, List<MultipartFile> images) {
         Category category=categoryRepository.findByCategoryName(ServiceCategory.TRANSPORT).orElseThrow(
                 ()->new ResourceNotFoundException("Category",2L)
         );
         Transport mappedObj=modelMapper.map(transportRequestDTO,Transport.class);
         mappedObj.setCategory(category);
+
         Provider provider=(Provider) authUtils.loggedInUser();
         mappedObj.setProvider(provider);
+
         Optional<Transport> checkDb=transportRepository.findByServiceName(mappedObj.getServiceName());
+        Transport lastTransportAdded;
         if (checkDb.isEmpty()){
-            Transport lastTransportAdded=transportRepository.save(mappedObj);
+
+            //set the vehicle category for the mappedObj
+            VehicleCategory vehicleCategory = vehicleCategoryRepository.findByCategoryName(transportRequestDTO.getVehicleCategory());
+            mappedObj.setVehicleCategory(vehicleCategory);
+
+            // Save the base service object first
+            lastTransportAdded=transportRepository.save(mappedObj);
+
             //set the tabs
             List<TabSectionRequest> tabsReq=transportRequestDTO.getTabsSection();
-            Boolean tabAdditionStatus=tabsImpl.addTabsToTransport(tabsReq,lastTransportAdded);
+            tabsImpl.addTabs(tabsReq,lastTransportAdded);
+
             //set the policies
             List<PolicySectionRequest> policyReq=transportRequestDTO.getPolicySection();
-            Boolean policyAdditionStatus=policiesImpl.addPoliciesToTransport(policyReq,lastTransportAdded);
-            //set the response
-//            if(tabAdditionStatus && policyAdditionStatus){
-                TransportResponseDTO responseDTO=serviceFactory.createTransportResponse(transportRequestDTO,tabsReq,policyReq);
-                return responseDTO;
-//            }else{
-//                throw new APIException("Couldn't save the transport service");
-//            }
+
+            //upload and associate images
+            imageService.uploadImagesForService(images,lastTransportAdded);
+
+
+
 
         }else{
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());
         }
 
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Tourist Guide Added Successfully")
+                .data("")
+                .build();
 
     }
 

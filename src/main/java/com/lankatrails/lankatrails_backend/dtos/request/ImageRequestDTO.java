@@ -1,7 +1,6 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
-import com.lankatrails.lankatrails_backend.model.Service;
-import jakarta.validation.constraints.NotBlank;
+import com.lankatrails.lankatrails_backend.model.Services;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,5 +13,5 @@ import lombok.Setter;
 public class ImageRequestDTO {
 //    @NotBlank(message = "Image is required")
     private String imageUrl;
-    private Service service;
+    private Services service;
 }

@@ -1,11 +1,10 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TouristGuideRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TouristGuideResponseDTO;
+import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
 import com.lankatrails.lankatrails_backend.model.*;
@@ -17,6 +16,9 @@ import com.lankatrails.lankatrails_backend.service.TouristGuideService;
 import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -46,6 +48,9 @@ public class TouristGuideImpl implements TouristGuideService {
     private ImageRepository imageRepository;
 
     @Autowired
+    private AreaRepository areaRepository;
+
+    @Autowired
     private ModelMapper modelMapper;
 
     @Autowired
@@ -55,27 +60,42 @@ public class TouristGuideImpl implements TouristGuideService {
     private FileUploadService fileUploadService;
 
     @Override
-    public TouristGuideResponseDTO getAllTourGuides() {
-        List<TouristGuide> allGuides=touristGuideRepository.findAll();
-        List<TouristGuideRequestDTO> responseList=new ArrayList<>();
-        for (TouristGuide guide : allGuides){
-            TouristGuideRequestDTO response=new TouristGuideRequestDTO();
-            response.setServiceAreas(guide.getServiceAreas());
-            response.setServiceName(guide.getServiceName());
-            response.setContactNo(guide.getContactNo());
+    public APIResponse<TouristGuideResponseDTO> getAllTourGuides(Integer pageNumber, Integer pageSize) {
+        Pageable pageDetails= PageRequest.of(pageNumber,pageSize);
 
-            //find the languages provided by a respective tour guide
-            List<Language> languages=languageRepository.findByTouristGuide_ServiceId(guide.getServiceId());
-//            if (!languages.isEmpty()){
-                response.setLanguages(languages);
-//            }
-            responseList.add(response);
+        Page<TouristGuide> touristGuides=touristGuideRepository.findAll(pageDetails);
+
+        List<TouristGuide> guidesContent=touristGuides.getContent();
+
+        if (guidesContent.isEmpty())
+            throw new APIException("No tourist guide created till now");
+
+        List<TouristGuideRequestDTO> tourGuideReq_DTOs= new ArrayList<>();
+
+        for (TouristGuide guide : guidesContent){
+            TouristGuideRequestDTO tourGuideRequest = new TouristGuideRequestDTO();
+            if (guide.getStatus()){
+                tourGuideRequest.setServiceId(guide.getServiceId());
+                tourGuideRequest.setServiceName(guide.getServiceName());
+                tourGuideRequest.setStatus(guide.getStatus());
+                tourGuideReq_DTOs.add(tourGuideRequest);
+            }
 
         }
-        TouristGuideResponseDTO touristGuideResponseDTO=new TouristGuideResponseDTO() ;
-        touristGuideResponseDTO.setContent(responseList);
 
-        return touristGuideResponseDTO;
+        TouristGuideResponseDTO tourGuideResponse=new TouristGuideResponseDTO();
+
+        tourGuideResponse.setContent(tourGuideReq_DTOs);
+        tourGuideResponse.setLastPage(touristGuides.isLast());
+        tourGuideResponse.setPageNumber(touristGuides.getNumber());
+        tourGuideResponse.setPageSize(touristGuides.getSize());
+        tourGuideResponse.setTotalElements(touristGuides.getTotalElements());
+        tourGuideResponse.setTotalPages(touristGuides.getTotalPages());
+        return  APIResponse.<TouristGuideResponseDTO>builder()
+                .success(true)
+                .message("Tourist Guides Fetched")
+                .data(tourGuideResponse)
+                .build();
 
     }
 
@@ -135,13 +155,35 @@ public class TouristGuideImpl implements TouristGuideService {
 
             imageRepository.saveAll(savedImages); // Persist images
 
+            //save the areas served
+            List<String> areaList = requestDTO.getServiceAreas();
+            Set<GuidingArea> guidingAreas = new HashSet<>();
+            areaList.forEach(area ->{
+                GuidingArea setAreas =new GuidingArea();
+                setAreas.setServiceArea(area);
+                setAreas.setTouristGuide(lastGuideAdded);
+                guidingAreas.add(setAreas);
+
+            });
+            areaRepository.saveAll(guidingAreas);
+
+            //save the languages served
+            List<String> languageList = requestDTO.getLanguages();
+            Set<Language> languages = new HashSet<>();
+            languageList.forEach(lng ->{
+                Language language = new Language();
+                language.setLanguage(lng);
+                language.setTouristGuide(lastGuideAdded);
+                languages.add(language);
+            });
+            languageRepository.saveAll(languages);
             // Prepare response
             TouristGuideRequestDTO responseDTO = new TouristGuideRequestDTO();
             responseDTO.setServiceName(requestDTO.getServiceName());
             responseDTO.setLocationBased(requestDTO.getLocationBased());
             responseDTO.setContactNo(requestDTO.getContactNo());
-            responseDTO.setServiceAreas(requestDTO.getServiceAreas());
-            responseDTO.setLanguages(requestDTO.getLanguages());
+//            responseDTO.setServiceAreas(requestDTO.getServiceAreas());
+//            responseDTO.setLanguages(requestDTO.getLanguages());
             responseDTO.setTabsSection(tabsReq);
             responseDTO.setPolicySection(policyReq);
 
@@ -193,7 +235,7 @@ public class TouristGuideImpl implements TouristGuideService {
         prepareResponse.setPolicySection(policies);
         prepareResponse.setTabsSection(tabs);
 //        prepareResponse.setLanguages(touristGuide.getLanguages());
-        prepareResponse.setServiceAreas(touristGuide.getServiceAreas());
+//        prepareResponse.setServiceAreas(touristGuide.getServiceAreas());
 
 
         return APIResponse.<TouristGuideRequestDTO>builder()
@@ -217,7 +259,7 @@ public class TouristGuideImpl implements TouristGuideService {
         touristGuide.setContactNo(requestDTO.getContactNo());
         touristGuide.setStatus(requestDTO.getStatus());
 //        touristGuide.setLanguages(requestDTO.getLanguages());
-        touristGuide.setServiceAreas(requestDTO.getServiceAreas());
+//        touristGuide.setServiceAreas(requestDTO.getServiceAreas());
 
         //save the updated tour guide
         touristGuideRepository.save(touristGuide);

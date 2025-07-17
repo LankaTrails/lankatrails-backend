@@ -2,6 +2,7 @@ package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
 import com.lankatrails.lankatrails_backend.model.ActivityService;
+import com.lankatrails.lankatrails_backend.model.Services;
 import com.lankatrails.lankatrails_backend.model.TabsSection;
 import com.lankatrails.lankatrails_backend.model.Transport;
 import com.lankatrails.lankatrails_backend.repositories.TabsSectionRepository;
@@ -22,7 +23,7 @@ public class TabsImpl implements Tabs {
     TabsSectionRepository tabsSectionRepository;
 
     @Override
-    public void addTabs(List<TabSectionRequest> tabsReq, ActivityService lastServiceAdded){
+    public void addTabs(List<TabSectionRequest> tabsReq, Services lastServiceAdded){
         if (!tabsReq.isEmpty()){
             for (TabSectionRequest tab : tabsReq){
                 if (StringUtils.hasText(tab.getHeading()) && StringUtils.hasText(tab.getContent())){

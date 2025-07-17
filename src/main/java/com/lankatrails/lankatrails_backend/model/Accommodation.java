@@ -6,16 +6,14 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "activity_services")
+@Table(name = "accommodation")
 @Getter
 @Setter
 @NoArgsConstructor
-public class ActivityService extends Services {
-    private  String activityType;
+public class Accommodation extends Services {
 
-    private String activityDetails;
+    private String about;
 
-    private String safetyInstructions;
 
 
 }

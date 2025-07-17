@@ -5,24 +5,19 @@ import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.exception.IllegalParamsException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.Place;
+import com.lankatrails.lankatrails_backend.model.Services;
 import com.lankatrails.lankatrails_backend.model.Trip;
 import com.lankatrails.lankatrails_backend.model.TripItem;
-import com.lankatrails.lankatrails_backend.model.enums.TripItemType;
 import com.lankatrails.lankatrails_backend.repositories.PlaceRepository;
 import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
 import com.lankatrails.lankatrails_backend.repositories.TripItemRepository;
 import com.lankatrails.lankatrails_backend.repositories.TripRepository;
 import com.lankatrails.lankatrails_backend.service.TripItemService;
-import com.lankatrails.lankatrails_backend.service.TripService;
 import com.lankatrails.lankatrails_backend.service.utils.TripItemMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 @org.springframework.stereotype.Service
@@ -79,7 +74,7 @@ public class TripItemServiceImpl implements TripItemService {
                     throw new IllegalParamsException("Service ID must be provided");
                 }
                 // Fetch the service by ID
-                com.lankatrails.lankatrails_backend.model.Service service = serviceRepository.findById(tripItemDTO.getService().getServiceId())
+                Services service = serviceRepository.findById(tripItemDTO.getService().getServiceId())
                         .orElseThrow(() -> new IllegalParamsException("Service not found with ID: " + tripItemDTO.getService().getServiceId()));
                 tripItem.setService(service);
             }

@@ -31,7 +31,7 @@ public class TripItem {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_id")
-    private Service service;
+    private Services service;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "place_id")
