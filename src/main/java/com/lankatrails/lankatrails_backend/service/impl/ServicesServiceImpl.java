@@ -1,13 +1,10 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.ServiceRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.model.ActivityService;
 import com.lankatrails.lankatrails_backend.model.Image;
-import com.lankatrails.lankatrails_backend.model.Service;
+import com.lankatrails.lankatrails_backend.model.Services;
 import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
 import com.lankatrails.lankatrails_backend.repositories.ImageRepository;
 import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
@@ -35,7 +32,7 @@ public class ServicesServiceImpl implements ServicesService {
             throw new BadRequestException("Service images cannot be null or empty", "ServiceImages", null);
         }
 
-        Service service = serviceRepository.findById(serviceId)
+        Services service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new ResourceNotFoundException("serviceID", serviceId));
 
         Set<Image> images = new HashSet<>(fileUploadService.storeImages(serviceImages, UploadCategory.SERVICE_PICTURE));

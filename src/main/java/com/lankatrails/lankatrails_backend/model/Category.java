@@ -28,7 +28,7 @@ public class Category {
     private ServiceCategory categoryName;
 
     @OneToMany(mappedBy = "category",cascade = CascadeType.ALL)
-    private Set<Service> services = new HashSet<>();
+    private Set<Services> services = new HashSet<>();
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
     private Set<License> licenses = new HashSet<>();

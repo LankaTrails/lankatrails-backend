@@ -18,7 +18,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @SuperBuilder
-public class Service {
+public class Services {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

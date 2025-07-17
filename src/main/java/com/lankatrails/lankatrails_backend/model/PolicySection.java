@@ -22,7 +22,7 @@ public class PolicySection {
     private String policy;
 
     @ManyToMany(mappedBy = "policies")
-    private Set<Service> services = new HashSet<>();
+    private Set<Services> services = new HashSet<>();
 
     @ManyToOne
     @JoinColumn(name = "provider_id")

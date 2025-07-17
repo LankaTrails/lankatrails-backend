@@ -4,10 +4,19 @@ import com.lankatrails.lankatrails_backend.dtos.request.TransportRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TransportResponseDTO;
 import com.lankatrails.lankatrails_backend.service.TransportService;
+import io.vavr.API;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("api/provider/transport")
@@ -37,12 +46,28 @@ public class TransportController {
         TransportResponseDTO transportResponseDTO=transportService.updateTransport(id,transportRequestDTO);
         return new ResponseEntity<>(transportResponseDTO,HttpStatus.OK);
     }
-    @PostMapping("/add")
-    public ResponseEntity<TransportResponseDTO> addNewTransport(
-            @RequestBody TransportRequestDTO transportRequestDTO
-    ){
-        TransportResponseDTO transportResponseDTO=transportService.addNewTransport(transportRequestDTO);
-        return new ResponseEntity<>(transportResponseDTO,HttpStatus.OK);
+    @PostMapping(value = "/add",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<APIResponse<String>> addNewTransport(
+            @RequestPart("service") @Valid  TransportRequestDTO transportRequestDTO,
+            @RequestPart(value = "images", required = false)List<MultipartFile> images,
+            BindingResult result
+            ){
+        if (result.hasErrors()){
+            Map<String,String> errors = new HashMap<>();
+            result.getFieldErrors().forEach(field ->{
+                errors.put(field.getField(), field.getDefaultMessage());
+            });
+            APIResponse<String> errorResponse = APIResponse.<String>builder()
+                    .success(false)
+                    .message("Validation Failed")
+                    .details(errors)
+                    .build();
+            return  new ResponseEntity<>(errorResponse,HttpStatus.BAD_REQUEST);
+        }else{
+            APIResponse<String> transportResponseDTO=transportService.addNewTransport(transportRequestDTO,images);
+            return new ResponseEntity<>(transportResponseDTO,HttpStatus.OK);
+        }
+
 
     }
     @PutMapping("/remove/{id}")
