@@ -25,11 +25,11 @@ public class TransportController {
     TransportService transportService;
 
     @GetMapping("/getAll")
-    public ResponseEntity<TransportResponseDTO> getAllTourists(
+    public ResponseEntity<APIResponse<TransportResponseDTO>> getAllTourists(
             @RequestParam(name = "pageNumber") Integer pageNumber,
             @RequestParam(name = "pageSize") Integer pageSize
     ){
-        TransportResponseDTO transportResponseDTO=transportService.getAll(pageNumber,pageSize);
+        APIResponse<TransportResponseDTO> transportResponseDTO=transportService.getAll(pageNumber,pageSize);
         return  new ResponseEntity<>(transportResponseDTO, HttpStatus.OK);
 
     }

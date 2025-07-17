@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface TransportService {
-    TransportResponseDTO getAll(Integer pageNumber, Integer pageSize);
+    APIResponse<TransportResponseDTO> getAll(Integer pageNumber, Integer pageSize);
     TransportResponseDTO getById(Long Id);
     TransportResponseDTO updateTransport(Long Id, TransportRequestDTO transportRequestDTO);
     APIResponse<String> addNewTransport(TransportRequestDTO transportRequestDTO, List<MultipartFile> images);

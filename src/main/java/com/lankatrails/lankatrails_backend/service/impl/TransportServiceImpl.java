@@ -71,19 +71,33 @@ public class TransportServiceImpl implements TransportService {
     ModelMapper modelMapper;
 
     @Override
-    public TransportResponseDTO getAll(Integer pageNumber, Integer pageSize){
+    public APIResponse<TransportResponseDTO> getAll(Integer pageNumber, Integer pageSize){
         Pageable pageDetails= PageRequest.of(pageNumber,pageSize);
+
         Page<Transport> transportPage=transportRepository.findAll(pageDetails);
+
         List<Transport> transports=transportPage.getContent();
 
         if (transports.isEmpty()){
             throw new APIException("No Transport Created Until Now");
         }
 
-        List<TransportRequestDTO>  transport_DTOs=transports.stream()
-                .map(transport -> modelMapper.map(transport, TransportRequestDTO.class))
-                .toList();
+//        List<TransportRequestDTO>  transport_DTOs=transports.stream()
+//                .map(transport -> modelMapper.map(transport, TransportRequestDTO.class))
+//                .toList();
 
+        List<TransportRequestDTO> transport_DTOs = new ArrayList<>();
+
+        for (Transport transport : transportPage){
+            TransportRequestDTO transportRequestDTO = new TransportRequestDTO();
+            if (transport.getStatus()){
+                transportRequestDTO.setServiceId(transport.getServiceId());
+                transportRequestDTO.setServiceName(transport.getServiceName());
+                transportRequestDTO.setStatus(transport.getStatus());
+                transport_DTOs.add(transportRequestDTO);
+
+            }
+        }
         TransportResponseDTO transportResponseDTO=new TransportResponseDTO();
 
         transportResponseDTO.setContent(transport_DTOs);
@@ -93,7 +107,11 @@ public class TransportServiceImpl implements TransportService {
         transportResponseDTO.setTotalElements(transportPage.getTotalElements());
         transportResponseDTO.setTotalPages(transportPage.getTotalPages());
 
-        return transportResponseDTO;
+        return APIResponse.<TransportResponseDTO>builder()
+                .success(true)
+                .message("Transport Services Fetched")
+                .data(transportResponseDTO)
+                .build();
 
     }
 
