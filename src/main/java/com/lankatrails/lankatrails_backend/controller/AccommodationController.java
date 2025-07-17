@@ -2,6 +2,8 @@ package com.lankatrails.lankatrails_backend.controller;
 
 import com.lankatrails.lankatrails_backend.dtos.request.AccommodationServiceRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.AccommodationResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.service.AccommodationService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,10 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
@@ -50,4 +49,15 @@ public class AccommodationController {
         }
 
     }
+
+    @GetMapping("/provider/accommodation/getAll")
+    public ResponseEntity<APIResponse<AccommodationResponse>> getAll_ActivityServices(
+            @RequestParam(name = "pageNumber") Integer pageNumber,
+            @RequestParam(name = "pageSize") Integer pageSize
+    ){
+
+        APIResponse<AccommodationResponse> accommodationResponse= accommodationService.getAll_Accommodations(pageNumber,pageSize);
+        return new ResponseEntity<>(accommodationResponse,HttpStatus.OK);
+    }
+
 }
