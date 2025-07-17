@@ -337,6 +337,7 @@ public class AuthServiceImpl implements AuthService {
                         .emailVerified(user.getEmailVerified())
                         .firstName(tourist.getFirstName())
                         .lastName(tourist.getLastName())
+                        .phoneNumber(tourist.getPhoneNumber())
                         .country(tourist.getCountry())
                         .build();
 
