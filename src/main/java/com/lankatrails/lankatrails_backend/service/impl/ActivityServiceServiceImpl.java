@@ -1,9 +1,6 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.exception.APIException;
@@ -12,7 +9,6 @@ import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsExcepti
 import com.lankatrails.lankatrails_backend.factory.CreateServiceFactory;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
-import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ActivityServiceService;
@@ -98,7 +94,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
             // Set Policies
             List<PolicySectionRequest> policyReq = services.getPolicySection();
-            Boolean policyAdditionStatus = policyImpl.addPolicies(policyReq, lastServiceAdded, category);
+            policyImpl.addPolicies(policyReq, lastServiceAdded, category);
 
             // Upload and associate images
             imageService.uploadImagesForService(images, lastServiceAdded);
@@ -115,6 +111,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     }
 
     @Override
+    @Transactional
     public APIResponse<ActivityServiceResponse> getAll_ActivityServices(Integer pageNumber, Integer pageSize){
 
         Pageable pageDetails= PageRequest.of(pageNumber,pageSize);
@@ -155,6 +152,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     }
 
   @Override
+  @Transactional
   public APIResponse<ActivityServiceRequest> searchWithId(Long Id){
         ActivityService activityService=activityServiceRepository.findById(Id)
                 .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
@@ -170,7 +168,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
             tabs.add(tabReq);
         }
 
-        List<PolicySection> policySection = policySectionRepository.findByProvider_UserId(authUtils.loggedInUserId());
+        List<PolicySection> policySection = policySectionRepository.findByProvider_UserIdAndCategoryIsNull(authUtils.loggedInUserId());
 
         List<PolicySectionRequest> policies = new ArrayList<>();
 //
@@ -183,6 +181,16 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
             policies.add(policyReq);
         }
 
+        //set the images
+        List<Image> images = imageRepository.findByService_ServiceId(Id);
+        //map images to imageDTO
+       List<ImageRequestDTO> imgDTOs = new ArrayList<>();
+        for (Image img : images){
+
+            ImageRequestDTO imgDTO = modelMapper.map(img,ImageRequestDTO.class);
+            imgDTOs.add(imgDTO);
+        }
+
         ActivityServiceRequest prepareResponse = new ActivityServiceRequest();
 
         prepareResponse.setServiceName(activityService.getServiceName());
@@ -193,6 +201,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         prepareResponse.setContactNo(activityService.getContactNo());
         prepareResponse.setTabsSection(tabs);
         prepareResponse.setPolicySection(policies);
+//        prepareResponse.setImages(imgDTOs);
 
         return  APIResponse.<ActivityServiceRequest>builder()
                 .success(true)

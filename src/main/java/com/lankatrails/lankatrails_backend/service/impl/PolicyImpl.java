@@ -1,6 +1,5 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.exception.PolicyExistsException;
@@ -11,7 +10,6 @@ import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.Policies;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -148,7 +146,7 @@ public class PolicyImpl implements Policies {
 
     @Override
     public List<PolicySectionRequest> getProviderPolicies(Long userId) {
-        List<PolicySection> policySection=policySectionRepository.findByProvider_UserId(userId);
+        List<PolicySection> policySection=policySectionRepository.findByProvider_UserIdAndCategoryIsNull(userId);
         List<PolicySectionRequest> response = new ArrayList<>();
         for (PolicySection policy : policySection){
             PolicySectionRequest policyReq = new PolicySectionRequest();
