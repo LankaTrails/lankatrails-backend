@@ -11,6 +11,6 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class FoodAndBeverage extends Services{
+public class FoodAndBeverage extends Service{
     private String openHours;
 }

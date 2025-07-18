@@ -19,7 +19,6 @@ public class Provider extends User {
     @Column(name = "business_name")
     private String businessName;
 
-    @Size(max = 100)
     @Column(name = "business_description")
     private String businessDescription;
 

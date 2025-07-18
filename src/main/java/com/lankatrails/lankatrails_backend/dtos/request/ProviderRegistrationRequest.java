@@ -16,7 +16,6 @@ public class ProviderRegistrationRequest extends RegistrationRequest {
     @Size(max = 50)
     private String businessName;
 
-    @Size(max = 100)
     private String businessDescription;
 
     private BusinessType businessType;
