@@ -4,13 +4,12 @@ import com.lankatrails.lankatrails_backend.dtos.request.PlaceDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.model.Place;
-import com.lankatrails.lankatrails_backend.model.Services;
+import com.lankatrails.lankatrails_backend.model.Service;
 import com.lankatrails.lankatrails_backend.model.TripItem;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
-@Service
+@org.springframework.stereotype.Service
 public class TripItemMapper {
     @Autowired
     private ModelMapper modelMapper;
@@ -56,7 +55,7 @@ public class TripItemMapper {
                 break;
             case SERVICE:
                 if (tripItemDTO.getService() != null) {
-                    tripItem.setService(modelMapper.map(tripItemDTO.getService(), Services.class));
+                    tripItem.setService(modelMapper.map(tripItemDTO.getService(), Service.class));
                 }
                 break;
             default:

@@ -14,7 +14,7 @@ import java.util.Set;
 @Getter
 @Setter
 @NoArgsConstructor
-public class TouristGuide extends Services {
+public class TouristGuide extends Service {
     private String serviceAreas;
 
     @OneToMany(mappedBy = "touristGuide")

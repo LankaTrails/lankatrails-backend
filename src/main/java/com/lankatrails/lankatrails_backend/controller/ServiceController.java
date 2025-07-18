@@ -1,21 +1,29 @@
 package com.lankatrails.lankatrails_backend.controller;
 
+import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.ServiceSearchRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.ProfilePicResponse;
-import com.lankatrails.lankatrails_backend.service.ServicesService;
+import com.lankatrails.lankatrails_backend.service.ServiceService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/service")
 public class ServiceController {
     @Autowired
-    ServicesService servicesService;
+    ServiceService serviceService;
 
-    @PostMapping(value = "/{userId}/add-service-images", consumes = "multipart/form-data")
-    public APIResponse<String> addServiceImages(@PathVariable Long userId, @RequestParam("serviceImages") MultipartFile[] serviceImages) {
-        return servicesService.addServiceImages(userId, serviceImages);
+    @PostMapping("/search")
+    public ResponseEntity<APIResponse<List<ServiceDTO>>> searchServices(
+            @RequestBody ServiceSearchRequestDTO requestDTO
+    ) {
+        APIResponse<List<ServiceDTO>> response = serviceService.searchServicesAdvanced(requestDTO);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
     }
 
 }

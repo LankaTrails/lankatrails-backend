@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.service;
 
 
+import com.lankatrails.lankatrails_backend.dtos.request.ChangePaswordRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.LoginRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.ProviderRegistrationRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TouristRegistrationRequest;
@@ -36,4 +37,6 @@ public interface AuthService {
     APIResponse<String> approveProvider(Long providerId);
 
     APIResponse<String> verifyEmail(String token);
+
+    APIResponse<String> changePassword(ChangePaswordRequest changePasswordRequest);
 }

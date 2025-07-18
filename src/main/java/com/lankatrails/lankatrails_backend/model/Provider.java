@@ -19,7 +19,6 @@ public class Provider extends User {
     @Column(name = "business_name")
     private String businessName;
 
-    @Size(max = 100)
     @Column(name = "business_description")
     private String businessDescription;
 
@@ -70,7 +69,7 @@ public class Provider extends User {
     private Set<License> licenses = new HashSet<>();
 
     @OneToMany(mappedBy = "provider", cascade = CascadeType.ALL)
-    private Set<Services> services = new HashSet<>();
+    private Set<Service> services = new HashSet<>();
 
     @PrePersist
     protected void onCreate() {
@@ -92,14 +91,14 @@ public class Provider extends User {
         }
     }
 
-    public void addService(Services service) {
+    public void addService(Service service) {
         if (service != null) {
             service.setProvider(this);
             this.services.add(service);
         }
     }
 
-    public void removeService(Services service) {
+    public void removeService(Service service) {
         if (service != null) {
             service.setProvider(null);
             this.services.remove(service);

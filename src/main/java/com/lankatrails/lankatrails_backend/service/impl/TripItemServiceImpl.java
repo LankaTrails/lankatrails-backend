@@ -5,7 +5,7 @@ import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.exception.IllegalParamsException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.Place;
-import com.lankatrails.lankatrails_backend.model.Services;
+import com.lankatrails.lankatrails_backend.model.Service;
 import com.lankatrails.lankatrails_backend.model.Trip;
 import com.lankatrails.lankatrails_backend.model.TripItem;
 import com.lankatrails.lankatrails_backend.repositories.PlaceRepository;
@@ -74,7 +74,7 @@ public class TripItemServiceImpl implements TripItemService {
                     throw new IllegalParamsException("Service ID must be provided");
                 }
                 // Fetch the service by ID
-                Services service = serviceRepository.findById(tripItemDTO.getService().getServiceId())
+                Service service = serviceRepository.findById(tripItemDTO.getService().getServiceId())
                         .orElseThrow(() -> new IllegalParamsException("Service not found with ID: " + tripItemDTO.getService().getServiceId()));
                 tripItem.setService(service);
             }

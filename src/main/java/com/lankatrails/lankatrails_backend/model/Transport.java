@@ -15,7 +15,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Transport extends Services {
+public class Transport extends Service {
 
     private Integer vehicleCapacity;
     private Integer vehicleQty;

@@ -12,12 +12,14 @@ import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.jwt.JwtUtils;
 import com.lankatrails.lankatrails_backend.security.service.RefreshTokenRedisService;
 import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.AuthService;
 import com.lankatrails.lankatrails_backend.service.utils.EmailService;
 import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -65,6 +67,9 @@ public class AuthServiceImpl implements AuthService {
     private JwtUtils jwtUtils;
 
     @Autowired
+    private AuthUtils authUtills;
+
+    @Autowired
     private RefreshTokenRedisService refreshTokenRedisService;
 
     @Autowired
@@ -72,6 +77,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private ModelMapper modelMapper;
 
     private void sendVerificationEmail(User user) {
         String jwtToken = jwtUtils.generateEmailVerificationJwt(user);
@@ -199,6 +207,7 @@ public class AuthServiceImpl implements AuthService {
         User user = userFactory.createUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         User savedUser = userRepository.save(user);
+        sendVerificationEmail(savedUser);
         log.info("Provider registered successfully with ID: {}", savedUser.getUserId());
 
         return APIResponse.<RegistrationResponse>builder()
@@ -300,6 +309,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public APIResponse<UserProfileDto> getLoggedUserProfile(HttpServletRequest request) {
         log.info("Fetching logged user profile for request: {}", request.getRequestURI());
 
@@ -327,6 +337,7 @@ public class AuthServiceImpl implements AuthService {
                         .emailVerified(user.getEmailVerified())
                         .firstName(tourist.getFirstName())
                         .lastName(tourist.getLastName())
+                        .phoneNumber(tourist.getPhoneNumber())
                         .country(tourist.getCountry())
                         .build();
 
@@ -350,7 +361,13 @@ public class AuthServiceImpl implements AuthService {
                         .emailVerified(user.getEmailVerified())
                         .businessName(provider.getBusinessName())
                         .businessDescription(provider.getBusinessDescription())
-                        .logoUrl(provider.getProfilePictureUrl())
+                        .coverImageUrl(provider.getCoverImageUrl())
+                        .location(modelMapper.map(provider.getLocation(), LocationDTO.class))
+                        .accommodationApprovalStatus(provider.getAccommodationApprovalStatus())
+                        .tourGuideApprovalStatus(provider.getTourGuideApprovalStatus())
+                        .transportApprovalStatus(provider.getTransportApprovalStatus())
+                        .activityApprovalStatus(provider.getActivityApprovalStatus())
+                        .foodApprovalStatus(provider.getFoodApprovalStatus())
                         .build();
 
                 return APIResponse.<UserProfileDto>builder()
@@ -494,6 +511,31 @@ public class AuthServiceImpl implements AuthService {
         return APIResponse.<String>builder()
                 .success(true)
                 .message("Email verified successfully.")
+                .build();
+    }
+
+    @Override
+    public APIResponse<String> changePassword(ChangePaswordRequest changePasswordRequest) {
+        User user = authUtills.loggedInUser();
+        log.info("Changing password for user: {}", user.getEmail());
+
+        if (changePasswordRequest.getNewPassword() == null || changePasswordRequest.getNewPassword().isEmpty()) {
+            log.error("Change password failed: New password is required.");
+            throw new BadRequestException("New password is required.", "newPassword", null);
+        }
+
+        if (!passwordEncoder.matches(changePasswordRequest.getOldPassword(), user.getPassword())) {
+            log.error("Change password failed: Current password is incorrect for user {}", user.getEmail());
+            throw new BadCredentialsException("Current password is incorrect.");
+        }
+
+        user.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
+        userRepository.save(user);
+        log.info("Password changed successfully for user: {}", user.getEmail());
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Password changed successfully.")
+                .data("Password changed successfully.")
                 .build();
     }
 

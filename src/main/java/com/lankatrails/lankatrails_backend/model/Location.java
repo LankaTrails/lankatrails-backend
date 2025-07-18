@@ -24,16 +24,16 @@ public class Location {
     @Column(name = "formatted_address", nullable = false)
     private String formattedAddress;
 
-    @Column(name = "city")
+    @Column(name = "city", columnDefinition = "TEXT")
     private String city;
 
-    @Column(name = "district")
+    @Column(name = "district", columnDefinition = "TEXT")
     private String district;
 
-    @Column(name = "province")
+    @Column(name = "province", columnDefinition = "TEXT")
     private String province;
 
-    @Column(name = "country")
+    @Column(name = "country", columnDefinition = "TEXT")
     private String country;
 
     @Column(name = "postal_code")
