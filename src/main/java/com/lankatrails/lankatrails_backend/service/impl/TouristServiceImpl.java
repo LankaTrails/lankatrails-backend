@@ -3,7 +3,6 @@ package com.lankatrails.lankatrails_backend.service.impl;
 import com.lankatrails.lankatrails_backend.dtos.request.FavouriteItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.PlaceDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TouristProfileDto;
 import com.lankatrails.lankatrails_backend.exception.IllegalParamsException;
@@ -60,7 +59,7 @@ public class TouristServiceImpl implements TouristService {
         tourist.setFirstName(touristProfileDto.getFirstName());
         tourist.setLastName(touristProfileDto.getLastName());
         tourist.setCountry(touristProfileDto.getCountry());
-
+        tourist.setPhoneNumber(touristProfileDto.getPhoneNumber());
         //save the updated tourist profile
         Tourist updatedTourist = touristRepository.save(tourist);
 
@@ -69,6 +68,7 @@ public class TouristServiceImpl implements TouristService {
                 .firstName(updatedTourist.getFirstName())
                 .lastName(updatedTourist.getLastName())
                 .country(updatedTourist.getCountry())
+                .phoneNumber(updatedTourist.getPhoneNumber())
                 .build();
 
         return APIResponse.<TouristProfileDto>builder()
