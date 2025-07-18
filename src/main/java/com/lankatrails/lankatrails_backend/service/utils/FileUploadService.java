@@ -14,8 +14,8 @@ import java.util.UUID;
 @Service
 public class FileUploadService {
 
-    private static final String UPLOAD_ROOT = "E:\\LankaTrails\\lankatrails-backend\\uploads";
-//    private static final String UPLOAD_ROOT = "D:\\LankaTrails\\lankatrails\\lankatrails-backend\\uploads";
+//    private static final String UPLOAD_ROOT = "E:\\LankaTrails\\lankatrails-backend\\uploads";
+    private static final String UPLOAD_ROOT = "D:\\LankaTrails\\lankatrails\\lankatrails-backend\\uploads";
 
     public String storeFile(MultipartFile file, UploadCategory category, String prefix) {
         if (file == null || file.isEmpty()) {

@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.service;
 
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.ServiceSearchRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,4 +19,6 @@ public interface ServiceService {
     );
 
     APIResponse<String> addServiceImages(Long serviceId, MultipartFile[] serviceImages);
+
+    APIResponse<List<ServiceDTO>> searchServicesAdvanced(ServiceSearchRequestDTO requestDTO);
 }
