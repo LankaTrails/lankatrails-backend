@@ -4,6 +4,7 @@ import com.lankatrails.lankatrails_backend.model.Category;
 import com.lankatrails.lankatrails_backend.model.Image;
 import com.lankatrails.lankatrails_backend.model.Location;
 import com.lankatrails.lankatrails_backend.model.Provider;
+import com.lankatrails.lankatrails_backend.model.enums.PriceType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -33,6 +34,11 @@ public abstract class ServiceRequest {
     private String contactNo;
 
     private Boolean status;
+
+    private Double price;
+
+    @NotBlank(message = "Price type is required")
+    private PriceType priceType;
 
     private List<TabSectionRequest> tabsSection;
 

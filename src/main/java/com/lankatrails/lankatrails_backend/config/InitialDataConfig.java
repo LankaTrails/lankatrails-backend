@@ -1,12 +1,8 @@
 package com.lankatrails.lankatrails_backend.config;
 
-import com.lankatrails.lankatrails_backend.model.Admin;
-import com.lankatrails.lankatrails_backend.model.Category;
-import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
-import com.lankatrails.lankatrails_backend.model.enums.UserRole;
-import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
-import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
-import com.lankatrails.lankatrails_backend.repositories.UserRepository;
+import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.enums.*;
+import com.lankatrails.lankatrails_backend.repositories.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,10 +14,18 @@ public class InitialDataConfig {
     @Bean
     CommandLineRunner initData(UserRepository userRepository,
                                CategoryRepository categoryRepository,
-                               PasswordEncoder passwordEncoder) {
+                               PasswordEncoder passwordEncoder,
+                               AccommodationCategoryRepository accommodationCategoryRepository,
+                               VehicleCategoryRepository vehicleCategoryRepository,
+                               ActivityCategoryRepository activityCategoryRepository,
+                               TourGuideCategoryRepository tourGuideCategoryRepository) {
         return args -> {
             initAdmin(userRepository, passwordEncoder);
             initCategories(categoryRepository);
+            initAccommodationTypes(accommodationCategoryRepository);
+            initVehicleTypes(vehicleCategoryRepository);
+            initActivityTypes(activityCategoryRepository);
+            initTourGuideTypes(tourGuideCategoryRepository);
         };
     }
 
@@ -50,4 +54,61 @@ public class InitialDataConfig {
             System.out.println("Initial service categories created");
         }
     }
+
+    private void initAccommodationTypes(AccommodationCategoryRepository accommodationCategoryRepository) {
+        if (accommodationCategoryRepository.count() == 0) {
+            accommodationCategoryRepository.save(new AccommodationCategory(AccommodationType.HOTEL));
+            accommodationCategoryRepository.save(new AccommodationCategory(AccommodationType.HOSTEL));
+            accommodationCategoryRepository.save(new AccommodationCategory(AccommodationType.GUEST_HOUSE));
+            accommodationCategoryRepository.save(new AccommodationCategory(AccommodationType.VILLA));
+            accommodationCategoryRepository.save(new AccommodationCategory(AccommodationType.APARTMENT));
+            accommodationCategoryRepository.save(new AccommodationCategory(AccommodationType.RESORT));
+            accommodationCategoryRepository.save(new AccommodationCategory(AccommodationType.HOMESTAY));
+            accommodationCategoryRepository.save(new AccommodationCategory(AccommodationType.CAMPING));
+            accommodationCategoryRepository.save(new AccommodationCategory(AccommodationType.LODGE));
+            System.out.println("Initial accommodation types created");
+        }
+    }
+
+    private void initVehicleTypes(VehicleCategoryRepository vehicleTypeRepository) {
+        if (vehicleTypeRepository.count() == 0) {
+            vehicleTypeRepository.save(new VehicleCategory(VehicleType.CAR));
+            vehicleTypeRepository.save(new VehicleCategory(VehicleType.VAN));
+            vehicleTypeRepository.save(new VehicleCategory(VehicleType.BUS));
+            vehicleTypeRepository.save(new VehicleCategory(VehicleType.TRUCK));
+            vehicleTypeRepository.save(new VehicleCategory(VehicleType.MOTORCYCLE));
+            vehicleTypeRepository.save(new VehicleCategory(VehicleType.BICYCLE));
+            vehicleTypeRepository.save(new VehicleCategory(VehicleType.SCOOTER));
+            vehicleTypeRepository.save(new VehicleCategory(VehicleType.PICKUP_TRUCK));
+            vehicleTypeRepository.save(new VehicleCategory(VehicleType.SUV));
+            vehicleTypeRepository.save(new VehicleCategory(VehicleType.TUK_TUK));
+            System.out.println("Initial vehicle types created");
+        }
+    }
+
+    private void initActivityTypes(ActivityCategoryRepository activityCategoryRepository) {
+        if (activityCategoryRepository.count() == 0) {
+            activityCategoryRepository.save(new ActivityCategory(ActivityType.ADVENTURE));
+            activityCategoryRepository.save(new ActivityCategory(ActivityType.EDUCATIONAL));
+            activityCategoryRepository.save(new ActivityCategory(ActivityType.CULTURAL));
+            activityCategoryRepository.save(new ActivityCategory(ActivityType.NATURE));
+            activityCategoryRepository.save(new ActivityCategory(ActivityType.RELAXATION));
+            activityCategoryRepository.save(new ActivityCategory(ActivityType.SPORTS));
+            activityCategoryRepository.save(new ActivityCategory(ActivityType.WATER_SPORTS));
+            activityCategoryRepository.save(new ActivityCategory(ActivityType.NIGHTLIFE));
+            activityCategoryRepository.save(new ActivityCategory(ActivityType.WELLNESS));
+            System.out.println("Initial activity types created");
+        }
+    }
+
+    private void initTourGuideTypes(TourGuideCategoryRepository tourGuideCategoryRepository) {
+        if (tourGuideCategoryRepository.count() == 0) {
+            tourGuideCategoryRepository.save(new TourGuideCategory(TourGuideType.NATIONAL));
+            tourGuideCategoryRepository.save(new TourGuideCategory(TourGuideType.CHAUFFEUR));
+            tourGuideCategoryRepository.save(new TourGuideCategory(TourGuideType.SITE));
+            tourGuideCategoryRepository.save(new TourGuideCategory(TourGuideType.AREA));
+            System.out.println("Initial tour guide types created");
+        }
+    }
+
 }

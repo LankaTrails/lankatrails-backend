@@ -23,5 +23,5 @@ public class Transport extends Service {
 
     @ManyToOne
     @JoinColumn(name = "vehicleCategory_id")
-    private  VehicleCategory vehicleCategory;
+    private VehicleCategory vehicleCategory;
 }

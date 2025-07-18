@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.model;
 
+import com.lankatrails.lankatrails_backend.model.enums.PriceType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,6 +30,11 @@ public class Service {
     private String contactNo;
 
     private Boolean status;
+
+    private Double price;
+
+    @Enumerated(EnumType.STRING)
+    private PriceType priceType;
 
     @ManyToOne
     @JoinColumn(name = "provider_id")
