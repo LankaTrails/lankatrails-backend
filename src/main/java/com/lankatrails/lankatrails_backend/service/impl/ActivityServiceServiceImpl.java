@@ -3,14 +3,12 @@ package com.lankatrails.lankatrails_backend.service.impl;
 import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.ImageDTO;
 import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
 import com.lankatrails.lankatrails_backend.factory.CreateServiceFactory;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
-import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ActivityServiceService;
@@ -96,7 +94,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
             // Set Policies
             List<PolicySectionRequest> policyReq = services.getPolicySection();
-            Boolean policyAdditionStatus = policyImpl.addPolicies(policyReq, lastServiceAdded, category);
+            policyImpl.addPolicies(policyReq, lastServiceAdded, category);
 
             // Upload and associate images
             imageService.uploadImagesForService(images, lastServiceAdded);
@@ -170,7 +168,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
             tabs.add(tabReq);
         }
 
-        List<PolicySection> policySection = policySectionRepository.findByProvider_UserId(authUtils.loggedInUserId());
+        List<PolicySection> policySection = policySectionRepository.findByProvider_UserIdAndCategoryIsNull(authUtils.loggedInUserId());
 
         List<PolicySectionRequest> policies = new ArrayList<>();
 //
