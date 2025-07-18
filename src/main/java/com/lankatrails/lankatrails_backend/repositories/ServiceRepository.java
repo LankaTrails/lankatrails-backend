@@ -43,6 +43,22 @@ public interface ServiceRepository extends JpaRepository<Service, Long> {
             @Param("country") String country
     );
 
+    @Query("""
+        SELECT s FROM Service s
+        WHERE s.locationBased.country ILIKE 'Sri Lanka'
+          AND (:location IS NULL 
+               OR (TYPE(s) <> TouristGuide AND (
+                   s.locationBased.city ILIKE CONCAT('%', CAST(:location AS text), '%')
+                   OR s.locationBased.district ILIKE CONCAT('%', CAST(:location AS text), '%')
+               ))
+               OR (TYPE(s) = TouristGuide AND 
+                   s.serviceAreas ILIKE CONCAT('%', CAST(:location AS text), '%')
+               )
+          )
+        """)
+    List<Service> findByLocationInSriLanka(@Param("location") String location);
+
+
     // 3. Combined spatial + text search with fixed casting
     @Query("""
             SELECT s FROM Service s
