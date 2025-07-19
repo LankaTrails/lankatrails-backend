@@ -51,6 +51,9 @@ public class TouristGuideImpl implements TouristGuideService {
     private AreaRepository areaRepository;
 
     @Autowired
+    private TourGuideCategoryRepository tourGuideCategoryRepository;
+
+    @Autowired
     private ModelMapper modelMapper;
 
     @Autowired
@@ -114,6 +117,11 @@ public class TouristGuideImpl implements TouristGuideService {
         Optional<TouristGuide> checkDb = touristGuideRepository.findByServiceName(mappedObj.getServiceName());
 
         if (checkDb.isEmpty()) {
+            TourGuideCategory tourGuideCategory = tourGuideCategoryRepository
+                    .findByCategoryName(requestDTO.getTourGuideType())
+                    .orElseThrow(() -> new ResourceNotFoundException("Tour Guide Category", requestDTO.getTourGuideType().name()));
+            mappedObj.setTourGuideCategory(tourGuideCategory);
+
             // Save Tourist Guide first
             TouristGuide lastGuideAdded = touristGuideRepository.save(mappedObj);
 

@@ -1,5 +1,7 @@
 package com.lankatrails.lankatrails_backend.model;
 
+import com.lankatrails.lankatrails_backend.model.enums.FuelType;
+import com.lankatrails.lankatrails_backend.model.enums.TransmissionType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -19,9 +21,12 @@ public class Transport extends Service {
 
     private Integer vehicleCapacity;
     private Integer vehicleQty;
-    private Double pricePerKm;
+    private Boolean driverIncluded;
+    private Boolean airConditioned;
+    private TransmissionType transmissionType;
+    private FuelType fuelType;
 
     @ManyToOne
     @JoinColumn(name = "vehicleCategory_id")
-    private  VehicleCategory vehicleCategory;
+    private VehicleCategory vehicleCategory;
 }

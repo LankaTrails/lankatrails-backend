@@ -1,34 +1,35 @@
 package com.lankatrails.lankatrails_backend.model;
 
+import com.lankatrails.lankatrails_backend.model.enums.ActivityType;
 import com.lankatrails.lankatrails_backend.model.enums.VehicleType;
 import jakarta.persistence.*;
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.ToString;
 
-import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "vehicle_category")
-@Getter
-@Setter
 @NoArgsConstructor
-public class VehicleCategory {
+@AllArgsConstructor
+@Data
+@Table(name = "activity_category")
+@ToString
+public class ActivityCategory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "category_id")
-    private Long vehicleCategoryId;
+    private Long activityCategoryId;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, name = "name", nullable = false, unique = true, columnDefinition = "VARCHAR(20)")
-    private VehicleType categoryName;
+    private ActivityType categoryName;
 
-    @OneToMany(mappedBy = "vehicleCategory")
-    private Set<Transport> transports = new HashSet<>();
+    @OneToMany(mappedBy = "activityCategory")
+    private Set<ActivityService> activityServices;
 
-    public VehicleCategory(VehicleType categoryName) {
+    public ActivityCategory(ActivityType categoryName) {
         this.categoryName = categoryName;
     }
-
 }
