@@ -79,7 +79,7 @@ public class InitialDataConfig {
             vehicleTypeRepository.save(new VehicleCategory(VehicleType.MOTORCYCLE));
             vehicleTypeRepository.save(new VehicleCategory(VehicleType.BICYCLE));
             vehicleTypeRepository.save(new VehicleCategory(VehicleType.SCOOTER));
-            vehicleTypeRepository.save(new VehicleCategory(VehicleType.PICKUP_TRUCK));
+            vehicleTypeRepository.save(new VehicleCategory(VehicleType.PICKUP));
             vehicleTypeRepository.save(new VehicleCategory(VehicleType.SUV));
             vehicleTypeRepository.save(new VehicleCategory(VehicleType.TUK_TUK));
             System.out.println("Initial vehicle types created");

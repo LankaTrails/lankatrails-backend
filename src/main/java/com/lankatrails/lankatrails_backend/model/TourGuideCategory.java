@@ -8,6 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.util.Set;
+
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,6 +25,9 @@ public class TourGuideCategory {
     @Enumerated(EnumType.STRING)
     @Column(length = 20, name = "name", nullable = false, unique = true, columnDefinition = "VARCHAR(20)")
     private TourGuideType categoryName;
+
+    @OneToMany(mappedBy = "tourGuideCategory")
+    private Set<TouristGuide> touristGuides;
 
     public TourGuideCategory(TourGuideType categoryName) {
         this.categoryName = categoryName;

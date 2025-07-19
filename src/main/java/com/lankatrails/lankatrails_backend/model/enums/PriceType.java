@@ -10,6 +10,7 @@ public enum PriceType {
     PER_KM("Per KM"),
     PER_HOUR("Per Hour"),
     PER_DAY("Per Day"),
+    PER_NIGHT("Per Night"),
     PER_WEEK("Per Week"),
     PER_MONTH("Per Month");
 

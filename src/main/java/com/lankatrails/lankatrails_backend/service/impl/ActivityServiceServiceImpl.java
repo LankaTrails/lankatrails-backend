@@ -52,6 +52,9 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     private ImageRepository imageRepository;
 
     @Autowired
+    private ActivityCategoryRepository activityCategoryRepository;
+
+    @Autowired
     private CreateServiceFactory serviceFactory;
 
     @Autowired
@@ -85,6 +88,11 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         ActivityService lastServiceAdded;
 
         if (checkDb.isEmpty()) {
+            ActivityCategory activityCategory = activityCategoryRepository.findByCategoryName(services.getActivityType());
+            if (activityCategory == null) {
+                throw new ResourceNotFoundException("Activity Category", services.getActivityType().name());
+            }
+            mappedObj.setActivityCategory(activityCategory);
             // Save the base service object first
             lastServiceAdded = activityServiceRepository.save(mappedObj);
 
@@ -194,7 +202,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         ActivityServiceRequest prepareResponse = new ActivityServiceRequest();
 
         prepareResponse.setServiceName(activityService.getServiceName());
-        prepareResponse.setActivityType(activityService.getActivityType());
+        prepareResponse.setActivityType(activityService.getActivityCategory().getCategoryName());
         prepareResponse.setActivityDetails(activityService.getActivityDetails());
         prepareResponse.setSafetyInstructions(activityService.getSafetyInstructions());
         prepareResponse.setLocationBased(modelMapper.map(activityService.getLocationBased(), LocationDTO.class));
@@ -293,7 +301,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
       activity.setLocationBased(modelMapper.map(activityService.getLocationBased(), Location.class));
       activity.setContactNo(activityService.getContactNo());
       activity.setStatus(activityService.getStatus());
-      activity.setActivityType(activityService.getActivityType());
+      activity.setActivityCategory(activityCategoryRepository.findByCategoryName(activityService.getActivityType()));
       activity.setActivityDetails(activityService.getActivityDetails());
       activity.setSafetyInstructions(activityService.getSafetyInstructions());
 

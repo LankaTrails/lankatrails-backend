@@ -14,6 +14,11 @@ public class Accommodation extends Service {
 
     private String about;
 
+    @ManyToOne
+    @JoinColumn(name = "accommodationCategory_id")
+    private AccommodationCategory accommodationCategory;
+
+
 
 
 }

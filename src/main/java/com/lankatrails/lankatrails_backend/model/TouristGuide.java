@@ -20,6 +20,7 @@ public class TouristGuide extends Service {
     @OneToMany(mappedBy = "touristGuide")
     private Set<Language> languages = new HashSet<>();
 
-
-
+    @ManyToOne
+    @JoinColumn(name = "tour_guide_category_id")
+    private TourGuideCategory tourGuideCategory;
 }

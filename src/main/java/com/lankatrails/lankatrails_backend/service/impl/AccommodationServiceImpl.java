@@ -10,11 +10,9 @@ import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse
 import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
-import com.lankatrails.lankatrails_backend.model.Accommodation;
-import com.lankatrails.lankatrails_backend.model.ActivityService;
-import com.lankatrails.lankatrails_backend.model.Category;
-import com.lankatrails.lankatrails_backend.model.Provider;
+import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
+import com.lankatrails.lankatrails_backend.repositories.AccommodationCategoryRepository;
 import com.lankatrails.lankatrails_backend.repositories.AccommodationRepository;
 import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
@@ -40,6 +38,9 @@ public class AccommodationServiceImpl implements  AccommodationService {
 
     @Autowired
     AccommodationRepository accommodationRepository;
+
+    @Autowired
+    AccommodationCategoryRepository accommodationCategoryRepository;
 
     @Autowired
     TabsImpl tabsImpl;
@@ -69,11 +70,18 @@ public class AccommodationServiceImpl implements  AccommodationService {
 
         Provider provider = (Provider) authUtils.loggedInUser();
         mappedObj.setProvider(provider);
+//        mappedObj.setAccommodationCategory(services.getAccommodationType());
 
         Optional<Accommodation> checkDb = accommodationRepository.findByServiceName(mappedObj.getServiceName());
         Accommodation lastServiceAdded;
 
         if (checkDb.isEmpty()) {
+            AccommodationCategory accommodationCategory = accommodationCategoryRepository.findByCategoryName(services.getAccommodationType());
+            if (accommodationCategory == null) {
+                throw new ResourceNotFoundException("Accommodation Category", services.getAccommodationType().name());
+            }
+            mappedObj.setAccommodationCategory(accommodationCategory);
+
             // Save the base service object first
             lastServiceAdded = accommodationRepository.save(mappedObj);
 
