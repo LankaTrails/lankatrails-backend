@@ -76,10 +76,9 @@ public class AccommodationServiceImpl implements  AccommodationService {
         Accommodation lastServiceAdded;
 
         if (checkDb.isEmpty()) {
-            AccommodationCategory accommodationCategory = accommodationCategoryRepository.findByCategoryName(services.getAccommodationType());
-            if (accommodationCategory == null) {
-                throw new ResourceNotFoundException("Accommodation Category", services.getAccommodationType().name());
-            }
+            AccommodationCategory accommodationCategory = accommodationCategoryRepository
+                    .findByCategoryName(services.getAccommodationType())
+                    .orElseThrow(() -> new ResourceNotFoundException("Accommodation Category", services.getAccommodationType().name()));
             mappedObj.setAccommodationCategory(accommodationCategory);
 
             // Save the base service object first

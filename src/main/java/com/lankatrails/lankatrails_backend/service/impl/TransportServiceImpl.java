@@ -190,10 +190,8 @@ public class TransportServiceImpl implements TransportService {
         if (checkDb.isEmpty()){
 
             //set the vehicle category for the mappedObj
-            VehicleCategory vehicleCategory = vehicleCategoryRepository.findByCategoryName(transportRequestDTO.getVehicleCategory());
-            if (vehicleCategory == null) {
-                throw new ResourceNotFoundException("Vehicle Category", transportRequestDTO.getVehicleCategory().name());
-            }
+            VehicleCategory vehicleCategory = vehicleCategoryRepository.findByCategoryName(transportRequestDTO.getVehicleCategory())
+                    .orElseThrow(() -> new ResourceNotFoundException("Vehicle Category", transportRequestDTO.getVehicleCategory().name()));
             mappedObj.setVehicleCategory(vehicleCategory);
 
             // Save the base service object first

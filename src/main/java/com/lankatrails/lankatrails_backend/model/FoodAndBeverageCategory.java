@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.model;
 
 import com.lankatrails.lankatrails_backend.model.enums.AccommodationType;
+import com.lankatrails.lankatrails_backend.model.enums.FoodAndBeverageType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -14,22 +15,22 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-@Table(name = "accommodation_type")
+@Table(name = "food_and_beverage_category")
 @ToString
-public class AccommodationCategory {
+public class FoodAndBeverageCategory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "category_id")
-    private Integer accommodationCategoryId;
+    private Integer foodAndBeverageCategoryId;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, name = "name", nullable = false, unique = true, columnDefinition = "VARCHAR(20)")
-    private AccommodationType categoryName;
+    private FoodAndBeverageType categoryName;
 
-    @OneToMany(mappedBy = "accommodationCategory")
-    private Set<Accommodation> accommodations = new HashSet<>();
+    @OneToMany(mappedBy = "foodAndBeverageCategory")
+    private Set<FoodAndBeverage> foodAndBeverages = new HashSet<>();
 
-    public AccommodationCategory(com.lankatrails.lankatrails_backend.model.enums.AccommodationType accommodationType) {
-        this.categoryName = accommodationType;
+    public FoodAndBeverageCategory(FoodAndBeverageType foodAndBeverageType) {
+        this.categoryName = foodAndBeverageType;
     }
 }

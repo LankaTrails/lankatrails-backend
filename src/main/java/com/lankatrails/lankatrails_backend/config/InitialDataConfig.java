@@ -18,7 +18,8 @@ public class InitialDataConfig {
                                AccommodationCategoryRepository accommodationCategoryRepository,
                                VehicleCategoryRepository vehicleCategoryRepository,
                                ActivityCategoryRepository activityCategoryRepository,
-                               TourGuideCategoryRepository tourGuideCategoryRepository) {
+                               TourGuideCategoryRepository tourGuideCategoryRepository,
+                               FoodAndBeverageCategoryRepository foodBeverageCategoryRepository) {
         return args -> {
             initAdmin(userRepository, passwordEncoder);
             initCategories(categoryRepository);
@@ -26,6 +27,7 @@ public class InitialDataConfig {
             initVehicleTypes(vehicleCategoryRepository);
             initActivityTypes(activityCategoryRepository);
             initTourGuideTypes(tourGuideCategoryRepository);
+            initFoodBeverageTypes(foodBeverageCategoryRepository);
         };
     }
 
@@ -108,6 +110,24 @@ public class InitialDataConfig {
             tourGuideCategoryRepository.save(new TourGuideCategory(TourGuideType.SITE));
             tourGuideCategoryRepository.save(new TourGuideCategory(TourGuideType.AREA));
             System.out.println("Initial tour guide types created");
+        }
+    }
+
+    private void initFoodBeverageTypes(FoodAndBeverageCategoryRepository foodBeverageCategoryRepository) {
+        if (foodBeverageCategoryRepository.count() == 0) {
+            foodBeverageCategoryRepository.save(new FoodAndBeverageCategory(FoodAndBeverageType.RESTAURANT));
+            foodBeverageCategoryRepository.save(new FoodAndBeverageCategory(FoodAndBeverageType.CAFE));
+            foodBeverageCategoryRepository.save(new FoodAndBeverageCategory(FoodAndBeverageType.BAR));
+            foodBeverageCategoryRepository.save(new FoodAndBeverageCategory(FoodAndBeverageType.STREET_FOOD));
+            foodBeverageCategoryRepository.save(new FoodAndBeverageCategory(FoodAndBeverageType.FOOD_TRUCK));
+            foodBeverageCategoryRepository.save(new FoodAndBeverageCategory(FoodAndBeverageType.BAKERY));
+            foodBeverageCategoryRepository.save(new FoodAndBeverageCategory(FoodAndBeverageType.BREWERY));
+            foodBeverageCategoryRepository.save(new FoodAndBeverageCategory(FoodAndBeverageType.BUFFET));
+            foodBeverageCategoryRepository.save(new FoodAndBeverageCategory(FoodAndBeverageType.PUB));
+            foodBeverageCategoryRepository.save(new FoodAndBeverageCategory(FoodAndBeverageType.WINERY));
+            foodBeverageCategoryRepository.save(new FoodAndBeverageCategory(FoodAndBeverageType.DISTILLERY));
+            foodBeverageCategoryRepository.save(new FoodAndBeverageCategory(FoodAndBeverageType.FOOD_COURT));
+            System.out.println("Initial food and beverage types created");
         }
     }
 

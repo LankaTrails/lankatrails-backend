@@ -117,10 +117,9 @@ public class TouristGuideImpl implements TouristGuideService {
         Optional<TouristGuide> checkDb = touristGuideRepository.findByServiceName(mappedObj.getServiceName());
 
         if (checkDb.isEmpty()) {
-            TourGuideCategory tourGuideCategory = tourGuideCategoryRepository.findByCategoryName(requestDTO.getTourGuideType());
-            if (tourGuideCategory == null) {
-                throw new ResourceNotFoundException("Tour Guide Category", requestDTO.getTourGuideType().name());
-            }
+            TourGuideCategory tourGuideCategory = tourGuideCategoryRepository
+                    .findByCategoryName(requestDTO.getTourGuideType())
+                    .orElseThrow(() -> new ResourceNotFoundException("Tour Guide Category", requestDTO.getTourGuideType().name()));
             mappedObj.setTourGuideCategory(tourGuideCategory);
 
             // Save Tourist Guide first

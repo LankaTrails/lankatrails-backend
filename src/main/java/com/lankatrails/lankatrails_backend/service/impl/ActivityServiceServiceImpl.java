@@ -88,11 +88,11 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         ActivityService lastServiceAdded;
 
         if (checkDb.isEmpty()) {
-            ActivityCategory activityCategory = activityCategoryRepository.findByCategoryName(services.getActivityType());
-            if (activityCategory == null) {
-                throw new ResourceNotFoundException("Activity Category", services.getActivityType().name());
-            }
+            ActivityCategory activityCategory = activityCategoryRepository
+                    .findByCategoryName(services.getActivityType())
+                    .orElseThrow(() -> new ResourceNotFoundException("Activity Category", services.getActivityType().name()));
             mappedObj.setActivityCategory(activityCategory);
+
             // Save the base service object first
             lastServiceAdded = activityServiceRepository.save(mappedObj);
 
@@ -301,7 +301,6 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
       activity.setLocationBased(modelMapper.map(activityService.getLocationBased(), Location.class));
       activity.setContactNo(activityService.getContactNo());
       activity.setStatus(activityService.getStatus());
-      activity.setActivityCategory(activityCategoryRepository.findByCategoryName(activityService.getActivityType()));
       activity.setActivityDetails(activityService.getActivityDetails());
       activity.setSafetyInstructions(activityService.getSafetyInstructions());
 

@@ -19,8 +19,8 @@ import java.util.Set;
 public class ActivityCategory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "activity_category_id")
-    private Long categoryId;
+    @Column(name = "category_id")
+    private Long activityCategoryId;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, name = "name", nullable = false, unique = true, columnDefinition = "VARCHAR(20)")

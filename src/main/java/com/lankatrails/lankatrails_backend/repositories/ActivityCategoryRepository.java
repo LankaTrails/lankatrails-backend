@@ -5,7 +5,9 @@ import com.lankatrails.lankatrails_backend.model.enums.ActivityType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface ActivityCategoryRepository extends JpaRepository<ActivityCategory, Long> {
-    ActivityCategory findByCategoryName(ActivityType categoryName);
+    Optional<ActivityCategory> findByCategoryName(ActivityType categoryName);
 }

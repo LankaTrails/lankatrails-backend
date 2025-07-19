@@ -19,7 +19,7 @@ public class Transport extends Service {
 
     private Integer vehicleCapacity;
     private Integer vehicleQty;
-    private Double pricePerKm;
+//    private Double pricePerKm;
 
     @ManyToOne
     @JoinColumn(name = "vehicleCategory_id")

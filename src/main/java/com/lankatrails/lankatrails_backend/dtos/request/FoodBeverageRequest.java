@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
+import com.lankatrails.lankatrails_backend.model.enums.FoodAndBeverageType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -9,4 +10,5 @@ import lombok.Setter;
 @NoArgsConstructor
 public class FoodBeverageRequest extends ServiceRequest {
     private String openHours;
+    private FoodAndBeverageType foodAndBeverageType;
 }

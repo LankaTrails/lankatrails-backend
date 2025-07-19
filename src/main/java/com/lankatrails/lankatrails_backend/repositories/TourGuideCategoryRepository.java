@@ -5,7 +5,9 @@ import com.lankatrails.lankatrails_backend.model.enums.TourGuideType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface TourGuideCategoryRepository extends JpaRepository<TourGuideCategory, Long> {
-    TourGuideCategory findByCategoryName(TourGuideType categoryName);
+    Optional<TourGuideCategory> findByCategoryName(TourGuideType categoryName);
 }
