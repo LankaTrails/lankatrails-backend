@@ -12,7 +12,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class Accommodation extends Service {
 
-    private String about;
+//    private String about;
     private Integer maxGuests;
     private Integer numberOfRooms;
     private Boolean freeWifi;

@@ -20,6 +20,7 @@ public class FoodAndBeverage extends Service{
     private Boolean alcoholServed;
     private Boolean outdoorSeating;
     private Boolean liveMusic;
+    private String cuisineType;
 
     @ManyToOne
     @JoinColumn(name = "foodAndBeverageCategory_id")

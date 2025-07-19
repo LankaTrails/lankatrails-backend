@@ -16,4 +16,5 @@ public class FoodBeverageRequest extends ServiceRequest {
     private Boolean alcoholServed;
     private Boolean outdoorSeating;
     private Boolean liveMusic;
+    private String cuisineType;
 }
