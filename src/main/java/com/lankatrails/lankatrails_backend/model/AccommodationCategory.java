@@ -20,9 +20,9 @@ public class AccommodationCategory {
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, name = "name", nullable = false, unique = true, columnDefinition = "VARCHAR(20)")
-    private com.lankatrails.lankatrails_backend.model.enums.AccommodationType CategoryName;
+    private com.lankatrails.lankatrails_backend.model.enums.AccommodationType categoryName;
 
     public AccommodationCategory(com.lankatrails.lankatrails_backend.model.enums.AccommodationType accommodationType) {
-        this.CategoryName = accommodationType;
+        this.categoryName = accommodationType;
     }
 }
