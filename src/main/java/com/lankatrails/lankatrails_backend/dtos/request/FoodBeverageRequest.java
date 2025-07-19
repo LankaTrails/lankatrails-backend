@@ -11,4 +11,9 @@ import lombok.Setter;
 public class FoodBeverageRequest extends ServiceRequest {
     private String openHours;
     private FoodAndBeverageType foodAndBeverageType;
+    private Boolean vegetarianOptions;
+    private Boolean halalCertified;
+    private Boolean alcoholServed;
+    private Boolean outdoorSeating;
+    private Boolean liveMusic;
 }

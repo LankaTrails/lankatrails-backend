@@ -15,6 +15,11 @@ import lombok.Setter;
 @NoArgsConstructor
 public class FoodAndBeverage extends Service{
     private String openHours;
+    private Boolean vegetarianOptions;
+    private Boolean halalCertified;
+    private Boolean alcoholServed;
+    private Boolean outdoorSeating;
+    private Boolean liveMusic;
 
     @ManyToOne
     @JoinColumn(name = "foodAndBeverageCategory_id")

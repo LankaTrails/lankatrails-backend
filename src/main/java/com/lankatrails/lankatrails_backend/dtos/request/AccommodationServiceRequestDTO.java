@@ -13,5 +13,17 @@ import lombok.Setter;
 public class AccommodationServiceRequestDTO extends ServiceRequest{
     private String about;
     private AccommodationType accommodationType;
+    private Integer maxGuests;
+    private Integer numberOfRooms;
+    private Boolean freeWifi;
+    private Boolean parkingAvailable;
+    private Boolean breakfastIncluded;
+    private Boolean airConditioned;
+    private Boolean swimmingPool;
+    private Boolean petFriendly;
+    private Boolean laundryService;
+    private Boolean roomService;
+    private Boolean gymAccess;
+    private Boolean spaServices;
 
 }
