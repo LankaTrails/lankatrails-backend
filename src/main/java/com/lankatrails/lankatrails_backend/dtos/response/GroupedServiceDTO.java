@@ -15,7 +15,8 @@ import java.util.List;
 @NoArgsConstructor
 public class GroupedServiceDTO {
     private Long providerId;
-    private String providerName;
+    private String businessName;
+    private String coverImageUrl;
     private LocationDTO groupedLocation;
     private List<ServiceDTO> services;
 }

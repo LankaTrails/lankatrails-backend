@@ -191,6 +191,7 @@ public class ServiceServiceImpl implements ServiceService {
             result.add(new GroupedServiceDTO(
                     representative.getProvider().getUserId(),
                     representative.getProvider().getBusinessName(),
+                    representative.getProvider().getCoverImageUrl(),
                     modelMapper.map(representative.getLocationBased(), LocationDTO.class),
                     dtoList
             ));
