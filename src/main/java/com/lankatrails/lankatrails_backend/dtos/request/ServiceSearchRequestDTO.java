@@ -1,6 +1,6 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
-import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
+import com.lankatrails.lankatrails_backend.model.enums.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,4 +17,9 @@ public class ServiceSearchRequestDTO {
     private String country;
 
     private ServiceCategory category;
+    private AccommodationType accommodationType;
+    private ActivityType activityType;
+    private FoodAndBeverageType foodAndBeverageType;
+    private VehicleType vehicleType;
+    private TourGuideType tourGuideType;
 }
