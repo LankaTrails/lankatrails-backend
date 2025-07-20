@@ -10,7 +10,7 @@ import java.util.List;
 public interface TouristGuideService {
     APIResponse<TouristGuideResponseDTO> getAllTourGuides(Integer pageNumber, Integer pageSize);
     TouristGuideResponseDTO addNewTouristGuide(TouristGuideRequestDTO requestDTO, List<MultipartFile> images);
-    APIResponse<TouristGuideRequestDTO> getGuideDetails(Long id);
+    APIResponse<TouristGuideRequestDTO> searchWithId(Long id);
     TouristGuideResponseDTO updateTourGuide(Long id,TouristGuideRequestDTO requestDTO);
 
 

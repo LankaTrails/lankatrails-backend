@@ -39,11 +39,11 @@ public class TourGuideController {
 
     @GetMapping("/tour-guide/{id}")
     public ResponseEntity<APIResponse<TouristGuideRequestDTO>> getGuideDetails(@PathVariable Long id) {
-        APIResponse<TouristGuideRequestDTO> touristGuideResponseDTO = touristGuideService.getGuideDetails(id);
+        APIResponse<TouristGuideRequestDTO> touristGuideResponseDTO = touristGuideService.searchWithId(id);
         return new ResponseEntity<>(touristGuideResponseDTO, HttpStatus.OK);
     }
 
-    @PostMapping(value = "/provider/tour-guide/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/tour-guide/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TouristGuideResponseDTO> addNewTourGuide
             (
                     @RequestPart("service") @Valid TouristGuideRequestDTO requestDTO,
