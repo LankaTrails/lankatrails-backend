@@ -3,7 +3,6 @@ package com.lankatrails.lankatrails_backend.controller;
 import com.lankatrails.lankatrails_backend.dtos.request.AccommodationServiceRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.AccommodationResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.service.AccommodationService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,10 +59,10 @@ public class AccommodationController {
         return new ResponseEntity<>(accommodationResponse,HttpStatus.OK);
     }
 
-//    @GetMapping("/provider/accommodation/{id}")
-//    public ResponseEntity<APIResponse<AccommodationServiceRequestDTO>> getById(@PathVariable Long Id){
-//        APIResponse<AccommodationServiceRequestDTO> accommodationResponse = accommodationService.searchWithId(Id);
-//        return new ResponseEntity<>(accommodationResponse,HttpStatus.OK);
-//    }
+    @GetMapping("/provider/accommodation/{Id}")
+    public ResponseEntity<APIResponse<AccommodationServiceRequestDTO>> searchById(@PathVariable Long Id){
+        APIResponse<AccommodationServiceRequestDTO> accommodationResponse = accommodationService.searchWithId(Id);
+        return new ResponseEntity<>(accommodationResponse,HttpStatus.OK);
+    }
 
 }

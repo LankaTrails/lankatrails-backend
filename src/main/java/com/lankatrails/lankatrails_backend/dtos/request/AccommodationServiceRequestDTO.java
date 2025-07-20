@@ -11,7 +11,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AccommodationServiceRequestDTO extends ServiceRequest{
-    private String about;
+//    private String about;
     private AccommodationType accommodationType;
     private Integer maxGuests;
     private Integer numberOfRooms;

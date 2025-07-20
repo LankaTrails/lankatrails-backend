@@ -176,7 +176,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
             tabs.add(tabReq);
         }
 
-        List<PolicySection> policySection = policySectionRepository.findByProvider_UserIdAndCategory_CategoryIdOrCategoryIsNull(authUtils.loggedInUserId(),4L);
+        List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(authUtils.loggedInUserId(),4L);
 
         List<PolicySectionRequest> policies = new ArrayList<>();
 //
