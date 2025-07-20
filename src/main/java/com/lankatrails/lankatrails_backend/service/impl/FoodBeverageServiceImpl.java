@@ -10,10 +10,7 @@ import com.lankatrails.lankatrails_backend.dtos.response.FoodBeverageResponse;
 import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
-import com.lankatrails.lankatrails_backend.model.ActivityService;
-import com.lankatrails.lankatrails_backend.model.Category;
-import com.lankatrails.lankatrails_backend.model.FoodAndBeverage;
-import com.lankatrails.lankatrails_backend.model.Provider;
+import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
@@ -43,6 +40,9 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
 
     @Autowired
     private FoodBeverageRepository foodBeverageRepository;
+
+    @Autowired
+    private FoodAndBeverageCategoryRepository foodAndBeverageCategoryRepository;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -82,6 +82,11 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         FoodAndBeverage lastServiceAdded;
 
         if (checkDb.isEmpty()) {
+            FoodAndBeverageCategory foodAndBeverageCategory = foodAndBeverageCategoryRepository
+                    .findByCategoryName(foodBeverageRequest.getFoodAndBeverageType())
+                    .orElseThrow(() -> new ResourceNotFoundException("Food and Beverage Category", foodBeverageRequest.getFoodAndBeverageType().getDisplayName()));
+            mappedObj.setFoodAndBeverageCategory(foodAndBeverageCategory);
+
             // Save the base service object first
             lastServiceAdded = foodBeverageRepository.save(mappedObj);
 

@@ -37,7 +37,7 @@ public abstract class ServiceRequest {
 
     private Double price;
 
-    @NotBlank(message = "Price type is required")
+//    @NotBlank(message = "Price type is required")
     private PriceType priceType;
 
     private List<TabSectionRequest> tabsSection;

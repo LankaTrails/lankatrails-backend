@@ -11,7 +11,7 @@ public enum VehicleType {
     MOTORCYCLE("Motorcycle"),
     BICYCLE("Bicycle"),
     SCOOTER("Scooter"),
-    PICKUP_TRUCK("Pickup Truck"),
+    PICKUP("Pickup Truck"),
     SUV("SUV"),
     TUK_TUK("Tuk Tuk");
 

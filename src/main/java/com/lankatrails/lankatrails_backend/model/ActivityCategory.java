@@ -8,6 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.util.Set;
+
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,12 +19,15 @@ import lombok.ToString;
 public class ActivityCategory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "activity_category_id")
-    private Long categoryId;
+    @Column(name = "category_id")
+    private Long activityCategoryId;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, name = "name", nullable = false, unique = true, columnDefinition = "VARCHAR(20)")
     private ActivityType categoryName;
+
+    @OneToMany(mappedBy = "activityCategory")
+    private Set<ActivityService> activityServices;
 
     public ActivityCategory(ActivityType categoryName) {
         this.categoryName = categoryName;
