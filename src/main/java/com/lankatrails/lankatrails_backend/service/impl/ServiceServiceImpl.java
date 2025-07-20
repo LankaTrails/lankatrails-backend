@@ -286,7 +286,7 @@ public class ServiceServiceImpl implements ServiceService {
         } else if (request.getCity() != null) {
             services = serviceRepository.findByLocationProviderCategory(request.getCity(), request.getProviderId(), Long.valueOf(categoryRequired.getCategoryId()));
         } else {
-            services = serviceRepository.findAll();
+            services = serviceRepository.findByCategoryAndProvider(categoryRequired, provider);
         }
 
         if (services.isEmpty()) {

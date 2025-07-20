@@ -162,7 +162,6 @@ public class AccommodationServiceImpl implements  AccommodationService {
         List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(authUtils.loggedInUserId(),1L);
 
         List<PolicySectionRequest> policies = new ArrayList<>();
-//
         for (PolicySection policy : policySection){
 
             PolicySectionRequest policyReq = new PolicySectionRequest();
@@ -184,10 +183,14 @@ public class AccommodationServiceImpl implements  AccommodationService {
         }
 
         AccommodationServiceRequestDTO prepareResponse = new AccommodationServiceRequestDTO();
-
+        prepareResponse.setServiceId(accommodation.getServiceId());
         prepareResponse.setServiceName(accommodation.getServiceName());
-//        prepareResponse.setAccommodationType(accommodation.getA);
+        prepareResponse.setStatus(accommodation.getStatus());
+        prepareResponse.setAccommodationType(accommodation.getAccommodationCategory().getCategoryName());
         prepareResponse.setMaxGuests(accommodation.getMaxGuests());
+        prepareResponse.setNumberOfRooms(accommodation.getNumberOfRooms());
+        prepareResponse.setPrice(accommodation.getPrice());
+        prepareResponse.setPriceType(accommodation.getPriceType());
         prepareResponse.setFreeWifi(accommodation.getFreeWifi());
         prepareResponse.setParkingAvailable(accommodation.getParkingAvailable());
         prepareResponse.setBreakfastIncluded(accommodation.getBreakfastIncluded());

@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface TransportService {
     APIResponse<TransportResponseDTO> getAll(Integer pageNumber, Integer pageSize);
-    TransportResponseDTO getById(Long Id);
+    APIResponse<TransportRequestDTO> getById(Long Id);
     TransportResponseDTO updateTransport(Long Id, TransportRequestDTO transportRequestDTO);
     APIResponse<String> addNewTransport(TransportRequestDTO transportRequestDTO, List<MultipartFile> images);
     APIResponse<String> deleteTransport(Long Id);
