@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface AccommodationCategoryRepository extends JpaRepository<AccommodationCategory, Long> {
     Optional<AccommodationCategory> findByCategoryName(AccommodationType categoryName);
 
+
 }

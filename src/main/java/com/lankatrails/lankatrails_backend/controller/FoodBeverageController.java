@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.controller;
 
+import com.lankatrails.lankatrails_backend.dtos.request.AccommodationServiceRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.FoodBeverageRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
@@ -58,5 +59,11 @@ public class FoodBeverageController {
 
         APIResponse<FoodBeverageResponse> foodBeverageResponse= foodBeverageService.getAll(pageNumber,pageSize);
         return new ResponseEntity<>(foodBeverageResponse,HttpStatus.OK);
+    }
+
+    @GetMapping("/food-beverage/{Id}")
+    public ResponseEntity<APIResponse<FoodBeverageRequest>> searchById(@PathVariable Long Id){
+        APIResponse<FoodBeverageRequest> accommodationResponse = foodBeverageService.searchWithId(Id);
+        return new ResponseEntity<>(accommodationResponse,HttpStatus.OK);
     }
 }

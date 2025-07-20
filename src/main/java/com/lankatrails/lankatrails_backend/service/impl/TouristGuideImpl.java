@@ -205,7 +205,8 @@ public class TouristGuideImpl implements TouristGuideService {
     }
 
     @Override
-    public APIResponse<TouristGuideRequestDTO> getGuideDetails(Long id) {
+    @Transactional
+    public APIResponse<TouristGuideRequestDTO> searchWithId(Long id) {
         TouristGuide touristGuide=touristGuideRepository.findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("Tour Guide",id));
 
@@ -221,20 +222,31 @@ public class TouristGuideImpl implements TouristGuideService {
             tabs.add(tabReq);
         }
 
-        List<PolicySection> policySection=policySectionRepository.findByServices_ServiceId(id);
-        List<PolicySectionRequest> policies=new ArrayList<>();
+        List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(authUtils.loggedInUserId(),4L);
 
-        //get the policies
-        for (PolicySection policy:policySection){
-            PolicySectionRequest guidePolicies=new PolicySectionRequest();
-            guidePolicies.setId(policy.getId());
-            guidePolicies.setHeading(policy.getHeading());
-            guidePolicies.setPolicy(policy.getPolicy());
-            policies.add(guidePolicies);
+        List<PolicySectionRequest> policies = new ArrayList<>();
+//
+        for (PolicySection policy : policySection){
+
+            PolicySectionRequest policyReq = new PolicySectionRequest();
+            policyReq.setId(policy.getId());
+            policyReq.setHeading(policy.getHeading());
+            policyReq.setPolicy(policy.getPolicy());
+            policies.add(policyReq);
         }
 
-        //Prepare the response
+        //set the images
+        List<Image> images = imageRepository.findByService_ServiceId(id);
+        //map images to imageDTO
+        List<ImageRequestDTO> imgDTOs = new ArrayList<>();
+        for (Image img : images){
+            ImageRequestDTO imgDTO = new ImageRequestDTO();
+            imgDTO.setImageUrl(img.getImageUrl());
+            imgDTOs.add(imgDTO);
 
+        }
+
+        //prepare the response
         TouristGuideRequestDTO prepareResponse=new TouristGuideRequestDTO();
 
         prepareResponse.setServiceName(touristGuide.getServiceName());
@@ -242,13 +254,18 @@ public class TouristGuideImpl implements TouristGuideService {
         prepareResponse.setLocationBased(modelMapper.map(touristGuide.getLocationBased(), LocationDTO.class));
         prepareResponse.setPolicySection(policies);
         prepareResponse.setTabsSection(tabs);
-//        prepareResponse.setLanguages(touristGuide.getLanguages());
+        prepareResponse.setLanguages(touristGuide.getLanguages()
+                        .stream()
+                        .map(Language::getLanguage)
+                        .collect(Collectors.toList())
+        );
+        
 //        prepareResponse.setServiceAreas(touristGuide.getServiceAreas());
 
 
         return APIResponse.<TouristGuideRequestDTO>builder()
                 .success(true)
-                .message("Tourist Guide with ID: "+touristGuide.getServiceId())
+                .message("Found Tourist Guide")
                 .data(prepareResponse)
                 .build();
 

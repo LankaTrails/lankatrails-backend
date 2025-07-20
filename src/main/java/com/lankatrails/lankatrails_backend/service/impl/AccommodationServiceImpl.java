@@ -1,9 +1,6 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.AccommodationServiceRequestDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.AccommodationResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
@@ -12,9 +9,7 @@ import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
-import com.lankatrails.lankatrails_backend.repositories.AccommodationCategoryRepository;
-import com.lankatrails.lankatrails_backend.repositories.AccommodationRepository;
-import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
+import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.AccommodationService;
 import com.lankatrails.lankatrails_backend.service.ImageService;
@@ -40,7 +35,13 @@ public class AccommodationServiceImpl implements  AccommodationService {
     AccommodationRepository accommodationRepository;
 
     @Autowired
-    AccommodationCategoryRepository accommodationCategoryRepository;
+    TabsSectionRepository tabsSectionRepository;
+
+    @Autowired
+    PolicySectionRepository policySectionRepository;
+
+    @Autowired
+    ImageRepository imageRepository;
 
     @Autowired
     TabsImpl tabsImpl;
@@ -70,17 +71,11 @@ public class AccommodationServiceImpl implements  AccommodationService {
 
         Provider provider = (Provider) authUtils.loggedInUser();
         mappedObj.setProvider(provider);
-//        mappedObj.setAccommodationCategory(services.getAccommodationType());
 
         Optional<Accommodation> checkDb = accommodationRepository.findByServiceName(mappedObj.getServiceName());
         Accommodation lastServiceAdded;
 
         if (checkDb.isEmpty()) {
-            AccommodationCategory accommodationCategory = accommodationCategoryRepository
-                    .findByCategoryName(services.getAccommodationType())
-                    .orElseThrow(() -> new ResourceNotFoundException("Accommodation Category", services.getAccommodationType().name()));
-            mappedObj.setAccommodationCategory(accommodationCategory);
-
             // Save the base service object first
             lastServiceAdded = accommodationRepository.save(mappedObj);
 
@@ -143,5 +138,78 @@ public class AccommodationServiceImpl implements  AccommodationService {
                 .message("Accommodation Services Fetched")
                 .data(accommodationResponse)
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<AccommodationServiceRequestDTO> searchWithId(Long Id) {
+        Accommodation accommodation=accommodationRepository.findById(Id)
+                .orElseThrow(()->new ResourceNotFoundException("Accommodation Service",Id));
+
+        //get the related tabs
+        List<TabsSection> tabsSection=tabsSectionRepository.findByService_ServiceId(Id);
+        List<TabSectionRequest> tabs=new ArrayList<>();
+
+        for (TabsSection tab :tabsSection){
+            TabSectionRequest tabReq = new TabSectionRequest();
+            tabReq.setId(tab.getId());
+            tabReq.setHeading(tab.getHeading());
+            tabReq.setContent(tab.getContent());
+            tabs.add(tabReq);
+        }
+
+        //get the related policies
+        List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(authUtils.loggedInUserId(),1L);
+
+        List<PolicySectionRequest> policies = new ArrayList<>();
+//
+        for (PolicySection policy : policySection){
+
+            PolicySectionRequest policyReq = new PolicySectionRequest();
+            policyReq.setId(policy.getId());
+            policyReq.setHeading(policy.getHeading());
+            policyReq.setPolicy(policy.getPolicy());
+            policies.add(policyReq);
+        }
+
+        //set the images
+        List<Image> images = imageRepository.findByService_ServiceId(Id);
+        //map images to imageDTO
+        List<ImageRequestDTO> imgDTOs = new ArrayList<>();
+        for (Image img : images){
+            ImageRequestDTO imgDTO = new ImageRequestDTO();
+            imgDTO.setImageUrl(img.getImageUrl());
+            imgDTOs.add(imgDTO);
+
+        }
+
+        AccommodationServiceRequestDTO prepareResponse = new AccommodationServiceRequestDTO();
+
+        prepareResponse.setServiceName(accommodation.getServiceName());
+//        prepareResponse.setAccommodationType(accommodation.getA);
+        prepareResponse.setMaxGuests(accommodation.getMaxGuests());
+        prepareResponse.setFreeWifi(accommodation.getFreeWifi());
+        prepareResponse.setParkingAvailable(accommodation.getParkingAvailable());
+        prepareResponse.setBreakfastIncluded(accommodation.getBreakfastIncluded());
+        prepareResponse.setAirConditioned(accommodation.getAirConditioned());
+        prepareResponse.setSwimmingPool(accommodation.getSwimmingPool());
+        prepareResponse.setPetFriendly(accommodation.getPetFriendly());
+        prepareResponse.setLaundryService(accommodation.getLaundryService());
+        prepareResponse.setRoomService(accommodation.getRoomService());
+        prepareResponse.setGymAccess(accommodation.getGymAccess());
+        prepareResponse.setSpaServices(accommodation.getSpaServices());
+        prepareResponse.setLocationBased(modelMapper.map(accommodation.getLocationBased(), LocationDTO.class));
+        prepareResponse.setContactNo(accommodation.getContactNo());
+        prepareResponse.setTabsSection(tabs);
+        prepareResponse.setPolicySection(policies);
+        prepareResponse.setImages(imgDTOs);
+
+        return  APIResponse.<AccommodationServiceRequestDTO>builder()
+                .success(true)
+                .message("Fetched Accommodation Service")
+                .data(prepareResponse)
+                .build();
+
+
     }
 }

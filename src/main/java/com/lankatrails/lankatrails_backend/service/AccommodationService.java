@@ -10,4 +10,5 @@ import java.util.List;
 public interface AccommodationService {
     APIResponse<String> addService(AccommodationServiceRequestDTO accommodationService, List<MultipartFile> images);
     APIResponse<AccommodationResponse> getAll_Accommodations(Integer pageNumber, Integer pageSize);
+    APIResponse<AccommodationServiceRequestDTO> searchWithId(Long Id);
 }
