@@ -1,9 +1,6 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.FoodBeverageRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.FoodBeverageResponse;
@@ -64,6 +61,12 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
 
     @Autowired
     private PolicyImpl policyImpl;
+
+    @Autowired
+    private PolicySectionRepository policySectionRepository;
+
+    @Autowired
+    private TabsSectionRepository tabsSectionRepository;
 
 
     @Override
@@ -148,6 +151,72 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
                 .success(true)
                 .message("Food and Beverages services Fetched")
                 .data(foodBeverageResponse)
+                .build();
+
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<FoodBeverageRequest> searchWithId(Long Id){
+        FoodAndBeverage foodAndBeverage=foodBeverageRepository.findById(Id)
+                .orElseThrow(()->new ResourceNotFoundException("Food and Beverage",Id));
+
+        List<TabsSection> tabsSection=tabsSectionRepository.findByService_ServiceId(Id);
+        List<TabSectionRequest> tabs=new ArrayList<>();
+
+        for (TabsSection tab :tabsSection){
+            TabSectionRequest tabReq = new TabSectionRequest();
+            tabReq.setId(tab.getId());
+            tabReq.setHeading(tab.getHeading());
+            tabReq.setContent(tab.getContent());
+            tabs.add(tabReq);
+        }
+
+        List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(authUtils.loggedInUserId(),3L);
+
+        List<PolicySectionRequest> policies = new ArrayList<>();
+//
+        for (PolicySection policy : policySection){
+
+            PolicySectionRequest policyReq = new PolicySectionRequest();
+            policyReq.setId(policy.getId());
+            policyReq.setHeading(policy.getHeading());
+            policyReq.setPolicy(policy.getPolicy());
+            policies.add(policyReq);
+        }
+
+        //set the images
+        List<Image> images = imageRepository.findByService_ServiceId(Id);
+        //map images to imageDTO
+        List<ImageRequestDTO> imgDTOs = new ArrayList<>();
+        for (Image img : images){
+            ImageRequestDTO imgDTO = new ImageRequestDTO();
+            imgDTO.setImageUrl(img.getImageUrl());
+            imgDTOs.add(imgDTO);
+
+        }
+
+        FoodBeverageRequest prepareResponse = new FoodBeverageRequest();
+
+        prepareResponse.setServiceName(foodAndBeverage.getServiceName());
+        prepareResponse.setOpenHours(foodAndBeverage.getOpenHours());
+        prepareResponse.setFoodAndBeverageType(foodAndBeverage.getFoodAndBeverageCategory().getCategoryName());
+        prepareResponse.setVegetarianOptions(foodAndBeverage.getVegetarianOptions());
+        prepareResponse.setHalalCertified(foodAndBeverage.getHalalCertified());
+        prepareResponse.setAlcoholServed(foodAndBeverage.getAlcoholServed());
+        prepareResponse.setOutdoorSeating(foodAndBeverage.getOutdoorSeating());
+        prepareResponse.setLiveMusic(foodAndBeverage.getLiveMusic());
+        prepareResponse.setCuisineType(foodAndBeverage.getCuisineType());
+        prepareResponse.setLocationBased(modelMapper.map(foodAndBeverage.getLocationBased(), LocationDTO.class));
+        prepareResponse.setContactNo(foodAndBeverage.getContactNo());
+        prepareResponse.setTabsSection(tabs);
+        prepareResponse.setPolicySection(policies);
+        prepareResponse.setImages(imgDTOs);
+
+        return  APIResponse.<FoodBeverageRequest>builder()
+                .success(true)
+                .message("Fetched Food and Beverage Service ")
+                .data(prepareResponse)
                 .build();
 
     }

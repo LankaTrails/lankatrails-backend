@@ -12,4 +12,5 @@ import java.util.List;
 public interface FoodBeverageService {
     APIResponse<String> addService(FoodBeverageRequest foodBeverageRequest, List<MultipartFile> images);
     APIResponse<FoodBeverageResponse> getAll(Integer pageNumber, Integer pageSize);
+    APIResponse<FoodBeverageRequest> searchWithId(Long Id);
 }
