@@ -1,15 +1,18 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.ProviderDetailsRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceSearchRequestDTO;
-import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.GroupedServiceDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.*;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
+import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
 import com.lankatrails.lankatrails_backend.repositories.ImageRepository;
+import com.lankatrails.lankatrails_backend.repositories.ProviderRepository;
 import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
 import com.lankatrails.lankatrails_backend.service.ServiceService;
 import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
@@ -37,6 +40,12 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Autowired
     ImageRepository imageRepository;
+
+    @Autowired
+    ProviderRepository providerRepository;
+
+    @Autowired
+    CategoryRepository categoryRepository;
 
     @Autowired
     FileUploadService fileUploadService;
@@ -106,7 +115,7 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Override
     @Transactional
-    public APIResponse<List<GroupedServiceDTO>> searchServicesAdvanced(ServiceSearchRequestDTO filter) {
+    public APIResponse<SearchResponseDTO> searchServicesAdvanced(ServiceSearchRequestDTO filter) {
         List<Service> services;
 
         // Step 1: Filter by location
@@ -167,40 +176,149 @@ public class ServiceServiceImpl implements ServiceService {
             );
         }
 
-        // Step 3: Group by Provider + Location
-        Map<String, List<Service>> grouped = filtered.collect(Collectors.groupingBy(service ->
-                service.getProvider().getUserId() + "|" + service.getLocationBased().getCity() + "|" + service.getCategory().getCategoryName()
+        // Step 3: Group by (provider + city + category)
+        Map<String, List<Service>> groupedMap = filtered.collect(Collectors.groupingBy(service ->
+                service.getProvider().getUserId() + "|" +
+                        service.getLocationBased().getCity() + "|" +
+                        service.getCategory().getCategoryName()
         ));
 
-        List<GroupedServiceDTO> result = new ArrayList<>();
+        List<ProviderSearchDTO> groupedProviders = new ArrayList<>();
+        List<ServiceSearchDTO> singleServices = new ArrayList<>();
 
-        for (Map.Entry<String, List<Service>> entry : grouped.entrySet()) {
-            List<ServiceDTO> dtoList = entry.getValue().stream().map(service -> {
-                ServiceDTO dto = new ServiceDTO();
+        for (Map.Entry<String, List<Service>> entry : groupedMap.entrySet()) {
+            List<Service> group = entry.getValue();
+
+            if (group.size() == 1) {
+                // Single service — map to ServiceSearchDTO
+                Service service = group.getFirst();
+                ServiceSearchDTO dto = new ServiceSearchDTO();
                 dto.setServiceId(service.getServiceId());
                 dto.setServiceName(service.getServiceName());
                 dto.setCategory(service.getCategory().getCategoryName());
                 dto.setLocationBased(modelMapper.map(service.getLocationBased(), LocationDTO.class));
+                dto.setPrice(service.getPrice());
+                dto.setPriceType(service.getPriceType());
                 dto.setMainImageUrl(service.getImages() != null && !service.getImages().isEmpty()
-                        ? service.getImages().get(0).getImageUrl()
+                        ? service.getImages().getFirst().getImageUrl()
                         : null);
-                return dto;
-            }).toList();
-
-            Service representative = entry.getValue().get(0);
-            result.add(new GroupedServiceDTO(
-                    representative.getProvider().getUserId(),
-                    representative.getProvider().getBusinessName(),
-                    representative.getProvider().getCoverImageUrl(),
-                    modelMapper.map(representative.getLocationBased(), LocationDTO.class),
-                    dtoList
-            ));
+                singleServices.add(dto);
+            } else {
+                // Grouped services — map to ProviderSearchDTO
+                Service representative = group.getFirst();
+                ProviderSearchDTO dto = new ProviderSearchDTO();
+                dto.setProviderId(representative.getProvider().getUserId());
+                dto.setBusinessName(representative.getProvider().getBusinessName());
+                dto.setLocation(modelMapper.map(representative.getLocationBased(), LocationDTO.class));
+                dto.setCoverImageUrl(representative.getProvider().getCoverImageUrl());
+                dto.setCategory(representative.getCategory().getCategoryName());
+                groupedProviders.add(dto);
+            }
         }
 
-        return APIResponse.<List<GroupedServiceDTO>>builder()
+        SearchResponseDTO responseDTO = new SearchResponseDTO();
+        responseDTO.setProviders(groupedProviders);
+        responseDTO.setServices(singleServices);
+
+        return APIResponse.<SearchResponseDTO>builder()
                 .success(true)
-                .message("Grouped services based on advanced filters")
-                .data(result)
+                .message("Search results with grouped providers and individual services")
+                .data(responseDTO)
+                .build();
+    }
+
+
+    @Override
+    @Transactional
+    public APIResponse<ProviderDetailsDTO> getServicesByProviderAndCategory(Long providerId, ServiceCategory category) {
+        Provider provider = providerRepository.findByUserId(providerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", providerId));
+
+        Category categoryRequired = categoryRepository.findByCategoryName(category)
+                .orElseThrow(() -> new ResourceNotFoundException("Category", String.valueOf(category)));
+
+        List<Service> services = serviceRepository.findByProviderAndCategory(provider, categoryRequired);
+
+        if (services.isEmpty()) {
+            throw new ResourceNotFoundException("No services found for provider and category", providerId + " - " + category);
+        }
+
+        ProviderDetailsDTO providerDetails = new ProviderDetailsDTO();
+        providerDetails.setProviderId(provider.getUserId());
+        providerDetails.setBusinessName(provider.getBusinessName());
+        providerDetails.setCoverImageUrl(provider.getCoverImageUrl());
+        providerDetails.setCategory(categoryRequired.getCategoryName());
+        providerDetails.setServices(services.stream()
+                .map(service -> {
+                    ServiceSearchDTO serviceSearchDTO = new ServiceSearchDTO();
+                    serviceSearchDTO.setServiceId(service.getServiceId());
+                    serviceSearchDTO.setServiceName(service.getServiceName());
+                    serviceSearchDTO.setCategory(service.getCategory().getCategoryName());
+                    serviceSearchDTO.setMainImageUrl(service.getImages() != null && !service.getImages().isEmpty()
+                            ? service.getImages().getFirst().getImageUrl()
+                            : null);
+                    return serviceSearchDTO;
+                })
+                .collect(Collectors.toList()));
+        return APIResponse.<ProviderDetailsDTO>builder()
+                .success(true)
+                .message("Services found for provider and category")
+                .data(providerDetails)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<ProviderDetailsDTO> getServicesByProviderAndCategory(ProviderDetailsRequest request) {
+        Provider provider = providerRepository.findByUserId(request.getProviderId())
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", request.getProviderId()));
+
+        Category categoryRequired = categoryRepository.findByCategoryName(request.getCategory())
+                .orElseThrow(() -> new ResourceNotFoundException("Category", String.valueOf(request.getCategory())));
+
+        List<Service> services;
+
+        // Step 1: Filter by location
+        if (request.getLat() != null && request.getLng() != null && request.getRadiusKm() != null) {
+            services = serviceRepository.findNearbyServicesByProviderCategory(
+                    request.getLat(), request.getLng(), request.getRadiusKm() * 1000, request.getProviderId(), Long.valueOf(categoryRequired.getCategoryId())
+            );
+        } else if (request.getCity() != null) {
+            services = serviceRepository.findByLocationProviderCategory(request.getCity(), request.getProviderId(), Long.valueOf(categoryRequired.getCategoryId()));
+        } else {
+            services = serviceRepository.findAll();
+        }
+
+        if (services.isEmpty()) {
+            throw new ResourceNotFoundException("No services found for provider and category", request.getProviderId() + " - " + request.getCategory());
+        }
+
+        ProviderDetailsDTO providerDetails = new ProviderDetailsDTO();
+        providerDetails.setProviderId(provider.getUserId());
+        providerDetails.setBusinessName(provider.getBusinessName());
+        providerDetails.setBusinessDescription(provider.getBusinessDescription());
+        providerDetails.setCoverImageUrl(provider.getCoverImageUrl());
+        providerDetails.setLocation(modelMapper.map(provider.getLocation(), LocationDTO.class));
+        providerDetails.setCategory(categoryRequired.getCategoryName());
+        providerDetails.setServices(services.stream()
+                .map(service -> {
+                    ServiceSearchDTO serviceSearchDTO = new ServiceSearchDTO();
+                    serviceSearchDTO.setServiceId(service.getServiceId());
+                    serviceSearchDTO.setServiceName(service.getServiceName());
+                    serviceSearchDTO.setLocationBased(modelMapper.map(service.getLocationBased(), LocationDTO.class));
+                    serviceSearchDTO.setPrice(service.getPrice());
+                    serviceSearchDTO.setPriceType(service.getPriceType());
+                    serviceSearchDTO.setCategory(service.getCategory().getCategoryName());
+                    serviceSearchDTO.setMainImageUrl(service.getImages() != null && !service.getImages().isEmpty()
+                            ? service.getImages().getFirst().getImageUrl()
+                            : null);
+                    return serviceSearchDTO;
+                })
+                .collect(Collectors.toList()));
+        return APIResponse.<ProviderDetailsDTO>builder()
+                .success(true)
+                .message("Services found for provider and category")
+                .data(providerDetails)
                 .build();
     }
 
