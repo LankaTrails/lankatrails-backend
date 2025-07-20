@@ -9,4 +9,5 @@ public interface PolicySectionRepository extends JpaRepository<PolicySection,Lon
     List<PolicySection> findByServices_ServiceId(Long Id);
     PolicySection findByHeading(String heading);
     List<PolicySection> findByProvider_UserIdAndCategoryIsNull(Long providerId);
+    List<PolicySection> findByProvider_UserIdAndCategory_CategoryIdOrCategoryIsNull(Long providerId, Long Id);
 }

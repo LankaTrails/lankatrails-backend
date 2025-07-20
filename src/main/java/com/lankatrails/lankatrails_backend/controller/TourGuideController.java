@@ -18,7 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/provider")
 public class TourGuideController {
     @Autowired
     TouristGuideService touristGuideService;
@@ -37,7 +37,7 @@ public class TourGuideController {
         return new ResponseEntity<>(touristGuideResponseDTO, HttpStatus.OK);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/tour-guide/{id}")
     public ResponseEntity<APIResponse<TouristGuideRequestDTO>> getGuideDetails(@PathVariable Long id) {
         APIResponse<TouristGuideRequestDTO> touristGuideResponseDTO = touristGuideService.getGuideDetails(id);
         return new ResponseEntity<>(touristGuideResponseDTO, HttpStatus.OK);

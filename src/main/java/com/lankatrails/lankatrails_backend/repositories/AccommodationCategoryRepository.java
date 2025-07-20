@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository;
 public interface AccommodationCategoryRepository extends JpaRepository<AccommodationCategory, Long> {
     AccommodationCategory findByCategoryName(String name);
 
+
 }

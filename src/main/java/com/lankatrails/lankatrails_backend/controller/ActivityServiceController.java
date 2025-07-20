@@ -92,7 +92,7 @@ public class ActivityServiceController {
         return new ResponseEntity<>(activityServiceResponse,HttpStatus.OK);
     }
 
-    @GetMapping("/activity-service/{id}")
+    @GetMapping("/provider/activity-service/{id}")
     public ResponseEntity<APIResponse<ActivityServiceRequest>> searchById(@PathVariable Long id){
         APIResponse<ActivityServiceRequest> activityService= activityServiceService.searchWithId(id);
         return new ResponseEntity<>(activityService,HttpStatus.OK);

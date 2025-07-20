@@ -60,4 +60,10 @@ public class AccommodationController {
         return new ResponseEntity<>(accommodationResponse,HttpStatus.OK);
     }
 
+//    @GetMapping("/provider/accommodation/{id}")
+//    public ResponseEntity<APIResponse<AccommodationServiceRequestDTO>> getById(@PathVariable Long Id){
+//        APIResponse<AccommodationServiceRequestDTO> accommodationResponse = accommodationService.searchWithId(Id);
+//        return new ResponseEntity<>(accommodationResponse,HttpStatus.OK);
+//    }
+
 }

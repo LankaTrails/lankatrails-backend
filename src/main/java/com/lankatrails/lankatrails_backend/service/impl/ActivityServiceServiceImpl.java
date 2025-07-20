@@ -168,7 +168,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
             tabs.add(tabReq);
         }
 
-        List<PolicySection> policySection = policySectionRepository.findByProvider_UserIdAndCategoryIsNull(authUtils.loggedInUserId());
+        List<PolicySection> policySection = policySectionRepository.findByProvider_UserIdAndCategory_CategoryIdOrCategoryIsNull(authUtils.loggedInUserId(),4L);
 
         List<PolicySectionRequest> policies = new ArrayList<>();
 //
@@ -186,9 +186,10 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         //map images to imageDTO
        List<ImageRequestDTO> imgDTOs = new ArrayList<>();
         for (Image img : images){
-
-            ImageRequestDTO imgDTO = modelMapper.map(img,ImageRequestDTO.class);
+            ImageRequestDTO imgDTO = new ImageRequestDTO();
+            imgDTO.setImageUrl(img.getImageUrl());
             imgDTOs.add(imgDTO);
+
         }
 
         ActivityServiceRequest prepareResponse = new ActivityServiceRequest();
@@ -201,11 +202,11 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         prepareResponse.setContactNo(activityService.getContactNo());
         prepareResponse.setTabsSection(tabs);
         prepareResponse.setPolicySection(policies);
-//        prepareResponse.setImages(imgDTOs);
+        prepareResponse.setImages(imgDTOs);
 
         return  APIResponse.<ActivityServiceRequest>builder()
                 .success(true)
-                .message("Tab Deleted Successfully")
+                .message("Fetched Activity Service ")
                 .data(prepareResponse)
                 .build();
 

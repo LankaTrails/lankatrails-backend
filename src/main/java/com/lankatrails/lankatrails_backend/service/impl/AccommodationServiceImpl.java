@@ -10,13 +10,11 @@ import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse
 import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
-import com.lankatrails.lankatrails_backend.model.Accommodation;
-import com.lankatrails.lankatrails_backend.model.ActivityService;
-import com.lankatrails.lankatrails_backend.model.Category;
-import com.lankatrails.lankatrails_backend.model.Provider;
+import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import com.lankatrails.lankatrails_backend.repositories.AccommodationRepository;
 import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
+import com.lankatrails.lankatrails_backend.repositories.TabsSectionRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.AccommodationService;
 import com.lankatrails.lankatrails_backend.service.ImageService;
@@ -40,6 +38,9 @@ public class AccommodationServiceImpl implements  AccommodationService {
 
     @Autowired
     AccommodationRepository accommodationRepository;
+
+    @Autowired
+    TabsSectionRepository tabsSectionRepository;
 
     @Autowired
     TabsImpl tabsImpl;
@@ -137,4 +138,39 @@ public class AccommodationServiceImpl implements  AccommodationService {
                 .data(accommodationResponse)
                 .build();
     }
+
+//    @Override
+//    @Transactional
+//    public APIResponse<AccommodationServiceRequestDTO> searchWithId(Long Id) {
+//        Accommodation accommodation=accommodationRepository.findById(Id)
+//                .orElseThrow(()->new ResourceNotFoundException("Accommodation Service",Id));
+//
+//        //get the related tabs
+//        List<TabsSection> tabsSection=tabsSectionRepository.findByService_ServiceId(Id);
+//        List<TabSectionRequest> tabs=new ArrayList<>();
+//
+//        for (TabsSection tab :tabsSection){
+//            TabSectionRequest tabReq = new TabSectionRequest();
+//            tabReq.setId(tab.getId());
+//            tabReq.setHeading(tab.getHeading());
+//            tabReq.setContent(tab.getContent());
+//            tabs.add(tabReq);
+//        }
+//
+//        //get the related policies
+//        List<PolicySection> policySection = policySectionRepository.findByProvider_UserIdAndCategoryIsNull(authUtils.loggedInUserId());
+//
+//        List<PolicySectionRequest> policies = new ArrayList<>();
+////
+//        for (PolicySection policy : policySection){
+//
+//            PolicySectionRequest policyReq = new PolicySectionRequest();
+//            policyReq.setId(policy.getId());
+//            policyReq.setHeading(policy.getHeading());
+//            policyReq.setPolicy(policy.getPolicy());
+//            policies.add(policyReq);
+//        }
+//
+//
+//    }
 }
