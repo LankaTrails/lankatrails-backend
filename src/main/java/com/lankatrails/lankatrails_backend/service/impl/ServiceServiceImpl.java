@@ -4,10 +4,10 @@ import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceSearchRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.GroupedServiceDTO;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.model.Image;
-import com.lankatrails.lankatrails_backend.model.Service;
+import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
 import com.lankatrails.lankatrails_backend.repositories.ImageRepository;
 import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
@@ -21,9 +21,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -93,12 +92,12 @@ public class ServiceServiceImpl implements ServiceService {
 
         Set<Image> images = new HashSet<>(fileUploadService.storeImages(serviceImages, UploadCategory.SERVICE_PICTURE));
 
-        for(Image img : images){
+        for (Image img : images) {
             img.setService(service);
             imageRepository.save(img);
         }
 
-        return  APIResponse.<String>builder()
+        return APIResponse.<String>builder()
                 .success(true)
                 .message("Successfully Added")
                 .data("")
@@ -107,50 +106,100 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Override
     @Transactional
-    public APIResponse<List<ServiceDTO>> searchServicesAdvanced(ServiceSearchRequestDTO filter) {
+    public APIResponse<List<GroupedServiceDTO>> searchServicesAdvanced(ServiceSearchRequestDTO filter) {
         List<Service> services;
 
-        // If spatial data is present
+        // Step 1: Filter by location
         if (filter.getLat() != null && filter.getLng() != null && filter.getRadiusKm() != null) {
             services = serviceRepository.findNearbyServices(
                     filter.getLat(), filter.getLng(), filter.getRadiusKm() * 1000
             );
-            log.info("Searching services within radius: {} km at lat: {}, lng: {}", filter.getRadiusKm(), filter.getLat(), filter.getLng());
-            log.info("Found {} services within radius", services.size());
         } else if (filter.getCity() != null || filter.getDistrict() != null || filter.getProvince() != null || filter.getCountry() != null) {
-            services = serviceRepository.findByLocationInSriLanka(
-                    filter.getCity()
-            );
-            log.info("Searching services by location details: city={}, district={}, province={}, country={}",
-                    filter.getCity(), filter.getDistrict(), filter.getProvince(), filter.getCountry());
-            log.info("Found {} services matching location details", services.size());
+            services = serviceRepository.findByLocationInSriLanka(filter.getCity());
         } else {
             services = serviceRepository.findAll();
-            log.info("No spatial or location filters provided, returning all services");
-            log.info("Found {} total services", services.size());
         }
 
-        // Now filter using additional params
+        // Step 2: Filter by category and subtype
         Stream<Service> filtered = services.stream();
 
         if (filter.getCategory() != null) {
             filtered = filtered.filter(s -> s.getCategory().getCategoryName().equals(filter.getCategory()));
         }
 
-        List<ServiceDTO> resultDTOs = filtered.map(service -> {
-            ServiceDTO dto = new ServiceDTO();
-            dto.setServiceId(service.getServiceId());
-            dto.setServiceName(service.getServiceName());
-            dto.setCategory(service.getCategory().getCategoryName());
-            dto.setLocationBased(modelMapper.map(service.getLocationBased(), LocationDTO.class));
-            dto.setMainImageUrl(service.getImages().getFirst().getImageUrl());
-            return dto;
-        }).toList();
+        if (filter.getAccommodationType() != null) {
+            filtered = filtered.filter(s ->
+                    s instanceof Accommodation acc &&
+                            acc.getAccommodationCategory() != null &&
+                            acc.getAccommodationCategory().getCategoryName().equals(filter.getAccommodationType())
+            );
+        }
 
-        return APIResponse.<List<ServiceDTO>>builder()
+        if (filter.getActivityType() != null) {
+            filtered = filtered.filter(s ->
+                    s instanceof ActivityService act &&
+                            act.getActivityCategory() != null &&
+                            act.getActivityCategory().getCategoryName().equals(filter.getActivityType())
+            );
+        }
+
+        if (filter.getTourGuideType() != null) {
+            filtered = filtered.filter(s ->
+                    s instanceof TouristGuide guide &&
+                            guide.getTourGuideCategory() != null &&
+                            guide.getTourGuideCategory().getCategoryName().equals(filter.getTourGuideType())
+            );
+        }
+
+        if (filter.getFoodAndBeverageType() != null) {
+            filtered = filtered.filter(s ->
+                    s instanceof FoodAndBeverage food &&
+                            food.getFoodAndBeverageCategory() != null &&
+                            food.getFoodAndBeverageCategory().getCategoryName().equals(filter.getFoodAndBeverageType())
+            );
+        }
+
+        if (filter.getVehicleType() != null) {
+            filtered = filtered.filter(s ->
+                    s instanceof Transport vehicle &&
+                            vehicle.getVehicleCategory() != null &&
+                            vehicle.getVehicleCategory().getCategoryName().equals(filter.getVehicleType())
+            );
+        }
+
+        // Step 3: Group by Provider + Location
+        Map<String, List<Service>> grouped = filtered.collect(Collectors.groupingBy(service ->
+                service.getProvider().getUserId() + "|" + service.getLocationBased().getCity() + "|" + service.getCategory().getCategoryName()
+        ));
+
+        List<GroupedServiceDTO> result = new ArrayList<>();
+
+        for (Map.Entry<String, List<Service>> entry : grouped.entrySet()) {
+            List<ServiceDTO> dtoList = entry.getValue().stream().map(service -> {
+                ServiceDTO dto = new ServiceDTO();
+                dto.setServiceId(service.getServiceId());
+                dto.setServiceName(service.getServiceName());
+                dto.setCategory(service.getCategory().getCategoryName());
+                dto.setLocationBased(modelMapper.map(service.getLocationBased(), LocationDTO.class));
+                dto.setMainImageUrl(service.getImages() != null && !service.getImages().isEmpty()
+                        ? service.getImages().get(0).getImageUrl()
+                        : null);
+                return dto;
+            }).toList();
+
+            Service representative = entry.getValue().get(0);
+            result.add(new GroupedServiceDTO(
+                    representative.getProvider().getUserId(),
+                    representative.getProvider().getBusinessName(),
+                    modelMapper.map(representative.getLocationBased(), LocationDTO.class),
+                    dtoList
+            ));
+        }
+
+        return APIResponse.<List<GroupedServiceDTO>>builder()
                 .success(true)
-                .message("Services matched with advanced filters")
-                .data(resultDTOs)
+                .message("Grouped services based on advanced filters")
+                .data(result)
                 .build();
     }
 
