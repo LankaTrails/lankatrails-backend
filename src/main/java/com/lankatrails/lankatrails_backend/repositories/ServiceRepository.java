@@ -134,5 +134,7 @@ public interface ServiceRepository extends JpaRepository<Service, Long> {
             @Param("categoryId") Long categoryId
     );
 
+    List<Service> findByCategoryAndProvider(Category category, Provider provider);
+
 
 }

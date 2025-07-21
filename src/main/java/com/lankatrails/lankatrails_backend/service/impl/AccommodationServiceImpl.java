@@ -13,6 +13,7 @@ import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.AccommodationService;
 import com.lankatrails.lankatrails_backend.service.ImageService;
+import com.lankatrails.lankatrails_backend.service.ServicesForAll;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -58,6 +59,8 @@ public class AccommodationServiceImpl implements  AccommodationService {
     @Autowired
     AuthUtils authUtils;
 
+    @Autowired
+    ServicesForAll servicesForAll;
 
 
     @Override
@@ -71,6 +74,8 @@ public class AccommodationServiceImpl implements  AccommodationService {
 
         Provider provider = (Provider) authUtils.loggedInUser();
         mappedObj.setProvider(provider);
+
+        mappedObj.setLocationBased(servicesForAll.setServiceLocation(services));
 
         Optional<Accommodation> checkDb = accommodationRepository.findByServiceName(mappedObj.getServiceName());
         Accommodation lastServiceAdded;
@@ -162,7 +167,6 @@ public class AccommodationServiceImpl implements  AccommodationService {
         List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(authUtils.loggedInUserId(),1L);
 
         List<PolicySectionRequest> policies = new ArrayList<>();
-//
         for (PolicySection policy : policySection){
 
             PolicySectionRequest policyReq = new PolicySectionRequest();
@@ -184,10 +188,14 @@ public class AccommodationServiceImpl implements  AccommodationService {
         }
 
         AccommodationServiceRequestDTO prepareResponse = new AccommodationServiceRequestDTO();
-
+        prepareResponse.setServiceId(accommodation.getServiceId());
         prepareResponse.setServiceName(accommodation.getServiceName());
-//        prepareResponse.setAccommodationType(accommodation.getA);
+        prepareResponse.setStatus(accommodation.getStatus());
+        prepareResponse.setAccommodationType(accommodation.getAccommodationCategory().getCategoryName());
         prepareResponse.setMaxGuests(accommodation.getMaxGuests());
+        prepareResponse.setNumberOfRooms(accommodation.getNumberOfRooms());
+        prepareResponse.setPrice(accommodation.getPrice());
+        prepareResponse.setPriceType(accommodation.getPriceType());
         prepareResponse.setFreeWifi(accommodation.getFreeWifi());
         prepareResponse.setParkingAvailable(accommodation.getParkingAvailable());
         prepareResponse.setBreakfastIncluded(accommodation.getBreakfastIncluded());

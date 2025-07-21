@@ -14,6 +14,7 @@ import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ActivityServiceService;
 
 import com.lankatrails.lankatrails_backend.service.ImageService;
+import com.lankatrails.lankatrails_backend.service.ServicesForAll;
 import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,6 +73,9 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     @Autowired
     private FileUploadService fileUploadService;
 
+    @Autowired
+    private ServicesForAll servicesForAll;
+
     @Override
     @Transactional
     public APIResponse<String> addService(ActivityServiceRequest services, List<MultipartFile> images) {
@@ -83,6 +87,8 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
         Provider provider = (Provider) authUtils.loggedInUser();
         mappedObj.setProvider(provider);
+
+        mappedObj.setLocationBased(servicesForAll.setServiceLocation(services));
 
         Optional<ActivityService> checkDb = activityServiceRepository.findByServiceName(mappedObj.getServiceName());
         ActivityService lastServiceAdded;

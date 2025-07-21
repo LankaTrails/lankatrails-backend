@@ -13,6 +13,7 @@ import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.FoodBeverageService;
 import com.lankatrails.lankatrails_backend.service.ImageService;
+import com.lankatrails.lankatrails_backend.service.ServicesForAll;
 import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,6 +69,9 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
     @Autowired
     private TabsSectionRepository tabsSectionRepository;
 
+    @Autowired
+    private ServicesForAll servicesForAll;
+
 
     @Override
     @Transactional
@@ -80,6 +84,8 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
 
         Provider provider = (Provider) authUtils.loggedInUser();
         mappedObj.setProvider(provider);
+
+        mappedObj.setLocationBased(servicesForAll.setServiceLocation(foodBeverageRequest));
 
         Optional<FoodAndBeverage> checkDb = foodBeverageRepository.findByServiceName(mappedObj.getServiceName());
         FoodAndBeverage lastServiceAdded;
