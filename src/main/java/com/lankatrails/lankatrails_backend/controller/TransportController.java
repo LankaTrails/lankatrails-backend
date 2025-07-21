@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.controller;
 
+import com.lankatrails.lankatrails_backend.dtos.request.AccommodationServiceRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TransportRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TransportResponseDTO;
@@ -34,8 +35,8 @@ public class TransportController {
 
     }
     @GetMapping("/{id}")
-    public ResponseEntity<TransportResponseDTO> searchWithId(@PathVariable Long id){
-        TransportResponseDTO transportResponseDTO=transportService.getById(id);
+    public ResponseEntity<APIResponse<TransportRequestDTO>> searchWithId(@PathVariable Long id){
+        APIResponse<TransportRequestDTO> transportResponseDTO=transportService.getById(id);
         return new ResponseEntity<>(transportResponseDTO,HttpStatus.OK);
     }
     @PutMapping("/{id}")

@@ -1,8 +1,6 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TransportRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TransportResponseDTO;
 import com.lankatrails.lankatrails_backend.exception.APIException;
@@ -15,6 +13,7 @@ import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ImageService;
+import com.lankatrails.lankatrails_backend.service.ServicesForAll;
 import com.lankatrails.lankatrails_backend.service.TransportService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,7 +65,13 @@ public class TransportServiceImpl implements TransportService {
     TabsSectionRepository tabsSectionRepository;
 
     @Autowired
+    ImageRepository imageRepository;
+
+    @Autowired
     ModelMapper modelMapper;
+
+    @Autowired
+    ServicesForAll servicesForAll;
 
     @Override
     public APIResponse<TransportResponseDTO> getAll(Integer pageNumber, Integer pageSize){
@@ -114,25 +119,71 @@ public class TransportServiceImpl implements TransportService {
     }
 
     @Override
-    public TransportResponseDTO getById(Long Id) {
+    public APIResponse<TransportRequestDTO> getById(Long Id) {
         Transport transport=transportRepository.findById(Id)
                 .orElseThrow(()->new ResourceNotFoundException("Transport Service",Id));
 
-        TransportRequestDTO mappedObj=modelMapper.map(transport,TransportRequestDTO.class);
+        //get the related tabs
+        List<TabsSection> tabsSection=tabsSectionRepository.findByService_ServiceId(Id);
+        List<TabSectionRequest> tabs=new ArrayList<>();
 
-        List<TabSectionRequest> tabs=tabsImpl.getAllTabs(Id);
-        List<PolicySectionRequest> policies = policiesImpl.getAllPolicies(Id);
+        for (TabsSection tab :tabsSection){
+            TabSectionRequest tabReq = new TabSectionRequest();
+            tabReq.setId(tab.getId());
+            tabReq.setHeading(tab.getHeading());
+            tabReq.setContent(tab.getContent());
+            tabs.add(tabReq);
+        }
 
-        mappedObj.setTabsSection(tabs);
-        mappedObj.setPolicySection(policies);
+        //get the related policies
+        List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(authUtils.loggedInUserId(),1L);
 
-        List<TransportRequestDTO> makeResponse=new ArrayList<>();
-        makeResponse.add(mappedObj);
+        List<PolicySectionRequest> policies = new ArrayList<>();
+        for (PolicySection policy : policySection){
 
-        TransportResponseDTO responseDTO=new TransportResponseDTO();
-        responseDTO.setContent(makeResponse);
+            PolicySectionRequest policyReq = new PolicySectionRequest();
+            policyReq.setId(policy.getId());
+            policyReq.setHeading(policy.getHeading());
+            policyReq.setPolicy(policy.getPolicy());
+            policies.add(policyReq);
+        }
 
-        return responseDTO;
+        //set the images
+        List<Image> images = imageRepository.findByService_ServiceId(Id);
+        //map images to imageDTO
+        List<ImageRequestDTO> imgDTOs = new ArrayList<>();
+        for (Image img : images){
+            ImageRequestDTO imgDTO = new ImageRequestDTO();
+            imgDTO.setImageUrl(img.getImageUrl());
+            imgDTOs.add(imgDTO);
+
+        }
+
+        TransportRequestDTO transportRequestDTO= new TransportRequestDTO();
+        transportRequestDTO.setServiceId(transport.getServiceId());
+        transportRequestDTO.setServiceName(transport.getServiceName());
+        transportRequestDTO.setStatus(transport.getStatus());
+        transportRequestDTO.setVehicleCategory(transport.getVehicleCategory().getCategoryName());
+        transportRequestDTO.setContactNo(transport.getContactNo());
+        transportRequestDTO.setLocationBased(modelMapper.map(transport.getLocationBased(), LocationDTO.class));
+        transportRequestDTO.setVehicleCapacity(transport.getVehicleCapacity());
+        transportRequestDTO.setVehicleQty(transport.getVehicleQty());
+        transportRequestDTO.setVehicleCategory(transport.getVehicleCategory().getCategoryName());
+        transportRequestDTO.setPrice(transport.getPrice());
+        transportRequestDTO.setPriceType(transport.getPriceType());
+        transportRequestDTO.setFuelType(transport.getFuelType());
+        transportRequestDTO.setTransmissionType(transport.getTransmissionType());
+        transportRequestDTO.setAirConditioned(transport.getAirConditioned());
+        transportRequestDTO.setDriverIncluded(transport.getDriverIncluded());
+        transportRequestDTO.setTabsSection(tabs);
+        transportRequestDTO.setPolicySection(policies);
+        transportRequestDTO.setImages(imgDTOs);
+
+        return APIResponse.<TransportRequestDTO>builder()
+                .success(true)
+                .message("Transport Service Fetched")
+                .data(transportRequestDTO)
+                .build();
     }
 
     @Override
@@ -184,6 +235,8 @@ public class TransportServiceImpl implements TransportService {
 
         Provider provider=(Provider) authUtils.loggedInUser();
         mappedObj.setProvider(provider);
+
+        mappedObj.setLocationBased(servicesForAll.setServiceLocation(transportRequestDTO));
 
         Optional<Transport> checkDb=transportRepository.findByServiceName(mappedObj.getServiceName());
         Transport lastTransportAdded;
