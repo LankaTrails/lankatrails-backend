@@ -13,6 +13,7 @@ import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ImageService;
+import com.lankatrails.lankatrails_backend.service.ServicesForAll;
 import com.lankatrails.lankatrails_backend.service.TransportService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,6 +69,9 @@ public class TransportServiceImpl implements TransportService {
 
     @Autowired
     ModelMapper modelMapper;
+
+    @Autowired
+    ServicesForAll servicesForAll;
 
     @Override
     public APIResponse<TransportResponseDTO> getAll(Integer pageNumber, Integer pageSize){
@@ -231,6 +235,8 @@ public class TransportServiceImpl implements TransportService {
 
         Provider provider=(Provider) authUtils.loggedInUser();
         mappedObj.setProvider(provider);
+
+        mappedObj.setLocationBased(servicesForAll.setServiceLocation(transportRequestDTO));
 
         Optional<Transport> checkDb=transportRepository.findByServiceName(mappedObj.getServiceName());
         Transport lastTransportAdded;

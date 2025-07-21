@@ -29,6 +29,8 @@ public abstract class ServiceRequest {
 //    @NotBlank(message = "Location is not pinned")
     private LocationDTO locationBased;
 
+    private Long locationId;
+
     @NotBlank(message = "Contact number is blank")
     @Pattern(regexp = "^(\\+94|0)?7[0-9]{8}$", message = "Invalid contact number format")
     private String contactNo;

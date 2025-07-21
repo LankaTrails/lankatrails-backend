@@ -7,6 +7,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LocationDTO {
+    private Long locationId;
     private String formattedAddress;
     private String city;
     private String district;
