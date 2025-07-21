@@ -212,6 +212,9 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         prepareResponse.setTabsSection(tabs);
         prepareResponse.setPolicySection(policies);
         prepareResponse.setImages(imgDTOs);
+        prepareResponse.setPrice(foodAndBeverage.getPrice());
+        prepareResponse.setPriceType(foodAndBeverage.getPriceType());
+        prepareResponse.setServiceId(Id);
 
         return  APIResponse.<FoodBeverageRequest>builder()
                 .success(true)

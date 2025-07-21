@@ -54,6 +54,9 @@ public class TouristGuideImpl implements TouristGuideService {
     private TourGuideCategoryRepository tourGuideCategoryRepository;
 
     @Autowired
+    private ServiceAreaRepository serviceAreaRepository;
+
+    @Autowired
     private ModelMapper modelMapper;
 
     @Autowired
@@ -246,9 +249,15 @@ public class TouristGuideImpl implements TouristGuideService {
 
         }
 
+        Optional<GuidingArea> guidingAreas = serviceAreaRepository.findByTouristGuide_ServiceId(id);
+
         //prepare the response
         TouristGuideRequestDTO prepareResponse=new TouristGuideRequestDTO();
-
+        prepareResponse.setServiceId(id);
+        prepareResponse.setPrice(touristGuide.getPrice());
+        prepareResponse.setImages(imgDTOs);
+        prepareResponse.setPriceType(touristGuide.getPriceType());
+        prepareResponse.setTourGuideType(touristGuide.getTourGuideCategory().getCategoryName());
         prepareResponse.setServiceName(touristGuide.getServiceName());
         prepareResponse.setContactNo(touristGuide.getContactNo());
         prepareResponse.setLocationBased(modelMapper.map(touristGuide.getLocationBased(), LocationDTO.class));
@@ -259,6 +268,12 @@ public class TouristGuideImpl implements TouristGuideService {
                         .map(Language::getLanguage)
                         .collect(Collectors.toList())
         );
+        prepareResponse.setServiceAreas(guidingAreas.stream()
+                .map(GuidingArea ::getServiceArea)
+                .collect(Collectors.toList()));
+
+
+
         
 //        prepareResponse.setServiceAreas(touristGuide.getServiceAreas());
 

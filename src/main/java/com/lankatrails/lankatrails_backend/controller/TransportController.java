@@ -34,8 +34,8 @@ public class TransportController {
 
     }
     @GetMapping("/{id}")
-    public ResponseEntity<TransportResponseDTO> searchWithId(@PathVariable Long id){
-        TransportResponseDTO transportResponseDTO=transportService.getById(id);
+    public ResponseEntity<APIResponse<TransportRequestDTO>> searchWithId(@PathVariable Long id){
+        APIResponse<TransportRequestDTO> transportResponseDTO=transportService.getById(id);
         return new ResponseEntity<>(transportResponseDTO,HttpStatus.OK);
     }
     @PutMapping("/{id}")

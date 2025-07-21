@@ -1,8 +1,6 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TransportRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TransportResponseDTO;
 import com.lankatrails.lankatrails_backend.exception.APIException;
@@ -41,8 +39,12 @@ public class TransportServiceImpl implements TransportService {
 
     @Autowired
     VehicleCategoryRepository vehicleCategoryRepository;
+
     @Autowired
     PolicySectionRepository policySectionRepository;
+
+    @Autowired
+    ImageRepository imageRepository;
 
     @Autowired
     TabsImpl tabsImpl;
@@ -114,25 +116,73 @@ public class TransportServiceImpl implements TransportService {
     }
 
     @Override
-    public TransportResponseDTO getById(Long Id) {
+    @Transactional
+    public APIResponse<TransportRequestDTO> getById(Long Id) {
         Transport transport=transportRepository.findById(Id)
                 .orElseThrow(()->new ResourceNotFoundException("Transport Service",Id));
 
-        TransportRequestDTO mappedObj=modelMapper.map(transport,TransportRequestDTO.class);
+//        TransportRequestDTO mappedObj=modelMapper.map(transport,TransportRequestDTO.class);
 
-        List<TabSectionRequest> tabs=tabsImpl.getAllTabs(Id);
-        List<PolicySectionRequest> policies = policiesImpl.getAllPolicies(Id);
+        List<TabsSection> tabsSection=tabsSectionRepository.findByService_ServiceId(Id);
+        List<TabSectionRequest> tabs=new ArrayList<>();
 
-        mappedObj.setTabsSection(tabs);
-        mappedObj.setPolicySection(policies);
+        for (TabsSection tab :tabsSection){
+            TabSectionRequest tabReq = new TabSectionRequest();
+            tabReq.setId(tab.getId());
+            tabReq.setHeading(tab.getHeading());
+            tabReq.setContent(tab.getContent());
+            tabs.add(tabReq);
+        }
+        List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(authUtils.loggedInUserId(),4L);
 
-        List<TransportRequestDTO> makeResponse=new ArrayList<>();
-        makeResponse.add(mappedObj);
+        List<PolicySectionRequest> policies = new ArrayList<>();
+//
+        for (PolicySection policy : policySection){
 
-        TransportResponseDTO responseDTO=new TransportResponseDTO();
-        responseDTO.setContent(makeResponse);
+            PolicySectionRequest policyReq = new PolicySectionRequest();
+            policyReq.setId(policy.getId());
+            policyReq.setHeading(policy.getHeading());
+            policyReq.setPolicy(policy.getPolicy());
+            policies.add(policyReq);
+        }
 
-        return responseDTO;
+        //set the images
+        List<Image> images = imageRepository.findByService_ServiceId(Id);
+        //map images to imageDTO
+        List<ImageRequestDTO> imgDTOs = new ArrayList<>();
+        for (Image img : images){
+            ImageRequestDTO imgDTO = new ImageRequestDTO();
+            imgDTO.setImageUrl(img.getImageUrl());
+            imgDTOs.add(imgDTO);
+
+        }
+
+        TransportRequestDTO prepareResponse = new TransportRequestDTO();
+        prepareResponse.setServiceName(transport.getServiceName());
+        prepareResponse.setVehicleCapacity(transport.getVehicleCapacity());
+        prepareResponse.setVehicleQty(transport.getVehicleQty());
+        prepareResponse.setVehicleCategory(transport.getVehicleCategory().getCategoryName());
+        prepareResponse.setDriverIncluded(transport.getDriverIncluded());
+        prepareResponse.setAirConditioned(transport.getAirConditioned());
+        prepareResponse.setTransmissionType(transport.getTransmissionType());
+        prepareResponse.setFuelType(transport.getFuelType());
+        prepareResponse.setContactNo(transport.getContactNo());
+        prepareResponse.setImages(imgDTOs);
+        prepareResponse.setLocationBased(modelMapper.map(transport.getLocationBased(), LocationDTO.class));
+        prepareResponse.setPolicySection(policies);
+        prepareResponse.setPrice(transport.getPrice());
+        prepareResponse.setPriceType(transport.getPriceType());
+        prepareResponse.setServiceId(Id);
+        prepareResponse.setTabsSection(tabs);
+
+
+
+
+        return APIResponse.<TransportRequestDTO>builder()
+                .success(true)
+                .message("Fetched Transport Service")
+                .data(prepareResponse)
+                .build();
     }
 
     @Override

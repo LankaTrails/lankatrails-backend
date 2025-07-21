@@ -200,6 +200,9 @@ public class AccommodationServiceImpl implements  AccommodationService {
         prepareResponse.setSpaServices(accommodation.getSpaServices());
         prepareResponse.setLocationBased(modelMapper.map(accommodation.getLocationBased(), LocationDTO.class));
         prepareResponse.setContactNo(accommodation.getContactNo());
+        prepareResponse.setNumberOfRooms(accommodation.getNumberOfRooms());
+        prepareResponse.setPrice(accommodation.getPrice());
+        prepareResponse.setServiceId(Id);
         prepareResponse.setTabsSection(tabs);
         prepareResponse.setPolicySection(policies);
         prepareResponse.setImages(imgDTOs);

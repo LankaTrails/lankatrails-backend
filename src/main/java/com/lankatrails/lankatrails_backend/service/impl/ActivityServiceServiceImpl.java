@@ -208,6 +208,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         prepareResponse.setSafetyInstructions(activityService.getSafetyInstructions());
         prepareResponse.setLocationBased(modelMapper.map(activityService.getLocationBased(), LocationDTO.class));
         prepareResponse.setContactNo(activityService.getContactNo());
+        prepareResponse.setServiceId(Id);
         prepareResponse.setTabsSection(tabs);
         prepareResponse.setPolicySection(policies);
         prepareResponse.setImages(imgDTOs);
