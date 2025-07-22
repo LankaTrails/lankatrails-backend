@@ -1,10 +1,12 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
+import com.lankatrails.lankatrails_backend.model.enums.TripStatus;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -19,7 +21,19 @@ public class TripRequestDTO {
 
     @NotNull(message = "End date is required")
     private LocalDate endDate;
-    private Integer numberOfPeople = 1;
+
+    @NotNull(message = "Start location is required")
+    private LocationDTO startLocation;
+
+    @NotNull(message = "At least one location is required")
+    private Set<LocationDTO> locations;
+
+    private Integer numberOfAdults = 1;
+    private Integer numberOfChildren = 0;
+
+//    @NotNull(message = "Trip status is required")
+    private TripStatus tripStatus;
+
     private Double totalBudget = 0.0;
     private Double totalBudgetLimit = 0.0;
     private Double totalDistance = 0.0;
