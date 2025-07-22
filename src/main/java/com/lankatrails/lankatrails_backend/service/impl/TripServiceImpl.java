@@ -118,6 +118,7 @@ public class TripServiceImpl implements TripService {
     }
 
     @Override
+    @Transactional
     public APIResponse<TripResponseDTO> getTripById(Long tripId) {
         log.info("Fetching trip with ID: {}", tripId);
         Trip trip = tripRepository.findByTripId(tripId);
