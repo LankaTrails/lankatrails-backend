@@ -42,6 +42,9 @@ public class AccommodationServiceImpl implements  AccommodationService {
     PolicySectionRepository policySectionRepository;
 
     @Autowired
+    AccommodationCategoryRepository accommodationCategoryRepository;
+
+    @Autowired
     ImageRepository imageRepository;
 
     @Autowired
@@ -81,6 +84,10 @@ public class AccommodationServiceImpl implements  AccommodationService {
         Accommodation lastServiceAdded;
 
         if (checkDb.isEmpty()) {
+            AccommodationCategory accommodationCategory = accommodationCategoryRepository.findByCategoryName(services.getAccommodationType())
+                    .orElseThrow(() -> new ResourceNotFoundException("Accommodation Category", String.valueOf(services.getAccommodationType())));
+            mappedObj.setAccommodationCategory(accommodationCategory);
+
             // Save the base service object first
             lastServiceAdded = accommodationRepository.save(mappedObj);
 
