@@ -19,7 +19,8 @@ public class InitialDataConfig {
                                VehicleCategoryRepository vehicleCategoryRepository,
                                ActivityCategoryRepository activityCategoryRepository,
                                TourGuideCategoryRepository tourGuideCategoryRepository,
-                               FoodAndBeverageCategoryRepository foodBeverageCategoryRepository) {
+                               FoodAndBeverageCategoryRepository foodBeverageCategoryRepository,
+                               TripTagRepository tripTagRepository) {
         return args -> {
             initAdmin(userRepository, passwordEncoder);
             initCategories(categoryRepository);
@@ -28,6 +29,7 @@ public class InitialDataConfig {
             initActivityTypes(activityCategoryRepository);
             initTourGuideTypes(tourGuideCategoryRepository);
             initFoodBeverageTypes(foodBeverageCategoryRepository);
+            initTripTags(tripTagRepository);
         };
     }
 
@@ -128,6 +130,27 @@ public class InitialDataConfig {
             foodBeverageCategoryRepository.save(new FoodAndBeverageCategory(FoodAndBeverageType.DISTILLERY));
             foodBeverageCategoryRepository.save(new FoodAndBeverageCategory(FoodAndBeverageType.FOOD_COURT));
             System.out.println("Initial food and beverage types created");
+        }
+    }
+
+    private void initTripTags(TripTagRepository tripTagRepository) {
+        if (tripTagRepository.count() == 0) {
+            tripTagRepository.save(new TripTag(TripTagType.HONEYMOON));
+            tripTagRepository.save(new TripTag(TripTagType.FAMILY));
+            tripTagRepository.save(new TripTag(TripTagType.ADVENTURE));
+            tripTagRepository.save(new TripTag(TripTagType.CULTURAL));
+            tripTagRepository.save(new TripTag(TripTagType.BUSINESS));
+            tripTagRepository.save(new TripTag(TripTagType.EDUCATIONAL));
+            tripTagRepository.save(new TripTag(TripTagType.RELAXATION));
+            tripTagRepository.save(new TripTag(TripTagType.SOLO));
+            tripTagRepository.save(new TripTag(TripTagType.GROUP));
+            tripTagRepository.save(new TripTag(TripTagType.ROMANTIC));
+            tripTagRepository.save(new TripTag(TripTagType.NATURE));
+            tripTagRepository.save(new TripTag(TripTagType.HISTORICAL));
+            tripTagRepository.save(new TripTag(TripTagType.SPORTS));
+            tripTagRepository.save(new TripTag(TripTagType.FESTIVAL));
+            tripTagRepository.save(new TripTag(TripTagType.LEISURE));
+            System.out.println("Initial trip tags created");
         }
     }
 

@@ -37,6 +37,7 @@ public class TripServiceImpl implements TripService {
     private AuthUtils authUtils;
 
     @Override
+    @Transactional
     public APIResponse<TripResponseDTO> createTrip(TripRequestDTO tripRequestDTO) {
         log.info("Creating trip with request: {}", tripRequestDTO);
         // Validate dates
@@ -48,8 +49,8 @@ public class TripServiceImpl implements TripService {
         }
 
         // Validate positive values
-        if (tripRequestDTO.getNumberOfPeople() != null && tripRequestDTO.getNumberOfPeople() <= 0) {
-            throw new IllegalArgumentException("Number of people must be positive");
+        if (tripRequestDTO.getNumberOfAdults() != null && tripRequestDTO.getNumberOfAdults() <= 0) {
+            throw new IllegalArgumentException("Number of adults must be positive");
         }
 
         // Convert DTO to entity
@@ -57,6 +58,7 @@ public class TripServiceImpl implements TripService {
 
         // Initialize collections
         trip.setTourists(new HashSet<>());
+        trip.setLocations(new HashSet<>());
         trip.setTripItems(new ArrayList<>());
         trip.setTripExpenses(new ArrayList<>());
         trip.setTripBudgetCategoryLimits(initializeCategoryLimits(tripRequestDTO, trip));
@@ -70,9 +72,15 @@ public class TripServiceImpl implements TripService {
         trip.setLeadTourist(leadTourist);
         trip.getTourists().add(leadTourist);
 
+        //add start location to locations
+//        trip.getLocations().add(modelMapper.map(tripRequestDTO.getStartLocation(), Location.class));
+
         // Set default values if not provided
-        if (trip.getNumberOfPeople() == null) {
-            trip.setNumberOfPeople(1);
+        if (trip.getNumberOfAdults() == null) {
+            trip.setNumberOfAdults(1);
+        }
+        if (trip.getNumberOfChildren() == null) {
+            trip.setNumberOfChildren(0);
         }
         if (trip.getTotalBudget() == null) {
             trip.setTotalBudget(0.0);
@@ -88,6 +96,7 @@ public class TripServiceImpl implements TripService {
     }
 
     @Override
+    @Transactional
     public APIResponse<List<TripResponseDTO>> getAllMyTrips() {
         log.info("Fetching all trips for the logged-in user");
         User currentUser = authUtils.loggedInUser();
@@ -109,6 +118,7 @@ public class TripServiceImpl implements TripService {
     }
 
     @Override
+    @Transactional
     public APIResponse<TripResponseDTO> getTripById(Long tripId) {
         log.info("Fetching trip with ID: {}", tripId);
         Trip trip = tripRepository.findByTripId(tripId);

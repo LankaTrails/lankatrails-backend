@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.model;
 
+import com.lankatrails.lankatrails_backend.model.enums.TripStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,8 +31,25 @@ public class Trip {
     @Column(name = "end_date")
     private LocalDate endDate;
 
-    @Column(name = "number_of_people")
-    private Integer numberOfPeople = 1;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "start_location_id", referencedColumnName ="location_id" )
+    private Location startLocation;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "trip_locations",
+            joinColumns = @JoinColumn(name = "trip_id"),
+            inverseJoinColumns = @JoinColumn(name = "location_id"))
+    private Set<Location> locations = new HashSet<>();
+
+    @Column(name = "number_of_adults", nullable = false)
+    private Integer numberOfAdults = 1;
+
+    @Column(name = "number_of_children", nullable = false)
+    private Integer numberOfChildren = 0;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "trip_status", nullable = false, columnDefinition = "VARCHAR(20)")
+    private TripStatus tripStatus;
 
     @Column(name = "total_budget")
     private Double totalBudget = 0.0;
@@ -42,7 +60,7 @@ public class Trip {
     @Column(name = "total_distance")
     private Double totalDistance = 0.0;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lead_tourist_id", referencedColumnName = "user_id")
     private Tourist leadTourist;
 
