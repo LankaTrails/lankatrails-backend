@@ -7,9 +7,11 @@ import com.lankatrails.lankatrails_backend.model.Service;
 import com.lankatrails.lankatrails_backend.repositories.LocationRepository;
 import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
 import com.lankatrails.lankatrails_backend.service.ServicesForAll;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 
+@Slf4j
 @org.springframework.stereotype.Service
 public class serviceImpl implements ServicesForAll {
     @Autowired
@@ -31,10 +33,12 @@ public class serviceImpl implements ServicesForAll {
 
     public Location setServiceLocation(ServiceRequest request){
         if (request.getLocationId() != null) {
+            log.info("Fetching existing location with ID: {}", request.getLocationId());
             // Fetch the location by ID
             return locationRepository.findLocationByLocationId(request.getLocationId())
                     .orElseThrow(() -> new ResourceNotFoundException("Location", request.getLocationId()));
         } else {
+            log.info("Creating new location from request: {}", request.getLocationBased());
             Location location = modelMapper.map(request.getLocationBased(), Location.class);
             return locationRepository.save(location);
         }

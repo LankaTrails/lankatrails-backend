@@ -7,6 +7,7 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 
 import java.awt.*;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -48,6 +49,9 @@ public class Location {
 
     @Column(name = "coordinates", columnDefinition = "geography(Point,4326)")
     private Point coordinates;
+
+    @OneToMany(mappedBy = "locationBased",cascade = CascadeType.ALL)
+    private Set<Service> services = new HashSet<>();
 
     @ManyToMany(mappedBy = "locations", fetch = FetchType.LAZY)
     private Set<Trip> trips;

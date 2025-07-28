@@ -57,8 +57,8 @@ public class Service {
     )
     private Set<PolicySection> policies=new HashSet<>();
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "location_id", referencedColumnName ="location_id" )
+    @ManyToOne
+    @JoinColumn(name = "location_id")
     private Location locationBased;
 
     @OneToMany(mappedBy = "service" )
