@@ -74,6 +74,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/admin/**").permitAll()// Update to admin role
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/api/user/**").permitAll()
+                        .requestMatchers("/api/locations/**").permitAll() // Allow access to location endpoints
                         .requestMatchers("/uploads/**").permitAll() // Allow access to uploads
                         .anyRequest().authenticated()
                 )

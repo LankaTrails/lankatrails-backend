@@ -7,6 +7,7 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 
 import java.awt.*;
+import java.util.Set;
 
 @Entity
 @Table(name = "location")
@@ -47,6 +48,9 @@ public class Location {
 
     @Column(name = "coordinates", columnDefinition = "geography(Point,4326)")
     private Point coordinates;
+
+    @ManyToMany(mappedBy = "locations", fetch = FetchType.LAZY)
+    private Set<Trip> trips;
 
     //Auto-set coordinates before saving or updating
     @PrePersist
