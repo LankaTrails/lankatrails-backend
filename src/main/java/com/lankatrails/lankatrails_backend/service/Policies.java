@@ -16,5 +16,6 @@ public interface Policies {
     Boolean addPoliciesToTransport(List<PolicySectionRequest> policyReq,Transport transport);
     APIResponse<String> providerAddPolicies(PolicySectionRequest policyReq);
     List<PolicySectionRequest> getProviderPolicies(Long userId);
+    List<PolicySectionRequest> getServicePolicies(Long userId, Long categoryId);
 
 }

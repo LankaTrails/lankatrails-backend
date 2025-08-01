@@ -191,7 +191,7 @@ public class AccommodationServiceImpl implements  AccommodationService {
         prepareResponse.setServiceId(accommodation.getServiceId());
         prepareResponse.setServiceName(accommodation.getServiceName());
         prepareResponse.setStatus(accommodation.getStatus());
-        prepareResponse.setAccommodationType(accommodation.getAccommodationCategory().getCategoryName());
+//        prepareResponse.setAccommodationType(accommodation.getAccommodationCategory().getCategoryName());
         prepareResponse.setMaxGuests(accommodation.getMaxGuests());
         prepareResponse.setNumberOfRooms(accommodation.getNumberOfRooms());
         prepareResponse.setPrice(accommodation.getPrice());
@@ -223,4 +223,35 @@ public class AccommodationServiceImpl implements  AccommodationService {
 
 
     }
+
+    @Override
+    @Transactional
+    //Adding new policy for the entire activity category
+    public APIResponse<String> addNewPolicy(PolicySection policies) {
+        Category category = categoryRepository.findByCategoryName(ServiceCategory.ACCOMMODATION)
+                .orElseThrow(() -> new ResourceNotFoundException("Category", 1L));
+        //check whether the policy exists
+        PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
+        if (policyCheck==null){
+            //Policy doesn't exist
+            policies.setProvider((Provider) authUtils.loggedInUser());
+            policies.setCategory(category);
+            policySectionRepository.save(policies);
+            return APIResponse.<String>builder()
+                    .success(true)
+                    .message("Policy Added Successfully")
+                    .data("")
+                    .build();
+        }else{
+
+            return APIResponse.<String>builder()
+                    .success(false)
+                    .message("Policy Already Exists")
+                    .data("")
+                    .build();
+
+        }
+
+    }
+
 }

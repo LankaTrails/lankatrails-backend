@@ -157,4 +157,20 @@ public class PolicyImpl implements Policies {
         }
         return response;
     }
+
+    @Override
+    public List<PolicySectionRequest> getServicePolicies(Long userId,Long categoryId) {
+        List<PolicySection> policySection=policySectionRepository.findByProvider_UserIdAndCategory_CategoryId(userId,categoryId);
+        List<PolicySectionRequest> response = new ArrayList<>();
+        for (PolicySection policy : policySection){
+            PolicySectionRequest policyReq = new PolicySectionRequest();
+            policyReq.setHeading(policy.getHeading());
+            policyReq.setPolicy(policy.getPolicy());
+            policyReq.setId(policy.getId());
+            response.add(policyReq);
+        }
+        return response;
+    }
+
+
 }

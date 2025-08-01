@@ -287,5 +287,35 @@ public class TransportServiceImpl implements TransportService {
 
     }
 
+    @Override
+    @Transactional
+    //Adding new policy for the entire activity category
+    public APIResponse<String> addNewPolicy(PolicySection policies) {
+        Category category = categoryRepository.findByCategoryName(ServiceCategory.TRANSPORT)
+                .orElseThrow(() -> new ResourceNotFoundException("Category", 2L));
+        //check whether the policy exists
+        PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
+        if (policyCheck==null){
+            //Policy doesn't exist
+            policies.setProvider((Provider) authUtils.loggedInUser());
+            policies.setCategory(category);
+            policySectionRepository.save(policies);
+            return APIResponse.<String>builder()
+                    .success(true)
+                    .message("Policy Added Successfully")
+                    .data("")
+                    .build();
+        }else{
+
+            return APIResponse.<String>builder()
+                    .success(false)
+                    .message("Policy Already Exists")
+                    .data("")
+                    .build();
+
+        }
+
+    }
+
 
 }
