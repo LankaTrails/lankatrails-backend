@@ -49,6 +49,21 @@ public class ProviderController {
         return new ResponseEntity<>(response,HttpStatus.OK);
 
     }
+    //Policies of the provider and also the policies common to a single service
+    @GetMapping("/policies/{categoryId}")
+    public ResponseEntity<APIResponse<List<PolicySectionRequest>>> providerAndServicePolicies(@PathVariable Long categoryId){
+        Provider provider = (Provider) authUtils.loggedInUser();
+        List<PolicySectionRequest> policies = policyImplementation
+                .getProviderAndServicePolicies(provider.getUserId(),categoryId);
+        APIResponse<List<PolicySectionRequest>> response =APIResponse.<List<PolicySectionRequest>>builder()
+                .success(true)
+                .message("Found Provider and Service Policies")
+                .data(policies)
+                .build();
+
+        return new ResponseEntity<>(response,HttpStatus.OK);
+
+    }
 
     @GetMapping("/business-details")
     public ResponseEntity<APIResponse<BusinessDetailDTO>> getBusinessDetails() {
