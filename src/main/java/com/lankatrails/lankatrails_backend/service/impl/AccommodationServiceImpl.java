@@ -1,19 +1,10 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.*;
-import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.AccommodationResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
-import com.lankatrails.lankatrails_backend.exception.APIException;
-import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
-import com.lankatrails.lankatrails_backend.model.*;
-import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
-import com.lankatrails.lankatrails_backend.repositories.*;
-import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
-import com.lankatrails.lankatrails_backend.service.AccommodationService;
-import com.lankatrails.lankatrails_backend.service.ImageService;
-import com.lankatrails.lankatrails_backend.service.ServicesForAll;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -23,9 +14,34 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import com.lankatrails.lankatrails_backend.dtos.request.AccommodationServiceRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.ImageRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.AccommodationResponse;
+import com.lankatrails.lankatrails_backend.exception.APIException;
+import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
+import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
+import com.lankatrails.lankatrails_backend.model.Accommodation;
+import com.lankatrails.lankatrails_backend.model.AccommodationCategory;
+import com.lankatrails.lankatrails_backend.model.Category;
+import com.lankatrails.lankatrails_backend.model.Image;
+import com.lankatrails.lankatrails_backend.model.PolicySection;
+import com.lankatrails.lankatrails_backend.model.Provider;
+import com.lankatrails.lankatrails_backend.model.TabsSection;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
+import com.lankatrails.lankatrails_backend.repositories.AccommodationCategoryRepository;
+import com.lankatrails.lankatrails_backend.repositories.AccommodationRepository;
+import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
+import com.lankatrails.lankatrails_backend.repositories.ImageRepository;
+import com.lankatrails.lankatrails_backend.repositories.PolicySectionRepository;
+import com.lankatrails.lankatrails_backend.repositories.TabsSectionRepository;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
+import com.lankatrails.lankatrails_backend.service.AccommodationService;
+import com.lankatrails.lankatrails_backend.service.ImageService;
+import com.lankatrails.lankatrails_backend.service.ServicesForAll;
 
 @Service
 public class AccommodationServiceImpl implements  AccommodationService {
@@ -78,7 +94,7 @@ public class AccommodationServiceImpl implements  AccommodationService {
         Provider provider = (Provider) authUtils.loggedInUser();
         mappedObj.setProvider(provider);
 
-        mappedObj.setLocationBased(servicesForAll.setServiceLocation(services));
+        mappedObj.setLocations(servicesForAll.setServiceLocation(services));
 
         Optional<Accommodation> checkDb = accommodationRepository.findByServiceName(mappedObj.getServiceName());
         Accommodation lastServiceAdded;
@@ -213,7 +229,9 @@ public class AccommodationServiceImpl implements  AccommodationService {
         prepareResponse.setRoomService(accommodation.getRoomService());
         prepareResponse.setGymAccess(accommodation.getGymAccess());
         prepareResponse.setSpaServices(accommodation.getSpaServices());
-        prepareResponse.setLocationBased(modelMapper.map(accommodation.getLocationBased(), LocationDTO.class));
+        prepareResponse.setLocations(accommodation.getLocations().stream()
+                .map(location -> modelMapper.map(location, LocationDTO.class))
+                .collect(Collectors.toSet()));
         prepareResponse.setContactNo(accommodation.getContactNo());
         prepareResponse.setNumberOfRooms(accommodation.getNumberOfRooms());
         prepareResponse.setPrice(accommodation.getPrice());

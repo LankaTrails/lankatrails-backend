@@ -57,9 +57,13 @@ public class Service {
     )
     private Set<PolicySection> policies=new HashSet<>();
 
-    @ManyToOne
-    @JoinColumn(name = "location_id")
-    private Location locationBased;
+    @ManyToMany
+    @JoinTable(
+          name = "service_location",
+          joinColumns = @JoinColumn(name = "service_id"),
+          inverseJoinColumns = @JoinColumn(name = "location_id")
+    )
+    private Set<Location> locations = new HashSet<>();
 
     @OneToMany(mappedBy = "service" )
     private List<Image> images = new ArrayList<>();

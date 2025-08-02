@@ -23,7 +23,7 @@ public class CreateServiceFactory {
 
         ActivityServiceRequest prepareResponse=new ActivityServiceRequest();
         prepareResponse.setServiceName(services.getServiceName());
-        prepareResponse.setLocationBased(services.getLocationBased());
+//        prepareResponse.setLocationBased(services.getLocationBased());
         prepareResponse.setContactNo(services.getContactNo());
         prepareResponse.setActivityType(services.getActivityType());
         prepareResponse.setActivityDetails(services.getActivityDetails());
@@ -50,7 +50,7 @@ public class CreateServiceFactory {
         prepareResponse.setPolicySection(transportRequestDTO.getPolicySection());
         prepareResponse.setTabsSection(transportRequestDTO.getTabsSection());
         prepareResponse.setContactNo(transportRequestDTO.getContactNo());
-        prepareResponse.setLocationBased(transportRequestDTO.getLocationBased());
+//        prepareResponse.setLocationBased(transportRequestDTO.getLocationBased());
         prepareResponse.setVehicleQty(transportRequestDTO.getVehicleQty());
 //        prepareResponse.setVehicleType(transportRequestDTO.getVehicleType());
 

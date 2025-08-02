@@ -1,20 +1,11 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.*;
-import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.TransportResponseDTO;
-import com.lankatrails.lankatrails_backend.exception.APIException;
-import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
-import com.lankatrails.lankatrails_backend.factory.CreateServiceFactory;
-import com.lankatrails.lankatrails_backend.factory.UpdateServiceFactory;
-import com.lankatrails.lankatrails_backend.model.*;
-import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
-import com.lankatrails.lankatrails_backend.repositories.*;
-import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
-import com.lankatrails.lankatrails_backend.service.ImageService;
-import com.lankatrails.lankatrails_backend.service.ServicesForAll;
-import com.lankatrails.lankatrails_backend.service.TransportService;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -24,10 +15,36 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import com.lankatrails.lankatrails_backend.dtos.request.ImageRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.TransportRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.TransportResponseDTO;
+import com.lankatrails.lankatrails_backend.exception.APIException;
+import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
+import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
+import com.lankatrails.lankatrails_backend.factory.CreateServiceFactory;
+import com.lankatrails.lankatrails_backend.factory.UpdateServiceFactory;
+import com.lankatrails.lankatrails_backend.model.Category;
+import com.lankatrails.lankatrails_backend.model.Image;
+import com.lankatrails.lankatrails_backend.model.PolicySection;
+import com.lankatrails.lankatrails_backend.model.Provider;
+import com.lankatrails.lankatrails_backend.model.TabsSection;
+import com.lankatrails.lankatrails_backend.model.Transport;
+import com.lankatrails.lankatrails_backend.model.VehicleCategory;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
+import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
+import com.lankatrails.lankatrails_backend.repositories.ImageRepository;
+import com.lankatrails.lankatrails_backend.repositories.PolicySectionRepository;
+import com.lankatrails.lankatrails_backend.repositories.TabsSectionRepository;
+import com.lankatrails.lankatrails_backend.repositories.TransportRepository;
+import com.lankatrails.lankatrails_backend.repositories.VehicleCategoryRepository;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
+import com.lankatrails.lankatrails_backend.service.ImageService;
+import com.lankatrails.lankatrails_backend.service.ServicesForAll;
+import com.lankatrails.lankatrails_backend.service.TransportService;
 
 @Service
 public class TransportServiceImpl implements TransportService {
@@ -172,7 +189,9 @@ public class TransportServiceImpl implements TransportService {
         prepareResponse.setFuelType(transport.getFuelType());
         prepareResponse.setContactNo(transport.getContactNo());
         prepareResponse.setImages(imgDTOs);
-        prepareResponse.setLocationBased(modelMapper.map(transport.getLocationBased(), LocationDTO.class));
+        prepareResponse.setLocations(transport.getLocations().stream()
+                .map(location -> modelMapper.map(location, LocationDTO.class))
+                .collect(Collectors.toSet()));
         prepareResponse.setPolicySection(policies);
         prepareResponse.setPrice(transport.getPrice());
         prepareResponse.setPriceType(transport.getPriceType());
@@ -197,6 +216,19 @@ public class TransportServiceImpl implements TransportService {
 
         Transport mappedObj=modelMapper.map(transportRequestDTO,Transport.class);
         Transport updatedObj=updateServiceFactory.updateTransport(transport,mappedObj);
+        
+        // Update basic service properties
+        updatedObj.setServiceName(transportRequestDTO.getServiceName());
+        updatedObj.setContactNo(transportRequestDTO.getContactNo());
+        updatedObj.setStatus(transportRequestDTO.getStatus());
+        updatedObj.setPrice(transportRequestDTO.getPrice());
+        updatedObj.setPriceType(transportRequestDTO.getPriceType());
+        
+        // Update locations
+        if (transportRequestDTO.getLocations() != null && !transportRequestDTO.getLocations().isEmpty()) {
+            updatedObj.setLocations(servicesForAll.setServiceLocation(transportRequestDTO));
+        }
+        
         transportRepository.save(updatedObj);
 
         //save the tabs if updated
@@ -239,7 +271,7 @@ public class TransportServiceImpl implements TransportService {
         Provider provider=(Provider) authUtils.loggedInUser();
         mappedObj.setProvider(provider);
 
-        mappedObj.setLocationBased(servicesForAll.setServiceLocation(transportRequestDTO));
+        mappedObj.setLocations(servicesForAll.setServiceLocation(transportRequestDTO));
 
         Optional<Transport> checkDb=transportRepository.findByServiceName(mappedObj.getServiceName());
         Transport lastTransportAdded;
