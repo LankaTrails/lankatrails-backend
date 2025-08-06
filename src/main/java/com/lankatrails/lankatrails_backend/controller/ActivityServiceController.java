@@ -1,12 +1,16 @@
 package com.lankatrails.lankatrails_backend.controller;
 
 import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.model.ActivityService;
 import com.lankatrails.lankatrails_backend.model.PolicySection;
+import com.lankatrails.lankatrails_backend.model.Provider;
 import com.lankatrails.lankatrails_backend.model.TabsSection;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ActivityServiceService;
+import com.lankatrails.lankatrails_backend.service.impl.PolicyImpl;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,6 +29,12 @@ import java.util.Map;
 public class ActivityServiceController {
     @Autowired
     ActivityServiceService activityServiceService;
+
+    @Autowired
+    AuthUtils authUtils;
+
+    @Autowired
+    PolicyImpl policyImpl;
 
 //    @PostMapping("/provider/activity-service/add")
 //    public ResponseEntity<APIResponse<String>> addService
@@ -92,6 +102,12 @@ public class ActivityServiceController {
         return new ResponseEntity<>(activityServiceResponse,HttpStatus.OK);
     }
 
+//    @GetMapping("/provider/activity-service/policies")
+//    public ResponseEntity<APIResponse<List<PolicySectionRequest>>> getAllActivityPolicies(){
+//        APIResponse<List<PolicySectionRequest>> policyResponse = activityServiceService.getAllPolicies();
+//        return  new ResponseEntity<>(policyResponse,HttpStatus.OK);
+//    }
+
     @GetMapping("/provider/activity-service/{id}")
     public ResponseEntity<APIResponse<ActivityServiceRequest>> searchById(@PathVariable Long id){
         APIResponse<ActivityServiceRequest> activityService= activityServiceService.searchWithId(id);
@@ -134,11 +150,30 @@ public class ActivityServiceController {
         APIResponse<String> responseDTO= activityServiceService.addNewPolicy(id,policies);
         return new ResponseEntity<>(responseDTO,HttpStatus.CREATED);
     }
+    //For Policies
+    @PostMapping("/provider/policy/activity")
+    public ResponseEntity<APIResponse<String>> addPolicies(@RequestBody PolicySection policies){
+        APIResponse<String> responseDTO= activityServiceService.addNewPolicy(policies);
+        return new ResponseEntity<>(responseDTO,HttpStatus.CREATED);
+    }
 
     @GetMapping("/delete/policy/{id}")
     public ResponseEntity<APIResponse<String>> removePolicy(@PathVariable Long id){
         APIResponse<String> response= activityServiceService.removePolicies(id);
         return new ResponseEntity<>(response,HttpStatus.OK);
+    }
+    @GetMapping("/provider/policy/activity")
+    public ResponseEntity<APIResponse<List<PolicySectionRequest>>> activityPolicies (){
+        Provider provider = (Provider) authUtils.loggedInUser();
+        List<PolicySectionRequest> policies = policyImpl.getServicePolicies(provider.getUserId(),4L);
+        APIResponse<List<PolicySectionRequest>> response =APIResponse.<List<PolicySectionRequest>>builder()
+                .success(true)
+                .message("Found Activity Policies")
+                .data(policies)
+                .build();
+
+        return new ResponseEntity<>(response,HttpStatus.OK);
+
     }
 
 

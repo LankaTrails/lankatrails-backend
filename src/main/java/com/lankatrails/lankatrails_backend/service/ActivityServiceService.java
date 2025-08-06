@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.service;
 
 import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.model.ActivityService;
@@ -19,6 +20,8 @@ public interface ActivityServiceService {
     ActivityServiceRequest addTabs(Long Id, TabsSection tabsSection);
     APIResponse<String> removeTabs(Long id);
     APIResponse<String> addNewPolicy(Long id, PolicySection policies);
+    APIResponse<String> addNewPolicy(PolicySection policies);
     APIResponse<String> removePolicies(Long id);
+//    APIResponse<List<PolicySectionRequest>> getAllPolicies();
 
 }

@@ -25,7 +25,6 @@ import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
-import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
 import com.lankatrails.lankatrails_backend.factory.CreateServiceFactory;
@@ -49,6 +48,21 @@ import com.lankatrails.lankatrails_backend.service.ActivityServiceService;
 import com.lankatrails.lankatrails_backend.service.ImageService;
 import com.lankatrails.lankatrails_backend.service.ServicesForAll;
 import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class ActivityServiceServiceImpl implements ActivityServiceService {
@@ -155,8 +169,8 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
         List<ActivityService> activityServices=activityServicePage.getContent();
 
-        if (activityServices.isEmpty())
-            throw new APIException("No Activity Service created till now");
+//        if (activityServices.isEmpty())
+//            throw new APIException("No Activity Service created till now");
 
         List<ActivityServiceRequest> activityServices_DTOs= new ArrayList<>();
 
@@ -318,8 +332,39 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         }
 
   }
+    @Override
+    @Transactional
+    //Adding new policy for the entire activity category
+    public APIResponse<String> addNewPolicy(PolicySection policies) {
+        Category category = categoryRepository.findByCategoryName(ServiceCategory.ACTIVITY)
+                .orElseThrow(() -> new ResourceNotFoundException("Category", 4L));
+        //check whether the policy exists
+        PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
+        if (policyCheck==null){
+            //Policy doesn't exist
+            policies.setProvider((Provider) authUtils.loggedInUser());
+            policies.setCategory(category);
+            policySectionRepository.save(policies);
+            return APIResponse.<String>builder()
+                    .success(true)
+                    .message("Policy Added Successfully")
+                    .data("")
+                    .build();
+        }else{
 
-  @Override
+            return APIResponse.<String>builder()
+                    .success(false)
+                    .message("Policy Already Exists")
+                    .data("")
+                    .build();
+
+        }
+
+    }
+
+
+
+    @Override
   @Transactional
   public APIResponse<String> updateWithId(Long Id,ActivityServiceRequest activityService){
 
@@ -455,5 +500,19 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
                 .data("")
                 .build();
     }
+
+//    @Override
+//    public APIResponse<List<PolicySectionRequest>> getAllPolicies(){
+//        Provider provider = (Provider) authUtils.loggedInUser();
+//        List<PolicySectionRequest> policies = policyImpl.getProviderPolicies(provider.getUserId());
+//        APIResponse<List<PolicySectionRequest>> response =APIResponse.<List<PolicySectionRequest>>builder()
+//                .success(true)
+//                .message("Found Provider Policies")
+//                .data(policies)
+//                .build();
+//
+//        return new ResponseEntity<>(response, HttpStatus.OK);
+//
+//    }
 
 }

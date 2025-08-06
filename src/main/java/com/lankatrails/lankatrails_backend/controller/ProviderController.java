@@ -7,6 +7,7 @@ import com.lankatrails.lankatrails_backend.model.Provider;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ProviderService;
 import com.lankatrails.lankatrails_backend.service.impl.PolicyImpl;
+import io.vavr.API;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -49,11 +50,32 @@ public class ProviderController {
         return new ResponseEntity<>(response,HttpStatus.OK);
 
     }
+    //Policies of the provider and also the policies common to a single service
+    @GetMapping("/policies/{categoryId}")
+    public ResponseEntity<APIResponse<List<PolicySectionRequest>>> providerAndServicePolicies(@PathVariable Long categoryId){
+        Provider provider = (Provider) authUtils.loggedInUser();
+        List<PolicySectionRequest> policies = policyImplementation
+                .getProviderAndServicePolicies(provider.getUserId(),categoryId);
+        APIResponse<List<PolicySectionRequest>> response =APIResponse.<List<PolicySectionRequest>>builder()
+                .success(true)
+                .message("Found Provider and Service Policies")
+                .data(policies)
+                .build();
+
+        return new ResponseEntity<>(response,HttpStatus.OK);
+
+    }
 
     @GetMapping("/business-details")
     public ResponseEntity<APIResponse<BusinessDetailDTO>> getBusinessDetails() {
         APIResponse<BusinessDetailDTO> response = providerService.getBusinessDetails();
         return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
+    }
+
+    @GetMapping("/delete/policy")
+    public ResponseEntity<APIResponse<String>> removePolicy(@PathVariable Long id){
+        APIResponse<String> response= policyImplementation.removePolicies(id);
+        return new ResponseEntity<>(response,HttpStatus.OK);
     }
 }
