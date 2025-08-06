@@ -7,9 +7,14 @@ import com.lankatrails.lankatrails_backend.model.Service;
 import com.lankatrails.lankatrails_backend.repositories.LocationRepository;
 import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
 import com.lankatrails.lankatrails_backend.service.ServicesForAll;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Slf4j
 @org.springframework.stereotype.Service
 public class serviceImpl implements ServicesForAll {
     @Autowired
@@ -29,14 +34,31 @@ public class serviceImpl implements ServicesForAll {
 
     }
 
-    public Location setServiceLocation(ServiceRequest request){
-        if (request.getLocationId() != null) {
-            // Fetch the location by ID
-            return locationRepository.findLocationByLocationId(request.getLocationId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Location", request.getLocationId()));
-        } else {
-            Location location = modelMapper.map(request.getLocationBased(), Location.class);
-            return locationRepository.save(location);
-        }
+//    public Location setServiceLocation(ServiceRequest request){
+//        if (request.getLocationId() != null) {
+//            log.info("Fetching existing location with ID: {}", request.getLocationId());
+//            // Fetch the location by ID
+//            return locationRepository.findLocationByLocationId(request.getLocationId())
+//                    .orElseThrow(() -> new ResourceNotFoundException("Location", request.getLocationId()));
+//        } else {
+//            log.info("Creating new location from request: {}", request.getLocationBased());
+//            Location location = modelMapper.map(request.getLocationBased(), Location.class);
+//            return locationRepository.save(location);
+//        }
+//    }
+
+    public Set<Location> setServiceLocation(ServiceRequest request){
+        return request.getLocations().stream()
+                .map(locationDTO -> {
+                    if (locationDTO.getLocationId() != null) {
+                        log.info("Fetching existing location with ID: {}", locationDTO.getLocationId());
+                        return locationRepository.findLocationByLocationId(locationDTO.getLocationId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Location", locationDTO.getLocationId()));
+                    } else {
+                        log.info("Creating new location from request: {}", locationDTO);
+                        Location location = modelMapper.map(locationDTO, Location.class);
+                        return locationRepository.save(location);
+                    }
+                }).collect(Collectors.toSet());
     }
 }

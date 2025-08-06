@@ -13,15 +13,15 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface ServiceService {
-    APIResponse<List<ServiceDTO>> searchServices(
-            Double lat,
-            Double lng,
-            Double radiusKm,
-            String city,
-            String district,
-            String province,
-            String country
-    );
+//    APIResponse<List<ServiceDTO>> searchServices(
+//            Double lat,
+//            Double lng,
+//            Double radiusKm,
+//            String city,
+//            String district,
+//            String province,
+//            String country
+//    );
 
     APIResponse<String> addServiceImages(Long serviceId, MultipartFile[] serviceImages);
 

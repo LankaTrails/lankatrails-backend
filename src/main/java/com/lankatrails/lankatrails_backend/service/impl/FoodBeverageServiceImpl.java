@@ -1,20 +1,10 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.*;
-import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.FoodBeverageResponse;
-import com.lankatrails.lankatrails_backend.exception.APIException;
-import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
-import com.lankatrails.lankatrails_backend.model.*;
-import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
-import com.lankatrails.lankatrails_backend.repositories.*;
-import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
-import com.lankatrails.lankatrails_backend.service.FoodBeverageService;
-import com.lankatrails.lankatrails_backend.service.ImageService;
-import com.lankatrails.lankatrails_backend.service.ServicesForAll;
-import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -24,9 +14,36 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import com.lankatrails.lankatrails_backend.dtos.request.FoodBeverageRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.ImageRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.FoodBeverageResponse;
+import com.lankatrails.lankatrails_backend.exception.APIException;
+import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
+import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
+import com.lankatrails.lankatrails_backend.model.Category;
+import com.lankatrails.lankatrails_backend.model.FoodAndBeverage;
+import com.lankatrails.lankatrails_backend.model.FoodAndBeverageCategory;
+import com.lankatrails.lankatrails_backend.model.Image;
+import com.lankatrails.lankatrails_backend.model.PolicySection;
+import com.lankatrails.lankatrails_backend.model.Provider;
+import com.lankatrails.lankatrails_backend.model.TabsSection;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
+import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
+import com.lankatrails.lankatrails_backend.repositories.FoodAndBeverageCategoryRepository;
+import com.lankatrails.lankatrails_backend.repositories.FoodBeverageRepository;
+import com.lankatrails.lankatrails_backend.repositories.ImageRepository;
+import com.lankatrails.lankatrails_backend.repositories.PolicySectionRepository;
+import com.lankatrails.lankatrails_backend.repositories.ProviderRepository;
+import com.lankatrails.lankatrails_backend.repositories.TabsSectionRepository;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
+import com.lankatrails.lankatrails_backend.service.FoodBeverageService;
+import com.lankatrails.lankatrails_backend.service.ImageService;
+import com.lankatrails.lankatrails_backend.service.ServicesForAll;
+import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 
 @Service
 public class FoodBeverageServiceImpl implements FoodBeverageService {
@@ -85,7 +102,7 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         Provider provider = (Provider) authUtils.loggedInUser();
         mappedObj.setProvider(provider);
 
-        mappedObj.setLocationBased(servicesForAll.setServiceLocation(foodBeverageRequest));
+        mappedObj.setLocations(servicesForAll.setServiceLocation(foodBeverageRequest));
 
         Optional<FoodAndBeverage> checkDb = foodBeverageRepository.findByServiceName(mappedObj.getServiceName());
         FoodAndBeverage lastServiceAdded;
@@ -213,7 +230,9 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         prepareResponse.setOutdoorSeating(foodAndBeverage.getOutdoorSeating());
         prepareResponse.setLiveMusic(foodAndBeverage.getLiveMusic());
         prepareResponse.setCuisineType(foodAndBeverage.getCuisineType());
-        prepareResponse.setLocationBased(modelMapper.map(foodAndBeverage.getLocationBased(), LocationDTO.class));
+        prepareResponse.setLocations(foodAndBeverage.getLocations().stream()
+                .map(location -> modelMapper.map(location, LocationDTO.class))
+                .collect(Collectors.toSet()));
         prepareResponse.setContactNo(foodAndBeverage.getContactNo());
         prepareResponse.setTabsSection(tabs);
         prepareResponse.setPolicySection(policies);
