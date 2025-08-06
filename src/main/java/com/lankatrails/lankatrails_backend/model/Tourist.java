@@ -7,6 +7,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -52,6 +54,9 @@ public class Tourist extends User {
             inverseJoinColumns = @JoinColumn(name = "place_id"))
     private Set<Place> favouritePlaces;
 
+    @OneToMany(mappedBy = "tourist")
+    private List<Booking> bookings = new ArrayList<>();
+
     public @Size(max = 20) String getFirstName() {
         return firstName;
     }
@@ -75,4 +80,6 @@ public class Tourist extends User {
     public void setLastName(@Size(max = 20) String lastName) {
         this.lastName = lastName;
     }
+
+
 }

@@ -19,4 +19,6 @@ public class ActivityService extends Service {
     private String activityDetails;
 
     private String safetyInstructions;
+
+    private String activityDuration;
 }
