@@ -16,8 +16,9 @@ public class AvailabilitySlot {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long slotId;
     private String dayOfWeek;
-    private LocalTime openTime;
-    private LocalTime closeTime;
+
+    private String openTime;
+    private String closeTime;
 
     @ManyToOne
     @JoinColumn(name = "service_id")
