@@ -55,6 +55,8 @@ public abstract class ServiceRequest {
 //    @NotEmpty(message = "Should be at least one image")
     private List<ImageRequestDTO> images;
 
+    private List<AvailabilitySlotDTO> availabilitySlots;
+
 
 
 

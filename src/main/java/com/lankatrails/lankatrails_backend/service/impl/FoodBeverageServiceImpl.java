@@ -222,7 +222,7 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         FoodBeverageRequest prepareResponse = new FoodBeverageRequest();
 
         prepareResponse.setServiceName(foodAndBeverage.getServiceName());
-        prepareResponse.setOpenHours(foodAndBeverage.getOpenHours());
+//        prepareResponse.setOpenHours(foodAndBeverage.getOpenHours());
         prepareResponse.setFoodAndBeverageType(foodAndBeverage.getFoodAndBeverageCategory().getCategoryName());
         prepareResponse.setVegetarianOptions(foodAndBeverage.getVegetarianOptions());
         prepareResponse.setHalalCertified(foodAndBeverage.getHalalCertified());

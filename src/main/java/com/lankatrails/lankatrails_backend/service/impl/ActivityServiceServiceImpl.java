@@ -103,6 +103,9 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     private PolicyImpl policyImpl;
 
     @Autowired
+    private serviceImpl serviceImpl;
+
+    @Autowired
     private AuthUtils authUtils;
 
     @Autowired
@@ -114,6 +117,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     @Override
     @Transactional
     public APIResponse<String> addService(ActivityServiceRequest services, List<MultipartFile> images) {
+        System.out.println("hello"+services.getAvailabilitySlots());
         Category category = categoryRepository.findByCategoryName(ServiceCategory.ACTIVITY)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", 4L));
 
@@ -147,6 +151,12 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
             // Upload and associate images
             imageService.uploadImagesForService(images, lastServiceAdded);
+
+            // Set the availability slots
+            List<AvailabilitySlotDTO> availabilitySlots = services.getAvailabilitySlots();
+//            System.out.println("Availability Slots1" + availabilitySlots);
+            serviceImpl.setAvailabilitySlots(availabilitySlots,lastServiceAdded);
+
 
         } else {
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());

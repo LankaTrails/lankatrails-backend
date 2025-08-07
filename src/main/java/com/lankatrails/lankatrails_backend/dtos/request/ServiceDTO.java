@@ -21,4 +21,8 @@ public class ServiceDTO {
     private Double price;
     private PriceType priceType;
     private String mainImageUrl;
+
+    private List<AvailabilitySlotDTO> availabilitySlots;
+
 }
+
