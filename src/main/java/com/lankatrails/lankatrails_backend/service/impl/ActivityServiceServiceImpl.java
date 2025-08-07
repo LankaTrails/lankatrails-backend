@@ -1,20 +1,54 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.ImageRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
 import com.lankatrails.lankatrails_backend.factory.CreateServiceFactory;
-import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.ActivityCategory;
+import com.lankatrails.lankatrails_backend.model.ActivityService;
+import com.lankatrails.lankatrails_backend.model.Category;
+import com.lankatrails.lankatrails_backend.model.Image;
+import com.lankatrails.lankatrails_backend.model.PolicySection;
+import com.lankatrails.lankatrails_backend.model.Provider;
+import com.lankatrails.lankatrails_backend.model.TabsSection;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
-import com.lankatrails.lankatrails_backend.repositories.*;
+import com.lankatrails.lankatrails_backend.repositories.ActivityCategoryRepository;
+import com.lankatrails.lankatrails_backend.repositories.ActivityServiceRepository;
+import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
+import com.lankatrails.lankatrails_backend.repositories.ImageRepository;
+import com.lankatrails.lankatrails_backend.repositories.PolicySectionRepository;
+import com.lankatrails.lankatrails_backend.repositories.ProviderRepository;
+import com.lankatrails.lankatrails_backend.repositories.TabsSectionRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ActivityServiceService;
-
 import com.lankatrails.lankatrails_backend.service.ImageService;
 import com.lankatrails.lankatrails_backend.service.ServicesForAll;
 import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -93,7 +127,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         Provider provider = (Provider) authUtils.loggedInUser();
         mappedObj.setProvider(provider);
 
-        mappedObj.setLocationBased(servicesForAll.setServiceLocation(services));
+        mappedObj.setLocations(servicesForAll.setServiceLocation(services));
 
         Optional<ActivityService> checkDb = activityServiceRepository.findByServiceName(mappedObj.getServiceName());
         ActivityService lastServiceAdded;
@@ -223,7 +257,9 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         prepareResponse.setActivityType(activityService.getActivityCategory().getCategoryName());
         prepareResponse.setActivityDetails(activityService.getActivityDetails());
         prepareResponse.setSafetyInstructions(activityService.getSafetyInstructions());
-        prepareResponse.setLocationBased(modelMapper.map(activityService.getLocationBased(), LocationDTO.class));
+        prepareResponse.setLocations(activityService.getLocations().stream()
+                .map(location -> modelMapper.map(location, LocationDTO.class))
+                .collect(Collectors.toSet()));
         prepareResponse.setContactNo(activityService.getContactNo());
         prepareResponse.setServiceId(Id);
         prepareResponse.setTabsSection(tabs);
@@ -348,11 +384,17 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
       //update the activity service
       activity.setServiceName(activityService.getServiceName());
-      activity.setLocationBased(modelMapper.map(activityService.getLocationBased(), Location.class));
       activity.setContactNo(activityService.getContactNo());
       activity.setStatus(activityService.getStatus());
       activity.setActivityDetails(activityService.getActivityDetails());
       activity.setSafetyInstructions(activityService.getSafetyInstructions());
+      activity.setPrice(activityService.getPrice());
+      activity.setPriceType(activityService.getPriceType());
+      
+      // Update locations
+      if (activityService.getLocations() != null && !activityService.getLocations().isEmpty()) {
+          activity.setLocations(servicesForAll.setServiceLocation(activityService));
+      }
 
       //save the updated activity service
       activityServiceRepository.save(activity);

@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -27,9 +28,9 @@ public abstract class ServiceRequest {
     private String serviceName;
 
 //    @NotBlank(message = "Location is not pinned")
-    private LocationDTO locationBased;
+    private Set<LocationDTO> locations;
 
-    private Long locationId;
+    private Set<Long> locationIds;
 
     @NotBlank(message = "Contact number is blank")
     @Pattern(regexp = "^(\\+94|0)?7[0-9]{8}$", message = "Invalid contact number format")

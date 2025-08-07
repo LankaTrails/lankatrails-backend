@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface LocationService {
     APIResponse<List<LocationDTO>> getAllCities();
+
+    APIResponse<List<LocationDTO>> getAllDistricts();
 }

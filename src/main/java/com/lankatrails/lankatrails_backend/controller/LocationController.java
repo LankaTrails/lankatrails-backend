@@ -26,4 +26,11 @@ public class LocationController {
         APIResponse<List<LocationDTO>> response = locationService.getAllCities();
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/districts")
+    public ResponseEntity<APIResponse<List<LocationDTO>>> getAllDistricts() {
+        log.info("Fetching all districts");
+        APIResponse<List<LocationDTO>> response = locationService.getAllDistricts();
+        return ResponseEntity.ok(response);
+    }
 }

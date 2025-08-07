@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -16,7 +17,7 @@ public class ServiceDTO {
     private Long serviceId;
     private String serviceName;
     private ServiceCategory Category;
-    private LocationDTO locationBased;
+    private Set<LocationDTO> locations;
     private Double price;
     private PriceType priceType;
     private String mainImageUrl;
