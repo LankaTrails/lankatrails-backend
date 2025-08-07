@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.repositories;
 
 import com.lankatrails.lankatrails_backend.model.Location;
+import com.lankatrails.lankatrails_backend.model.enums.LocationType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -14,5 +15,7 @@ public interface LocationRepository extends JpaRepository<Location, Long> {
 
     @Query("SELECT l FROM Location l WHERE l.city IS NOT NULL GROUP BY l.city, l.locationId")
     List<Location> findFirstLocationPerCity();
+
+    List<Location> findByLocationType(LocationType locationType);
 
 }
