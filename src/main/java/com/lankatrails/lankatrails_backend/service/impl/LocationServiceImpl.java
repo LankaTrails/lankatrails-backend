@@ -3,6 +3,7 @@ package com.lankatrails.lankatrails_backend.service.impl;
 import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.model.Location;
+import com.lankatrails.lankatrails_backend.model.enums.LocationType;
 import com.lankatrails.lankatrails_backend.repositories.LocationRepository;
 import com.lankatrails.lankatrails_backend.service.LocationService;
 import org.checkerframework.checker.units.qual.A;
@@ -39,6 +40,27 @@ public class LocationServiceImpl implements LocationService {
             return APIResponse.<List<LocationDTO>>builder()
                     .success(true)
                     .message("Cities retrieved successfully")
+                    .data(cityDTOs)
+                    .build();
+        }
+    }
+
+    @Override
+    public APIResponse<List<LocationDTO>> getAllDistricts() {
+        List<Location> cities = locationRepository.findByLocationType(LocationType.DISTRICT); // This method should return a list of LocationDTOs
+        if (cities.isEmpty()) {
+            return APIResponse.<List<LocationDTO>>builder()
+                    .success(false)
+                    .message("No districts found")
+                    .data(List.of())
+                    .build();
+        } else {
+            List<LocationDTO> cityDTOs = cities.stream()
+                    .map(location -> modelMapper.map(location, LocationDTO.class))
+                    .toList(); // Convert each Location to LocationDTO
+            return APIResponse.<List<LocationDTO>>builder()
+                    .success(true)
+                    .message("Districts retrieved successfully")
                     .data(cityDTOs)
                     .build();
         }
