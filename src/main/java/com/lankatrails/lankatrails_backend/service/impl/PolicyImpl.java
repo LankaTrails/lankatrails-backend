@@ -3,6 +3,7 @@ package com.lankatrails.lankatrails_backend.service.impl;
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.exception.PolicyExistsException;
+import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.repositories.ActivityServiceRepository;
 import com.lankatrails.lankatrails_backend.repositories.PolicySectionRepository;
@@ -11,6 +12,7 @@ import com.lankatrails.lankatrails_backend.service.Policies;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.function.Function;
@@ -125,6 +127,7 @@ public class PolicyImpl implements Policies {
     }
 
     @Override
+//    @Transactional
     public APIResponse<String> providerAddPolicies
             (PolicySectionRequest policyReq) {
             PolicySection mappedObj = modelMapper.map(policyReq,PolicySection.class);
@@ -157,4 +160,45 @@ public class PolicyImpl implements Policies {
         }
         return response;
     }
+    @Override
+    public List<PolicySectionRequest> getProviderAndServicePolicies(Long userId,Long categoryId) {
+        List<PolicySection> policySection=policySectionRepository.findByProviderIdAndCategoryIdOrNull(userId,categoryId);
+        List<PolicySectionRequest> response = new ArrayList<>();
+        for (PolicySection policy : policySection){
+            PolicySectionRequest policyReq = new PolicySectionRequest();
+            policyReq.setHeading(policy.getHeading());
+            policyReq.setPolicy(policy.getPolicy());
+            policyReq.setId(policy.getId());
+            response.add(policyReq);
+        }
+        return response;
+    }
+    @Override
+    public List<PolicySectionRequest> getServicePolicies(Long userId,Long categoryId) {
+        List<PolicySection> policySection=policySectionRepository.findByProvider_UserIdAndCategory_CategoryId(userId,categoryId);
+        List<PolicySectionRequest> response = new ArrayList<>();
+        for (PolicySection policy : policySection){
+            PolicySectionRequest policyReq = new PolicySectionRequest();
+            policyReq.setHeading(policy.getHeading());
+            policyReq.setPolicy(policy.getPolicy());
+            policyReq.setId(policy.getId());
+            response.add(policyReq);
+        }
+        return response;
+    }
+
+    @Override
+    public APIResponse<String> removePolicies(Long id){
+        policySectionRepository.findById(id)
+                .orElseThrow(()->new ResourceNotFoundException("Policy",id));
+//        policySectionRepository.findByPolicy_PolicyId(id);
+        policySectionRepository.deleteById(id);
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Policy removed successfully")
+                .data("")
+                .build();
+    }
+
+
 }

@@ -1,9 +1,14 @@
 package com.lankatrails.lankatrails_backend.controller;
 
 import com.lankatrails.lankatrails_backend.dtos.request.AccommodationServiceRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.AccommodationResponse;
+import com.lankatrails.lankatrails_backend.model.PolicySection;
+import com.lankatrails.lankatrails_backend.model.Provider;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.AccommodationService;
+import com.lankatrails.lankatrails_backend.service.impl.PolicyImpl;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,6 +28,12 @@ public class AccommodationController {
 
     @Autowired
     AccommodationService accommodationService;
+
+    @Autowired
+    PolicyImpl policyImpl;
+
+    @Autowired
+    AuthUtils authUtils;
 
     @PostMapping(value = "/provider/accommodation/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<APIResponse<String>> addTransport
@@ -63,6 +74,25 @@ public class AccommodationController {
     public ResponseEntity<APIResponse<AccommodationServiceRequestDTO>> searchById(@PathVariable Long Id){
         APIResponse<AccommodationServiceRequestDTO> accommodationResponse = accommodationService.searchWithId(Id);
         return new ResponseEntity<>(accommodationResponse,HttpStatus.OK);
+    }
+
+    @PostMapping("/provider/policy/accommodation")
+    public ResponseEntity<APIResponse<String>> addPolicies(@RequestBody PolicySection policies){
+        APIResponse<String> responseDTO= accommodationService.addNewPolicy(policies);
+        return new ResponseEntity<>(responseDTO,HttpStatus.CREATED);
+    }
+    @GetMapping("/provider/policy/accommodation")
+    public ResponseEntity<APIResponse<List<PolicySectionRequest>>> accommodationPolicies(){
+        Provider provider = (Provider) authUtils.loggedInUser();
+        List<PolicySectionRequest> policies = policyImpl.getServicePolicies(provider.getUserId(),1L);
+        APIResponse<List<PolicySectionRequest>> response =APIResponse.<List<PolicySectionRequest>>builder()
+                .success(true)
+                .message("Found Accommodation Policies")
+                .data(policies)
+                .build();
+
+        return new ResponseEntity<>(response,HttpStatus.OK);
+
     }
 
 }

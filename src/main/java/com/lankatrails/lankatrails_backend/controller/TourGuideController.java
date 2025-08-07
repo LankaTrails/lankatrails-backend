@@ -1,12 +1,17 @@
 package com.lankatrails.lankatrails_backend.controller;
 
 
+import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TouristGuideRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TouristGuideResponseDTO;
+import com.lankatrails.lankatrails_backend.model.PolicySection;
+import com.lankatrails.lankatrails_backend.model.Provider;
 import com.lankatrails.lankatrails_backend.repositories.TouristGuideRepository;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ServicesForAll;
 import com.lankatrails.lankatrails_backend.service.TouristGuideService;
+import com.lankatrails.lankatrails_backend.service.impl.PolicyImpl;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,6 +30,12 @@ public class TourGuideController {
 
     @Autowired
     ServicesForAll servicesForAll;
+
+    @Autowired
+    AuthUtils authUtils;
+
+    @Autowired
+    PolicyImpl policyImpl;
 
     @GetMapping("/tour-guide/getAll")
     public ResponseEntity<APIResponse<TouristGuideResponseDTO>> getAllTourGuides
@@ -68,5 +79,24 @@ public class TourGuideController {
     public ResponseEntity<TouristGuideResponseDTO> updateTourGuide(@PathVariable Long id, @RequestBody TouristGuideRequestDTO requestDTO) {
         TouristGuideResponseDTO touristGuideResponseDTO = touristGuideService.updateTourGuide(id, requestDTO);
         return new ResponseEntity<>(touristGuideResponseDTO, HttpStatus.OK);
+    }
+
+    @PostMapping("/policy/tour-guide")
+    public ResponseEntity<APIResponse<String>> addPolicies(@RequestBody PolicySection policies){
+        APIResponse<String> responseDTO= touristGuideService.addNewPolicy(policies);
+        return new ResponseEntity<>(responseDTO,HttpStatus.CREATED);
+    }
+    @GetMapping("/policy/tour-guide")
+    public ResponseEntity<APIResponse<List<PolicySectionRequest>>> guidePolicies (){
+        Provider provider = (Provider) authUtils.loggedInUser();
+        List<PolicySectionRequest> policies = policyImpl.getServicePolicies(provider.getUserId(),5L);
+        APIResponse<List<PolicySectionRequest>> response =APIResponse.<List<PolicySectionRequest>>builder()
+                .success(true)
+                .message("Found TourGuide Policies")
+                .data(policies)
+                .build();
+
+        return new ResponseEntity<>(response,HttpStatus.OK);
+
     }
 }
