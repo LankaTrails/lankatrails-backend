@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.model;
 
+import com.lankatrails.lankatrails_backend.model.enums.BookingType;
 import com.lankatrails.lankatrails_backend.model.enums.PriceType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -35,6 +36,9 @@ public class Service {
 
     @Enumerated(EnumType.STRING)
     private PriceType priceType;
+
+    @Enumerated(EnumType.STRING)
+    private BookingType bookingType;
 
     @ManyToOne
     @JoinColumn(name = "provider_id")

@@ -74,16 +74,16 @@ public class serviceImpl implements ServicesForAll {
     public void setAvailabilitySlots(List<AvailabilitySlotDTO> availabilitySlots, ActivityService activityService){
         log.debug("Availability Slots{}", availabilitySlots.toString());
         for (AvailabilitySlotDTO availabilitySlot : availabilitySlots){
-            List<AvailabilitySlot> checkDb= availabilitySlotRepository.findByService_ServiceId(activityService.getServiceId());
-            if (checkDb.isEmpty()){
-//               AvailabilitySlot slot = modelMapper.map(availabilitySlot,AvailabilitySlot.class);
-                AvailabilitySlot slot = new AvailabilitySlot();
-                slot.setCloseTime(availabilitySlot.getCloseTime());
-                slot.setOpenTime(availabilitySlot.getOpenTime());
-                slot.setDayOfWeek(availabilitySlot.getDayOfWeek());
-                slot.setService(activityService);
-                availabilitySlotRepository.save(slot);
-            }
+                if(!availabilitySlot.getOpenTime().isEmpty() && !availabilitySlot.getCloseTime().isEmpty()){
+                    AvailabilitySlot slot = new AvailabilitySlot();
+                    slot.setCloseTime(availabilitySlot.getCloseTime());
+                    slot.setOpenTime(availabilitySlot.getOpenTime());
+                    slot.setDayOfWeek(availabilitySlot.getDayOfWeek());
+                    slot.setService(activityService);
+                    availabilitySlotRepository.save(slot);
+                }
+
+
         }
 
     }

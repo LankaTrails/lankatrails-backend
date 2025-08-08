@@ -9,6 +9,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.lankatrails.lankatrails_backend.dtos.request.*;
+import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -18,11 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.ImageRequestDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
@@ -154,9 +151,12 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
             // Set the availability slots
             List<AvailabilitySlotDTO> availabilitySlots = services.getAvailabilitySlots();
-//            System.out.println("Availability Slots1" + availabilitySlots);
+            for(AvailabilitySlotDTO availabilitySlotDTO : availabilitySlots){
+                if(availabilitySlotDTO.getCloseTime().isEmpty() || availabilitySlotDTO.getOpenTime().isEmpty()){
+                    throw new BadCredentialsException("Invalid Availability Slots","All Week Days should have the schedule");
+                }
+            }
             serviceImpl.setAvailabilitySlots(availabilitySlots,lastServiceAdded);
-
 
         } else {
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());

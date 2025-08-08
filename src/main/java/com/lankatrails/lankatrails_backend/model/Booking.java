@@ -6,7 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Getter
@@ -24,11 +26,12 @@ public class Booking {
     @ManyToOne
     @JoinColumn(name = "tourist_id")
     private Tourist tourist;
-
-    private Long adults;
-    private Long children;
-    private LocalDateTime bookedDateTime;
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
+    private Integer adults;
+    private Integer children;
+    private String bookedDateTime;
+    private LocalTime startTime;
+    private LocalTime endTime;
+    private LocalDate fromDate;
+    private LocalDate toDate;
     private Enum<BookingStatus> bookingStatus;
 }
