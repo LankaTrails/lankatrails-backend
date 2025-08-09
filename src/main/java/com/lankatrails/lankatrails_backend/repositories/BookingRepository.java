@@ -26,6 +26,7 @@ public interface BookingRepository extends JpaRepository<Booking,Long> {
             LocalDate toDate,
             Long userId
     );
+    Optional<Booking> findByFromDateAndService_ServiceId(LocalDate fromDate, Long id);
 
     @Query("SELECT b FROM Booking b WHERE " +
             "b.service.id = :serviceId AND " +

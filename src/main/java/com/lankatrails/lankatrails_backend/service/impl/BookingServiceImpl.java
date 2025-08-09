@@ -165,6 +165,8 @@ public class BookingServiceImpl implements BookingService {
                     );
                     //if no conflicting items are available for the booking
                     //validate for the availability of the quantities if available
+                    //Get the total head count of the new booking received
+                    Integer totalHeads = bookingRequestDTO.getChildCount() + bookingRequestDTO.getAdultCount();
                     if (overlapBookings.isEmpty()){
                         //start checking with the service
                         //trying to place the booking for multiple days
@@ -177,8 +179,7 @@ public class BookingServiceImpl implements BookingService {
                                     bookingRequestDTO.getToDate(),
                                     requestedEndTime
                             );
-                            //Get the total head count of the new booking received
-                            Integer totalHeads = bookingRequestDTO.getChildCount() + bookingRequestDTO.getAdultCount();
+
 
                             //accommodation, food-beverage can have many tourists at once
                             //therefore should check whether the newly received booking exceeds the maximum head count possible in the given range
@@ -226,7 +227,7 @@ public class BookingServiceImpl implements BookingService {
                                 }else{
                                     return APIResponse.<String>builder()
                                             .success(true)
-                                            .message("Available for Bookings")
+                                            .message("Available for Multi-DayBookings")
                                             .data("")
                                             .build();
                                 }
@@ -237,7 +238,39 @@ public class BookingServiceImpl implements BookingService {
                         }
                         //trying to place the booking for a day
                         if (bookingType == ONE_DAY){
+                            Optional<Booking> oneDayConflict =bookingRepository.findByFromDateAndService_ServiceId(bookingRequestDTO.getFromDate(),id);
+                            if (oneDayConflict.isEmpty()){
+                                if (service.getCategory().getCategoryName() == ServiceCategory.ACCOMMODATION) {
+                                    Accommodation accommodation = accommodationRepository.findByServiceId(id).orElseThrow(() -> new ResourceNotFoundException("Accommodation", id));
+                                    if (accommodation.getMaxGuests() <= totalHeads) {
+                                        return APIResponse.<String>builder()
+                                                .success(false)
+                                                .message("Amount of maximum guests, exceeded")
+                                                .data("")
+                                                .build();
+                                    }else{
+                                        return APIResponse.<String>builder()
+                                                .success(true)
+                                                .message("Available for One-Day Bookings")
+                                                .data("")
+                                                .build();
+                                    }
+                                }else{
+                                    return APIResponse.<String>builder()
+                                            .success(true)
+                                            .message("Available for One-Day Bookings")
+                                            .data("")
+                                            .build();
+                                }
 
+
+                            }else{
+                                return APIResponse.<String>builder()
+                                        .success(false)
+                                        .message("Already Booked")
+                                        .data("")
+                                        .build();
+                            }
 
                         }
 
