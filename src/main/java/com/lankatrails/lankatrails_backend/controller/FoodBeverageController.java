@@ -1,11 +1,8 @@
 package com.lankatrails.lankatrails_backend.controller;
 
-import com.lankatrails.lankatrails_backend.dtos.request.AccommodationServiceRequestDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.FoodBeverageRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.FoodBeverageResponse;
 import com.lankatrails.lankatrails_backend.model.PolicySection;
 import com.lankatrails.lankatrails_backend.model.Provider;
@@ -94,6 +91,32 @@ public class FoodBeverageController {
                 .build();
 
         return new ResponseEntity<>(response,HttpStatus.OK);
+
+    }
+
+    @PutMapping(value = "/food-beverage/update/{Id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<APIResponse<String>> updateAccommodation
+            (
+                    @PathVariable Long Id,
+                    @RequestPart("service") @Valid FoodBeverageRequest service,
+                    @RequestPart(value = "images", required = false) List<MultipartFile> images,
+                    BindingResult result
+            ){
+        if (result.hasErrors()){
+            Map<String,String> errors = new HashMap<>();
+            result.getFieldErrors().forEach(field ->{
+                errors.put(field.getField(), field.getDefaultMessage());
+            });
+            APIResponse<String> errorResponse = APIResponse.<String>builder()
+                    .success(false)
+                    .message("Validation Failed")
+                    .details(errors)
+                    .build();
+            return  new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }else{
+            APIResponse<String> ActivityServiceDTO =  foodBeverageService.updateService(Id, service, images);
+            return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.OK);
+        }
 
     }
 }
