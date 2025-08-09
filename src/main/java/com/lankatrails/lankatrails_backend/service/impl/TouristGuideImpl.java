@@ -54,6 +54,15 @@ public class TouristGuideImpl implements TouristGuideService {
     ServicesForAll servicesForAll;
 
     @Autowired
+    TabsImpl tabsImpl;
+
+    @Autowired
+    PolicyImpl policyImpl;
+
+    @Autowired
+    private ImageServiceImpl imageService;
+
+    @Autowired
     private ModelMapper modelMapper;
 
     @Autowired
@@ -213,8 +222,9 @@ public class TouristGuideImpl implements TouristGuideService {
             tabs.add(tabReq);
         }
 
-        List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(authUtils.loggedInUserId(),4L);
+//        List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(authUtils.loggedInUserId(),4L);
 
+        List<PolicySection> policySection = touristGuide.getPolicies().stream().toList();
         List<PolicySectionRequest> policies = new ArrayList<>();
 //
         for (PolicySection policy : policySection){
@@ -232,6 +242,7 @@ public class TouristGuideImpl implements TouristGuideService {
         List<ImageRequestDTO> imgDTOs = new ArrayList<>();
         for (Image img : images){
             ImageRequestDTO imgDTO = new ImageRequestDTO();
+            imgDTO.setId(img.getImageId());
             imgDTO.setImageUrl(img.getImageUrl());
             imgDTOs.add(imgDTO);
 
@@ -391,6 +402,84 @@ public class TouristGuideImpl implements TouristGuideService {
 
         }
 
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<String> updateService(Long id, TouristGuideRequestDTO requestDTO, List<MultipartFile> images) {
+        TouristGuide touristGuide = touristGuideRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Tourist Guide", id));
+
+        TourGuideCategory tourGuideCategory = tourGuideCategoryRepository
+                .findByCategoryName(requestDTO.getTourGuideType())
+                .orElseThrow(() -> new ResourceNotFoundException("Tour Guide Category", requestDTO.getTourGuideType().name()));
+
+        // Update the tourist guide details
+        touristGuide.setServiceName(requestDTO.getServiceName());
+        touristGuide.setContactNo(requestDTO.getContactNo());
+        touristGuide.setPrice(requestDTO.getPrice());
+        touristGuide.setPriceType(requestDTO.getPriceType());
+        touristGuide.setTourGuideCategory(tourGuideCategory);
+
+        // handle languages
+        if (requestDTO.getLanguages() != null && !requestDTO.getLanguages().isEmpty()) {
+            // Clear existing languages and set new ones
+            languageRepository.deleteAll(touristGuide.getLanguages());
+            touristGuide.setLanguages(requestDTO.getLanguages()
+                    .stream()
+                    .map(language -> {
+                        Language lang = new Language();
+                        lang.setLanguage(language);
+                        lang.setTouristGuide(touristGuide);
+                        return languageRepository.save(lang);
+                    })
+                    .collect(Collectors.toSet()));
+
+        }
+
+        // Update locations
+        touristGuide.setLocations(servicesForAll.setServiceLocation(requestDTO));
+
+        // Save the updated tourist guide
+        TouristGuide updatedTourGuide = touristGuideRepository.save(touristGuide);
+
+        // update tabs
+        tabsImpl.updateTabs(requestDTO.getTabsSection(), updatedTourGuide);
+        tabsImpl.deleteTabs(requestDTO.getDeletedTabs());
+
+        // update policies
+        policyImpl.updatePolicies(requestDTO.getPolicySection(), updatedTourGuide);
+        policyImpl.deletePolicies(requestDTO.getDeletedPolicies(), updatedTourGuide);
+
+        // Handle image uploads
+        if (images != null && !images.isEmpty()) {
+            imageService.uploadImagesForService(images, updatedTourGuide);
+        }
+
+        // Delete images if specified
+        if (requestDTO.getDeletedImages() != null && !requestDTO.getDeletedImages().isEmpty()) {
+            imageService.deleteImages(requestDTO.getDeletedImages());
+        }
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Tourist Guide Updated Successfully")
+                .data("Tourist Guide with ID " + id + " has been updated.")
+                .build();
+    }
+
+    @Override
+    public APIResponse<String> deleteService(Long Id) {
+        TouristGuide touristGuide = touristGuideRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Tourist Guide", Id));
+
+        touristGuide.setStatus(false);
+        touristGuideRepository.save(touristGuide);
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Tourist Guide Deleted Successfully")
+                .data("")
+                .build();
     }
 
 }

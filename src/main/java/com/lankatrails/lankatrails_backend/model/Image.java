@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Table(name = "image")
@@ -17,7 +19,8 @@ public class Image {
 
     private String imageUrl;
 
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "service_id",referencedColumnName = "serviceId")
+    @ManyToOne
+    @JoinColumn(name = "service_id")
+    @OnDelete(action = OnDeleteAction.CASCADE) // database-level cascade
     private Service service;
 }

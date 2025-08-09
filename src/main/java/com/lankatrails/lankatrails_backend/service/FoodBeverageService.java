@@ -15,5 +15,6 @@ public interface FoodBeverageService {
     APIResponse<FoodBeverageResponse> getAll(Integer pageNumber, Integer pageSize);
     APIResponse<FoodBeverageRequest> searchWithId(Long Id);
     APIResponse<String> addNewPolicy(PolicySection policies);
-
+    APIResponse<String> updateService(Long id, FoodBeverageRequest foodBeverageRequest, List<MultipartFile> images);
+    APIResponse<String> deleteService(Long Id);
 }

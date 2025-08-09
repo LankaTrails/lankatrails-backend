@@ -12,6 +12,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ImageRequestDTO {
 //    @NotBlank(message = "Image is required")
+    private Long id;
     private String imageUrl;
     private Service service;
 }

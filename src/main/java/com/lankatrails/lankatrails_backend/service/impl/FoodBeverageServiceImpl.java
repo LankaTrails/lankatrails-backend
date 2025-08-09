@@ -195,10 +195,9 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
             tabs.add(tabReq);
         }
 
-        List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(authUtils.loggedInUserId(),3L);
-
+//        List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(authUtils.loggedInUserId(),3L);
+        List<PolicySection> policySection = foodAndBeverage.getPolicies().stream().toList();
         List<PolicySectionRequest> policies = new ArrayList<>();
-//
         for (PolicySection policy : policySection){
 
             PolicySectionRequest policyReq = new PolicySectionRequest();
@@ -214,6 +213,7 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         List<ImageRequestDTO> imgDTOs = new ArrayList<>();
         for (Image img : images){
             ImageRequestDTO imgDTO = new ImageRequestDTO();
+            imgDTO.setId(img.getImageId());
             imgDTO.setImageUrl(img.getImageUrl());
             imgDTOs.add(imgDTO);
 
@@ -277,6 +277,80 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
 
         }
 
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<String> updateService(Long id, FoodBeverageRequest foodBeverageRequest, List<MultipartFile> images) {
+        FoodAndBeverage foodAndBeverageService = foodBeverageRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Food and Beverage", foodBeverageRequest.getServiceId()));
+
+        FoodAndBeverageCategory foodAndBeverageCategory = foodAndBeverageCategoryRepository
+                .findByCategoryName(foodBeverageRequest.getFoodAndBeverageType())
+                .orElseThrow(() -> new ResourceNotFoundException("Food and Beverage Category", foodBeverageRequest.getFoodAndBeverageType().getDisplayName()));
+
+        // Update the fields
+        foodAndBeverageService.setServiceName(foodBeverageRequest.getServiceName());
+//        foodAndBeverageService.setStatus(foodBeverageRequest.getStatus());
+        foodAndBeverageService.setContactNo(foodBeverageRequest.getContactNo());
+        foodAndBeverageService.setOpenHours(foodBeverageRequest.getOpenHours());
+        foodAndBeverageService.setVegetarianOptions(foodBeverageRequest.getVegetarianOptions());
+        foodAndBeverageService.setHalalCertified(foodBeverageRequest.getHalalCertified());
+        foodAndBeverageService.setAlcoholServed(foodBeverageRequest.getAlcoholServed());
+        foodAndBeverageService.setOutdoorSeating(foodBeverageRequest.getOutdoorSeating());
+        foodAndBeverageService.setLiveMusic(foodBeverageRequest.getLiveMusic());
+        foodAndBeverageService.setCuisineType(foodBeverageRequest.getCuisineType());
+        foodAndBeverageService.setContactNo(foodBeverageRequest.getContactNo());
+        foodAndBeverageService.setPrice(foodBeverageRequest.getPrice());
+        foodAndBeverageService.setPriceType(foodBeverageRequest.getPriceType());
+        foodAndBeverageService.setFoodAndBeverageCategory(foodAndBeverageCategory);
+
+        // Update the locations
+        foodAndBeverageService.setLocations(servicesForAll.setServiceLocation(foodBeverageRequest));
+
+        // Save the updated service
+        foodAndBeverageService = foodBeverageRepository.save(foodAndBeverageService);
+
+        // Update the tabs
+        tabsImpl.updateTabs(foodBeverageRequest.getTabsSection(), foodAndBeverageService);
+        tabsImpl.deleteTabs(foodBeverageRequest.getDeletedTabs());
+
+        // Update the policies
+        policyImpl.updatePolicies(foodBeverageRequest.getPolicySection(), foodAndBeverageService);
+        policyImpl.deletePolicies(foodBeverageRequest.getDeletedPolicies(), foodAndBeverageService);
+
+        // Upload and associate images
+        if (images != null && !images.isEmpty()) {
+            imageService.uploadImagesForService(images, foodAndBeverageService);
+        }
+
+        //Delete images if specified
+        if (foodBeverageRequest.getDeletedImages() != null && !foodBeverageRequest.getDeletedImages().isEmpty()) {
+            for (ImageRequestDTO imageReq : foodBeverageRequest.getDeletedImages()) {
+                imageService.deleteImages(foodBeverageRequest.getDeletedImages());
+            }
+        }
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Food and Beverage Service Updated Successfully")
+                .data("")
+                .build();
+    }
+
+    @Override
+    public APIResponse<String> deleteService(Long Id) {
+        FoodAndBeverage foodAndBeverage = foodBeverageRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Food and Beverage", Id));
+
+        foodAndBeverage.setStatus(false);
+        foodBeverageRepository.save(foodAndBeverage);
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Food and Beverage Service Deleted Successfully")
+                .data("")
+                .build();
     }
 
 }
