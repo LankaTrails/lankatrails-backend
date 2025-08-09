@@ -3,6 +3,7 @@ package com.lankatrails.lankatrails_backend.service.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
@@ -187,7 +188,9 @@ public class AccommodationServiceImpl implements  AccommodationService {
         }
 
         //get the related policies
-        List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(authUtils.loggedInUserId(),1L);
+//        List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(authUtils.loggedInUserId(),1L);
+        List<PolicySection> policySection = accommodation.getPolicies().stream()
+                .toList();
 
         List<PolicySectionRequest> policies = new ArrayList<>();
         for (PolicySection policy : policySection){
@@ -205,6 +208,7 @@ public class AccommodationServiceImpl implements  AccommodationService {
         List<ImageRequestDTO> imgDTOs = new ArrayList<>();
         for (Image img : images){
             ImageRequestDTO imgDTO = new ImageRequestDTO();
+            imgDTO.setId(img.getImageId());
             imgDTO.setImageUrl(img.getImageUrl());
             imgDTOs.add(imgDTO);
 
@@ -214,7 +218,7 @@ public class AccommodationServiceImpl implements  AccommodationService {
         prepareResponse.setServiceId(accommodation.getServiceId());
         prepareResponse.setServiceName(accommodation.getServiceName());
         prepareResponse.setStatus(accommodation.getStatus());
-//        prepareResponse.setAccommodationType(accommodation.getAccommodationCategory().getCategoryName());
+        prepareResponse.setAccommodationType(accommodation.getAccommodationCategory().getCategoryName());
         prepareResponse.setMaxGuests(accommodation.getMaxGuests());
         prepareResponse.setNumberOfRooms(accommodation.getNumberOfRooms());
         prepareResponse.setPrice(accommodation.getPrice());
@@ -277,6 +281,81 @@ public class AccommodationServiceImpl implements  AccommodationService {
 
         }
 
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<String> updateAccommodation(Long id, AccommodationServiceRequestDTO accommodationService, List<MultipartFile> images) {
+        Accommodation accommodation = accommodationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Accommodation Service", accommodationService.getServiceId()));
+
+        AccommodationCategory accommodationCategory = accommodationCategoryRepository.findByCategoryName(accommodationService.getAccommodationType())
+                .orElseThrow(() -> new ResourceNotFoundException("Accommodation Category", String.valueOf(accommodationService.getAccommodationType())));
+
+        // Update the accommodation details
+        accommodation.setServiceName(accommodationService.getServiceName());
+        accommodation.setContactNo(accommodationService.getContactNo());
+//        accommodation.setStatus(accommodationService.getStatus());
+        accommodation.setMaxGuests(accommodationService.getMaxGuests());
+        accommodation.setNumberOfRooms(accommodationService.getNumberOfRooms());
+        accommodation.setPrice(accommodationService.getPrice());
+        accommodation.setPriceType(accommodationService.getPriceType());
+        accommodation.setAccommodationCategory(accommodationCategory);
+        accommodation.setFreeWifi(accommodationService.getFreeWifi());
+        accommodation.setParkingAvailable(accommodationService.getParkingAvailable());
+        accommodation.setBreakfastIncluded(accommodationService.getBreakfastIncluded());
+        accommodation.setAirConditioned(accommodationService.getAirConditioned());
+        accommodation.setSwimmingPool(accommodationService.getSwimmingPool());
+        accommodation.setPetFriendly(accommodationService.getPetFriendly());
+        accommodation.setLaundryService(accommodationService.getLaundryService());
+        accommodation.setRoomService(accommodationService.getRoomService());
+        accommodation.setGymAccess(accommodationService.getGymAccess());
+        accommodation.setSpaServices(accommodationService.getSpaServices());
+
+        // Update locations
+        accommodation.setLocations(servicesForAll.setServiceLocation(accommodationService));
+
+        // Save the updated service
+        Accommodation updatedAccommodation = accommodationRepository.save(accommodation);
+
+        // Update tabs
+        tabsImpl.updateTabs(accommodationService.getTabsSection(), updatedAccommodation);
+        tabsImpl.deleteTabs(accommodationService.getDeletedTabs());
+
+        // Update policies
+        policyImpl.updatePolicies(accommodationService.getPolicySection(), updatedAccommodation);
+        policyImpl.deletePolicies(accommodationService.getDeletedPolicies(), updatedAccommodation);
+
+        // Upload and associate images if provided
+        if (images != null && !images.isEmpty()) {
+            imageService.uploadImagesForService(images, updatedAccommodation);
+        }
+
+        // Delete images that are marked for deletion
+        if (accommodationService.getDeletedImages() != null && !accommodationService.getDeletedImages().isEmpty()) {
+            imageService.deleteImages(accommodationService.getDeletedImages());
+        }
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Accommodation Updated Successfully")
+                .data("")
+                .build();
+    }
+
+    @Override
+    public APIResponse<String> deleteService(Long Id) {
+        Accommodation accommodation = accommodationRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Accommodation Service", Id));
+
+        accommodation.setStatus(false); // Set status to false instead of deleting
+        accommodationRepository.save(accommodation);
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Accommodation Service Deleted Successfully")
+                .data("")
+                .build();
     }
 
 }

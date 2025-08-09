@@ -12,5 +12,7 @@ public interface Tabs {
     void addTabs(List<TabSectionRequest> tabsReq, Service lastServiceAdded);
     List<TabSectionRequest> getAllTabs(Long Id);
     Set<TabsSection> updateTabs(Set<TabsSection> tabs, List<TabSectionRequest> reqTabs, Transport transport);
+    void updateTabs(List<TabSectionRequest> tabsReq, Service lastServiceAdded);
     Boolean addTabsToTransport(List<TabSectionRequest> tabsReq,Transport transport);
+    void deleteTabs(List<TabSectionRequest> tabsReq);
 }

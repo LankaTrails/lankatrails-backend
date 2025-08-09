@@ -69,7 +69,7 @@ public class Service {
     )
     private Set<Location> locations = new HashSet<>();
 
-    @OneToMany(mappedBy = "service" )
+    @OneToMany(mappedBy = "service", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Image> images = new ArrayList<>();
 
     @OneToMany(mappedBy = "service")

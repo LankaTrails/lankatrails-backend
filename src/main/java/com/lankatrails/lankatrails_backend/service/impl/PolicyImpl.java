@@ -11,14 +11,13 @@ import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.Policies;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@Service
+@org.springframework.stereotype.Service
 public class PolicyImpl implements Policies {
     @Autowired
     PolicySectionRepository policySectionRepository;
@@ -200,5 +199,67 @@ public class PolicyImpl implements Policies {
                 .build();
     }
 
+    @Override
+    public void updatePolicies(List<PolicySectionRequest> policyReq, Service service) {
+        if (policyReq == null || policyReq.isEmpty()) {
+            return;
+        }
+
+        for (PolicySectionRequest policy : policyReq) {
+            if (policy.getId() != null) {
+                // Update existing
+                PolicySection existingPolicy = policySectionRepository.findById(policy.getId())
+                        .orElseThrow(() -> new IllegalArgumentException("Policy not found with ID: " + policy.getId()));
+
+                existingPolicy.setHeading(policy.getHeading());
+                existingPolicy.setPolicy(policy.getPolicy());
+
+                // Maintain both sides of the relationship if bidirectional
+                service.getPolicies().add(existingPolicy);
+                existingPolicy.getServices().add(service);
+
+            } else {
+                // Create new
+                PolicySection newPolicy = new PolicySection();
+                newPolicy.setHeading(policy.getHeading());
+                newPolicy.setPolicy(policy.getPolicy());
+                newPolicy.setCategory(service.getCategory());
+                newPolicy.setProvider(service.getProvider());
+
+                // Maintain both sides
+                service.getPolicies().add(newPolicy);
+                if (newPolicy.getServices() != null) {
+                    newPolicy.getServices().add(service);
+                }
+
+                policySectionRepository.save(newPolicy); // must save here because it's new
+            }
+        }
+    }
+
+    @Override
+    public void deletePolicies(List<PolicySectionRequest> policyReq, Service service) {
+        if (policyReq == null || policyReq.isEmpty()) {
+            return;
+        }
+
+        for (PolicySectionRequest policy : policyReq) {
+            if (policy.getId() != null) {
+                PolicySection existingPolicy = policySectionRepository.findById(policy.getId())
+                        .orElseThrow(() -> new IllegalArgumentException("Policy not found with ID: " + policy.getId()));
+
+                // Remove the association from both sides
+                service.getPolicies().remove(existingPolicy);
+                existingPolicy.getServices().remove(service);
+
+                // Now decide whether to delete the policy entirely
+                if (existingPolicy.getServices().isEmpty()) {
+                    policySectionRepository.delete(existingPolicy);
+                } else {
+                    policySectionRepository.save(existingPolicy);
+                }
+            }
+        }
+    }
 
 }

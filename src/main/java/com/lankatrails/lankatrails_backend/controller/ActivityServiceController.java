@@ -177,15 +177,35 @@ public class ActivityServiceController {
     }
 
 
+    @PutMapping(value = "/provider/activity-service/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<APIResponse<String>> updateActivityService
+            (
+                    @PathVariable Long id,
+                    @RequestPart("service") @Valid ActivityServiceRequest activityService,
+                    @RequestPart(value = "images", required = false) List<MultipartFile> images,
+                    BindingResult result
+            ){
+        if (result.hasErrors()){
+            Map<String,String> errors = new HashMap<>();
+            result.getFieldErrors().forEach(field ->{
+                errors.put(field.getField(), field.getDefaultMessage());
+            });
+            APIResponse<String> errorResponse = APIResponse.<String>builder()
+                    .success(false)
+                    .message("Validation Failed")
+                    .details(errors)
+                    .build();
+            return  new ResponseEntity<>(errorResponse,HttpStatus.BAD_REQUEST);
+        }else{
+            APIResponse<String> updatedService= activityServiceService.updateService(id,activityService, images);
+            return  new ResponseEntity<>(updatedService,HttpStatus.OK);
+        }
+    }
 
-
-
-
-
-
-
-
-
-
+    @PutMapping("/provider/activity-service/remove/{id}")
+    public ResponseEntity<APIResponse<String>> deleteActivityService(@PathVariable Long id) {
+        APIResponse<String> response = activityServiceService.deleteService(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 
 }

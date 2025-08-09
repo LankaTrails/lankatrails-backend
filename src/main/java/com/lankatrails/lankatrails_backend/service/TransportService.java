@@ -15,6 +15,7 @@ public interface TransportService {
     APIResponse<String> addNewTransport(TransportRequestDTO transportRequestDTO, List<MultipartFile> images);
     APIResponse<String> deleteTransport(Long Id);
     APIResponse<String> addNewPolicy(PolicySection policies);
+    APIResponse<String> updateTransport(Long id, TransportRequestDTO transportRequestDTO, List<MultipartFile> images);
 
 
 }

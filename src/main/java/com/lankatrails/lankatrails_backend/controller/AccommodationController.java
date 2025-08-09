@@ -95,4 +95,36 @@ public class AccommodationController {
 
     }
 
+    @PutMapping(value = "/provider/accommodation/update/{Id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<APIResponse<String>> updateAccommodation
+            (
+                    @PathVariable Long Id,
+                    @RequestPart("service") @Valid AccommodationServiceRequestDTO service,
+                    @RequestPart(value = "images", required = false) List<MultipartFile> images,
+                    BindingResult result
+            ){
+        if (result.hasErrors()){
+            Map<String,String> errors = new HashMap<>();
+            result.getFieldErrors().forEach(field ->{
+                errors.put(field.getField(), field.getDefaultMessage());
+            });
+            APIResponse<String> errorResponse = APIResponse.<String>builder()
+                    .success(false)
+                    .message("Validation Failed")
+                    .details(errors)
+                    .build();
+            return  new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }else{
+            APIResponse<String> ActivityServiceDTO =  accommodationService.updateAccommodation(Id, service, images);
+            return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.OK);
+        }
+
+    }
+
+    @PutMapping("/provider/accommodation/remove/{Id}")
+    public ResponseEntity<APIResponse<String>> deleteAccommodation(@PathVariable Long Id) {
+        APIResponse<String> response = accommodationService.deleteService(Id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
 }
