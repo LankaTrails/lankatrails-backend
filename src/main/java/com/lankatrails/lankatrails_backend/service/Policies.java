@@ -19,4 +19,6 @@ public interface Policies {
     List<PolicySectionRequest> getProviderAndServicePolicies(Long userId,Long categoryId);
     List<PolicySectionRequest> getServicePolicies(Long userId, Long categoryId);
     APIResponse<String> removePolicies(Long id);
+    void updatePolicies(List<PolicySectionRequest> policyReq, Service service);
+    void deletePolicies(List<PolicySectionRequest> policyReq, Service service);
 }

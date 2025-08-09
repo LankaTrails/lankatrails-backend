@@ -55,7 +55,10 @@ public abstract class ServiceRequest {
 //    @NotEmpty(message = "Should be at least one image")
     private List<ImageRequestDTO> images;
 
+    private List<ImageRequestDTO> deletedImages;
 
+    private List<TabSectionRequest> deletedTabs;
 
+    private List<PolicySectionRequest> deletedPolicies;
 
 }

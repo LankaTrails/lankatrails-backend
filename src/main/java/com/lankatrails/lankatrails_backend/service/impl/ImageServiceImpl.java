@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.dtos.request.ImageRequestDTO;
 import com.lankatrails.lankatrails_backend.model.Image;
 import com.lankatrails.lankatrails_backend.model.Service;
 import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
@@ -34,5 +35,21 @@ public class ImageServiceImpl implements ImageService {
         }
         // Persist images
         imageRepository.saveAll(imageList);
+    }
+
+    @Override
+    public void deleteImages(List<ImageRequestDTO> imageRequestDTOs) {
+        List<Long> imageIds = new ArrayList<>();
+        for (ImageRequestDTO imageRequestDTO : imageRequestDTOs) {
+            imageIds.add(imageRequestDTO.getId());
+        }
+
+        List<Image> imagesToDelete = imageRepository.findAllById(imageIds);
+        if (!imagesToDelete.isEmpty()) {
+            for (Image image : imagesToDelete) {
+                fileUploadService.deleteFile(image.getImageUrl(), UploadCategory.SERVICE_PICTURE, "service");
+            }
+            imageRepository.deleteAll(imagesToDelete);
+        }
     }
 }

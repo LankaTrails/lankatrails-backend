@@ -6,6 +6,8 @@ import com.lankatrails.lankatrails_backend.model.TabsSection;
 import com.lankatrails.lankatrails_backend.model.Transport;
 import com.lankatrails.lankatrails_backend.repositories.TabsSectionRepository;
 import com.lankatrails.lankatrails_backend.service.Tabs;
+import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 
@@ -14,9 +16,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @org.springframework.stereotype.Service
+@Slf4j
 public class TabsImpl implements Tabs {
     @Autowired
     TabsSectionRepository tabsSectionRepository;
+
+    @Autowired
+    ModelMapper modelMapper;
 
     @Override
     public void addTabs(List<TabSectionRequest> tabsReq, Service lastServiceAdded){
@@ -53,6 +59,30 @@ public class TabsImpl implements Tabs {
     }
 
     @Override
+    public void updateTabs(List<TabSectionRequest> tabsReq, Service lastServiceAdded){
+        if (!tabsReq.isEmpty()){
+            for (TabSectionRequest tab : tabsReq){
+                if (tab.getId() != null) {
+                    // If the tab has an ID, update the existing tab
+                    TabsSection existingTab = tabsSectionRepository.findById(tab.getId())
+                            .orElseThrow(() -> new IllegalArgumentException("Tab not found with ID: " + tab.getId()));
+                    existingTab.setHeading(tab.getHeading());
+                    existingTab.setContent(tab.getContent());
+                    tabsSectionRepository.save(existingTab);
+                } else {
+                    // If no ID, create a new tab
+                    TabsSection newTab = new TabsSection();
+                    newTab.setHeading(tab.getHeading());
+                    newTab.setContent(tab.getContent());
+                    newTab.setService(lastServiceAdded);
+                    tabsSectionRepository.save(newTab);
+                }
+            }
+
+        }
+    }
+
+    @Override
     public Set<TabsSection> updateTabs(Set<TabsSection> tabs, List<TabSectionRequest> reqTabs, Transport transport) {
         //create a map of existing tabs by ID for quick lookup
         Map<Long,TabsSection> savedTabMap=tabs.stream()
@@ -81,6 +111,8 @@ public class TabsImpl implements Tabs {
         return updatedTabs;
     }
 
+
+
     @Override
     public Boolean addTabsToTransport(List<TabSectionRequest> tabsReq, Transport lastTransportAdded) {
         if (tabsReq!=null){
@@ -94,6 +126,19 @@ public class TabsImpl implements Tabs {
             return true;
         }else {
             return false;
+        }
+    }
+
+    @Override
+    public void deleteTabs(List<TabSectionRequest> tabsReq) {
+        log.debug("Deleting tabs: {}", tabsReq);
+        if (tabsReq != null && !tabsReq.isEmpty()) {
+            for (TabSectionRequest tab : tabsReq) {
+                if (tab.getId() != null) {
+                    log.debug("Deleting tab with ID: {}", tab.getId());
+                    tabsSectionRepository.deleteById(tab.getId());
+                }
+            }
         }
     }
 
