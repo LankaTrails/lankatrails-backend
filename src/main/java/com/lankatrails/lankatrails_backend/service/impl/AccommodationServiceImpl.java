@@ -343,4 +343,19 @@ public class AccommodationServiceImpl implements  AccommodationService {
                 .build();
     }
 
+    @Override
+    public APIResponse<String> deleteService(Long Id) {
+        Accommodation accommodation = accommodationRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Accommodation Service", Id));
+
+        accommodation.setStatus(false); // Set status to false instead of deleting
+        accommodationRepository.save(accommodation);
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Accommodation Service Deleted Successfully")
+                .data("")
+                .build();
+    }
+
 }

@@ -24,5 +24,5 @@ public interface ActivityServiceService {
     APIResponse<String> removePolicies(Long id);
 //    APIResponse<List<PolicySectionRequest>> getAllPolicies();
     APIResponse<String> updateService( Long id, ActivityServiceRequest activityService, List<MultipartFile> images);
-
+    APIResponse<String> deleteService(Long Id);
 }

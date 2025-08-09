@@ -338,4 +338,19 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
                 .build();
     }
 
+    @Override
+    public APIResponse<String> deleteService(Long Id) {
+        FoodAndBeverage foodAndBeverage = foodBeverageRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Food and Beverage", Id));
+
+        foodAndBeverage.setStatus(false);
+        foodBeverageRepository.save(foodAndBeverage);
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Food and Beverage Service Deleted Successfully")
+                .data("")
+                .build();
+    }
+
 }

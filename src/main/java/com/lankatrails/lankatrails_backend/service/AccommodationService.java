@@ -14,5 +14,5 @@ public interface AccommodationService {
     APIResponse<AccommodationServiceRequestDTO> searchWithId(Long Id);
     APIResponse<String> addNewPolicy(PolicySection policies);
     APIResponse<String> updateAccommodation(Long id, AccommodationServiceRequestDTO accommodationService, List<MultipartFile> images);
-
+    APIResponse<String> deleteService(Long Id);
 }

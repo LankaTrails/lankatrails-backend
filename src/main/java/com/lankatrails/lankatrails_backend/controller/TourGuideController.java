@@ -129,4 +129,10 @@ public class TourGuideController {
         }
 
     }
+
+    @PutMapping("/tour-guide/remove/{Id}")
+    public ResponseEntity<APIResponse<String>> deleteAccommodation(@PathVariable Long Id) {
+        APIResponse<String> response = touristGuideService.deleteService(Id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 }

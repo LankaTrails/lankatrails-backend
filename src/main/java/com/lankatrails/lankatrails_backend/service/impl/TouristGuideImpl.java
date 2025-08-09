@@ -468,4 +468,18 @@ public class TouristGuideImpl implements TouristGuideService {
                 .build();
     }
 
+    @Override
+    public APIResponse<String> deleteService(Long Id) {
+        TouristGuide touristGuide = touristGuideRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Tourist Guide", Id));
+
+        touristGuide.setStatus(false);
+        touristGuideRepository.save(touristGuide);
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Tourist Guide Deleted Successfully")
+                .data("")
+                .build();
+    }
+
 }

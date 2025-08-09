@@ -121,4 +121,10 @@ public class AccommodationController {
 
     }
 
+    @PutMapping("/provider/accommodation/remove/{Id}")
+    public ResponseEntity<APIResponse<String>> deleteAccommodation(@PathVariable Long Id) {
+        APIResponse<String> response = accommodationService.deleteService(Id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
 }

@@ -556,6 +556,21 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
     }
 
+    @Override
+    public APIResponse<String> deleteService(Long Id) {
+        ActivityService activity = activityServiceRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Activity Service", Id));
+
+        activity.setStatus(false);
+        activityServiceRepository.save(activity);
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Activity Service Deleted Successfully")
+                .data("")
+                .build();
+    }
+
 //    @Override
 //    public APIResponse<List<PolicySectionRequest>> getAllPolicies(){
 //        Provider provider = (Provider) authUtils.loggedInUser();

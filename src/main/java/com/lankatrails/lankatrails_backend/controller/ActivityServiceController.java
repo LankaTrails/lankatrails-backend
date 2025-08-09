@@ -202,15 +202,10 @@ public class ActivityServiceController {
         }
     }
 
-
-
-
-
-
-
-
-
-
-
+    @PutMapping("/provider/activity-service/remove/{id}")
+    public ResponseEntity<APIResponse<String>> deleteActivityService(@PathVariable Long id) {
+        APIResponse<String> response = activityServiceService.deleteService(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 
 }

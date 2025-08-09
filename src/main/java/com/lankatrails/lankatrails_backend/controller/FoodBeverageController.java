@@ -119,4 +119,10 @@ public class FoodBeverageController {
         }
 
     }
+
+    @PutMapping("/food-beverage/remove/{id}")
+    public ResponseEntity<APIResponse<String>> deleteService(@PathVariable Long id){
+        APIResponse<String> response=foodBeverageService.deleteService(id);
+        return new ResponseEntity<>(response,HttpStatus.OK);
+    }
 }
