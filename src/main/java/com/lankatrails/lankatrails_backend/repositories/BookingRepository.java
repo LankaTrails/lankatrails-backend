@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.repositories;
 
 import com.lankatrails.lankatrails_backend.model.Booking;
+import com.lankatrails.lankatrails_backend.model.Tourist;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -8,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface BookingRepository extends JpaRepository<Booking,Long> {
     List<Booking> findByEndTimeAndStartTimeAndFromDateAndToDateAndService_ServiceId(
@@ -16,6 +18,13 @@ public interface BookingRepository extends JpaRepository<Booking,Long> {
             LocalDate fromDate,
             LocalDate endDate,
             Long serviceId
+    );
+    List<Booking> findByStartTimeAndEndTimeAndFromDateAndToDateAndTourist_UserId(
+            LocalTime startTime,
+            LocalTime endTime,
+            LocalDate fromDate,
+            LocalDate toDate,
+            Long userId
     );
 
     @Query("SELECT b FROM Booking b WHERE " +
@@ -29,4 +38,19 @@ public interface BookingRepository extends JpaRepository<Booking,Long> {
             @Param("toDate") LocalDate toDate,
             @Param("endTime") LocalTime endTime
     );
+
+    @Query("SELECT b FROM Booking b WHERE " +
+            "b.tourist.userId = :userId AND " +
+            // Date range overlap condition (more flexible than exact match)
+            "((b.fromDate <= :toDate AND b.toDate >= :fromDate) AND " +
+            // Time slot overlap condition
+            "(b.startTime < :endTime AND b.endTime > :startTime))")
+    List<Booking> findOverlappingBookings(
+            @Param("userId") Long userId,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime
+    );
+
 }

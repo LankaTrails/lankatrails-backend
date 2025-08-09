@@ -11,6 +11,7 @@ import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.BookingService;
 import jakarta.persistence.Table;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,6 +27,7 @@ import static com.lankatrails.lankatrails_backend.model.enums.BookingType.*;
 import static com.lankatrails.lankatrails_backend.model.enums.ServiceCategory.ACCOMMODATION;
 
 @Service
+//@Slf4j
 public class BookingServiceImpl implements BookingService {
     @Autowired
     AvailabilitySlotRepository availabilitySlotRepository;
@@ -53,8 +56,9 @@ public class BookingServiceImpl implements BookingService {
         }
 
         //Parse requested time slot
-        LocalTime requestedStartTime = bookingRequestDTO.getFromTime();
-        LocalTime requestedEndTime = bookingRequestDTO.getToTime();
+        // Convert DTO times to match database format
+        LocalTime requestedStartTime = LocalTime.parse(bookingRequestDTO.getFromTime() + ":00");
+        LocalTime requestedEndTime = LocalTime.parse(bookingRequestDTO.getToTime() + ":00");
         DayOfWeek requestedStartDay = bookingRequestDTO.getFromDate().getDayOfWeek();
         DayOfWeek requestedEndDay = bookingRequestDTO.getToDate().getDayOfWeek();
 
@@ -141,56 +145,125 @@ public class BookingServiceImpl implements BookingService {
             com.lankatrails.lankatrails_backend.model.Service service = serviceRepository.findById(id)
                 .orElseThrow(()-> new ResourceNotFoundException("Service",id));
 
+            //check whether a booking is added on the same time slot
+            List<Booking> sameSlot_touristBookings = bookingRepository.findByStartTimeAndEndTimeAndFromDateAndToDateAndTourist_UserId(
+                    requestedStartTime,
+                    requestedEndTime,
+                    bookingRequestDTO.getFromDate(),
+                    bookingRequestDTO.getToDate(),
+                    authUtils.loggedInUser().getUserId()
+            );
             BookingType bookingType = service.getBookingType();
+            if (sameSlot_touristBookings.isEmpty()){
+                    //check whether there are conflicting items in the trip when adding into bookings
+                    List<Booking> overlapBookings = bookingRepository.findOverlappingBookings(
+                            authUtils.loggedInUserId(),
+                            bookingRequestDTO.getFromDate(),
+                            bookingRequestDTO.getToDate(),
+                            requestedStartTime,
+                            requestedEndTime
+                    );
+                    //if no conflicting items are available for the booking
+                    //validate for the availability of the quantities if available
+                    if (overlapBookings.isEmpty()){
+                        //start checking with the service
+                        //trying to place the booking for multiple days
+                        if (bookingType == MULTI_DAY){
+                            //Find whether the service will get overlapping bookings because of the new booking
+                            List<Booking> conflictingBookings=bookingRepository.findExactConflictingBookings(
+                                    id,
+                                    bookingRequestDTO.getFromDate(),
+                                    requestedStartTime,
+                                    bookingRequestDTO.getToDate(),
+                                    requestedEndTime
+                            );
+                            //Get the total head count of the new booking received
+                            Integer totalHeads = bookingRequestDTO.getChildCount() + bookingRequestDTO.getAdultCount();
 
-            if (bookingType == MULTI_DAY){
+                            //accommodation, food-beverage can have many tourists at once
+                            //therefore should check whether the newly received booking exceeds the maximum head count possible in the given range
+                            if (!conflictingBookings.isEmpty()){
+                                //get the total head count of existing bookings and the newly received booking
+                                for (Booking conflictBooking : conflictingBookings){
+                                    totalHeads = totalHeads +conflictBooking.getAdults()+conflictBooking.getChildren();
+                                }
 
-                List<Booking> conflictingBookings=bookingRepository.findExactConflictingBookings(id,bookingRequestDTO.getFromDate(),requestedStartTime,bookingRequestDTO.getToDate(),requestedEndTime);
-                Integer totalHeads = bookingRequestDTO.getChildCount() + bookingRequestDTO.getAdultCount();
+                                //for accommodation
+                                if (service.getCategory().getCategoryName() == ServiceCategory.ACCOMMODATION){
+                                    Accommodation accommodation= accommodationRepository.findByServiceId(id).orElseThrow(()->new ResourceNotFoundException("Accommodation",id));
+                                    //exceeds the no of maximum possible guests
+                                    if (accommodation.getMaxGuests() <= totalHeads){
+                                        return APIResponse.<String>builder()
+                                                .success(false)
+                                                .message("Amount of maximum guests, exceeded")
+                                                .data("")
+                                                .build();
+                                    }
 
-                //accommodation, food-beverage can have many tourists at once
-                if (!conflictingBookings.isEmpty()){
+                                }else if (service.getCategory().getCategoryName() == ServiceCategory.ACTIVITY ||
+                                        service.getCategory().getCategoryName() == ServiceCategory.TRANSPORT ||
+                                        service.getCategory().getCategoryName() == ServiceCategory.TOUR_GUIDE){
+                                    //for activity provider, transport, tour-guide needs to check only whether there is a booking on the newly received dates
+                                    return APIResponse.<String>builder()
+                                            .success(false)
+                                            .message("Already Booked")
+                                            .data("")
+                                            .build();
+                                }
 
-                    for (Booking conflictBooking : conflictingBookings){
-                        totalHeads = totalHeads +conflictBooking.getAdults()+conflictBooking.getChildren();
+
+                            }else{
+                                if (service.getCategory().getCategoryName() == ServiceCategory.ACCOMMODATION) {
+                                    Accommodation accommodation = accommodationRepository.findByServiceId(id).orElseThrow(() -> new ResourceNotFoundException("Accommodation", id));
+                                    //exceeds the no of maximum possible guests
+                                    if (accommodation.getMaxGuests() <= totalHeads) {
+                                        return APIResponse.<String>builder()
+                                                .success(false)
+                                                .message("Amount of maximum guests, exceeded")
+                                                .data("")
+                                                .build();
+                                    }
+                                }else{
+                                    return APIResponse.<String>builder()
+                                            .success(true)
+                                            .message("Available for Bookings")
+                                            .data("")
+                                            .build();
+                                }
+
+                            }
+
+
+                        }
+                        //trying to place the booking for a day
+                        if (bookingType == ONE_DAY){
+
+
+                        }
+
+                        if (bookingType == TIME_SLOTS){
+
+                        }
+                    }else{
+                        return APIResponse.<String>builder()
+                                .success(false)
+                                .message("Conflicts with the existing bookings in the trip")
+                                .data("")
+                                .build();
                     }
 
-                    //for accommodation
-                    if (service.getCategory().getCategoryName() == ACCOMMODATION){
-                       Accommodation accommodation= accommodationRepository.findByServiceId(id).orElseThrow(()->new ResourceNotFoundException("Accommodation",id));
-                       //exceeds the no of maximum possible guests
-                       if (accommodation.getMaxGuests() <= totalHeads){
-                           return APIResponse.<String>builder()
-                                   .success(false)
-                                   .message("Amount of maximum guests, exceeded")
-                                   .data("")
-                                   .build();
-                       }
-
-                    }else if(service.getCategory().getCategoryName() == ServiceCategory.FOOD_BEVERAGE){
-                        FoodAndBeverage foodAndBeverages=foodBeverageRepository.findByServiceId(id).orElseThrow(()->new ResourceNotFoundException("Food-Beverage",id));
-
-                    }
-
-                    return APIResponse.<String>builder()
-                            .success(false)
-                            .message("Conflicting Bookings")
-                            .data("")
-                            .build();
-                }else{
-
-                }
 
 
+
+
+            }else{
+                return APIResponse.<String>builder()
+                        .success(false)
+                        .message("Item already in the time slot ")
+                        .data("")
+                        .build();
             }
 
-            if (bookingType == ONE_DAY){
-
-            }
-
-            if (bookingType == TIME_SLOTS){
-
-            }
 
 
         return null;
@@ -217,6 +290,8 @@ public class BookingServiceImpl implements BookingService {
                 break;
 
         }
+//        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("HH:mm");
+//        LocalTime time = LocalTime.parse(bookingRequestDTO.getToTime().toString(), inputFormatter);
         prepareBooking.setService(service);
         prepareBooking.setAdults(bookingRequestDTO.getAdultCount());
         prepareBooking.setChildren(bookingRequestDTO.getChildCount());

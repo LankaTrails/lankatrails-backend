@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.lankatrails.lankatrails_backend.model.enums.BookingStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -29,8 +30,15 @@ public class Booking {
     private Integer adults;
     private Integer children;
     private String bookedDateTime;
+
+//    @Column(columnDefinition = "TIME")
+//    @JsonFormat(pattern = "HH:mm")
     private LocalTime startTime;
+
+//    @Column(columnDefinition = "TIME")
+//    @JsonFormat(pattern = "HH:mm")
     private LocalTime endTime;
+
     private LocalDate fromDate;
     private LocalDate toDate;
     private Enum<BookingStatus> bookingStatus;
