@@ -14,5 +14,5 @@ public interface TouristGuideService {
     APIResponse<TouristGuideRequestDTO> searchWithId(Long id);
     TouristGuideResponseDTO updateTourGuide(Long id,TouristGuideRequestDTO requestDTO);
     APIResponse<String> addNewPolicy(PolicySection policies);
-
+    APIResponse<String> updateService(Long id, TouristGuideRequestDTO requestDTO, List<MultipartFile> images );
 }

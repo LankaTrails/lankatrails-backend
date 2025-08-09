@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.controller;
 
 
+import com.lankatrails.lankatrails_backend.dtos.request.FoodBeverageRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TouristGuideRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
@@ -17,10 +18,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/provider")
@@ -97,6 +101,32 @@ public class TourGuideController {
                 .build();
 
         return new ResponseEntity<>(response,HttpStatus.OK);
+
+    }
+
+    @PutMapping(value = "/tour-guide/update/{Id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<APIResponse<String>> updateAccommodation
+            (
+                    @PathVariable Long Id,
+                    @RequestPart("service") @Valid TouristGuideRequestDTO service,
+                    @RequestPart(value = "images", required = false) List<MultipartFile> images,
+                    BindingResult result
+            ){
+        if (result.hasErrors()){
+            Map<String,String> errors = new HashMap<>();
+            result.getFieldErrors().forEach(field ->{
+                errors.put(field.getField(), field.getDefaultMessage());
+            });
+            APIResponse<String> errorResponse = APIResponse.<String>builder()
+                    .success(false)
+                    .message("Validation Failed")
+                    .details(errors)
+                    .build();
+            return  new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }else{
+            APIResponse<String> ActivityServiceDTO =  touristGuideService.updateService(Id, service, images);
+            return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.OK);
+        }
 
     }
 }
