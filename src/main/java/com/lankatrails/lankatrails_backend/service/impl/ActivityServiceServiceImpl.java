@@ -217,8 +217,8 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
             tabs.add(tabReq);
         }
 
-        List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(authUtils.loggedInUserId(),4L);
-
+//        List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(authUtils.loggedInUserId(),4L);
+        List<PolicySection> policySection = activityService.getPolicies().stream().toList();
         List<PolicySectionRequest> policies = new ArrayList<>();
 //
         for (PolicySection policy : policySection){
@@ -236,6 +236,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
        List<ImageRequestDTO> imgDTOs = new ArrayList<>();
         for (Image img : images){
             ImageRequestDTO imgDTO = new ImageRequestDTO();
+            imgDTO.setId(img.getImageId());
             imgDTO.setImageUrl(img.getImageUrl());
             imgDTOs.add(imgDTO);
 
@@ -247,6 +248,8 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         prepareResponse.setActivityType(activityService.getActivityCategory().getCategoryName());
         prepareResponse.setActivityDetails(activityService.getActivityDetails());
         prepareResponse.setSafetyInstructions(activityService.getSafetyInstructions());
+        prepareResponse.setPrice(activityService.getPrice());
+        prepareResponse.setPriceType(activityService.getPriceType());
         prepareResponse.setLocations(activityService.getLocations().stream()
                 .map(location -> modelMapper.map(location, LocationDTO.class))
                 .collect(Collectors.toSet()));
@@ -499,6 +502,58 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
                 .message("Policy removed successfully")
                 .data("")
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<String> updateService(Long id, ActivityServiceRequest activityService, List<MultipartFile> images) {
+        ActivityService activity = activityServiceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Activity Service", id));
+
+        ActivityCategory activityCategory = activityCategoryRepository
+                .findByCategoryName(activityService.getActivityType())
+                .orElseThrow(() -> new ResourceNotFoundException("Activity Category", activityService.getActivityType().name()));
+
+        // Update the existing service with new details
+        activity.setServiceName(activityService.getServiceName());
+        activity.setContactNo(activityService.getContactNo());
+//        activity.setStatus(activityService.getStatus());
+        activity.setActivityDetails(activityService.getActivityDetails());
+        activity.setSafetyInstructions(activityService.getSafetyInstructions());
+        activity.setPrice(activityService.getPrice());
+        activity.setPriceType(activityService.getPriceType());
+        activity.setActivityCategory(activityCategory);
+
+        // Update locations
+        activity.setLocations(servicesForAll.setServiceLocation(activityService));
+
+        // Save the updated activity service
+        ActivityService updatedActivity = activityServiceRepository.save(activity);
+
+        //update or add tabs
+        tabsImpl.updateTabs(activityService.getTabsSection(), updatedActivity);
+        tabsImpl.deleteTabs(activityService.getDeletedTabs());
+
+        //update or add policies
+        policyImpl.updatePolicies(activityService.getPolicySection(), updatedActivity);
+        policyImpl.deletePolicies(activityService.getDeletedPolicies(), updatedActivity);
+
+        // Upload and associate images
+        if (images != null && !images.isEmpty()) {
+            imageService.uploadImagesForService(images, updatedActivity);
+        }
+
+        // Delete images if specified
+        if (activityService.getDeletedImages() != null && !activityService.getDeletedImages().isEmpty()) {
+            imageService.deleteImages(activityService.getDeletedImages());
+        }
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Activity Service Updated Successfully")
+                .data("")
+                .build();
+
     }
 
 //    @Override
