@@ -25,6 +25,8 @@ public class Accommodation extends Service {
     private Boolean roomService;
     private Boolean gymAccess;
     private Boolean spaServices;
+    private String checkInTime;
+    private String checkOutTime;
 
     @ManyToOne
     @JoinColumn(name = "accommodationCategory_id")

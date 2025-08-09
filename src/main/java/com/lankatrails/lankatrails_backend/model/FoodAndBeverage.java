@@ -14,7 +14,8 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class FoodAndBeverage extends Service{
-    private String openHours;
+    private String openTime;
+    private String closeTime;
     private Boolean vegetarianOptions;
     private Boolean halalCertified;
     private Boolean alcoholServed;

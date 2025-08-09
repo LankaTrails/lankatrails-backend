@@ -74,4 +74,10 @@ public class Service {
     @ManyToMany(mappedBy = "favouriteServices")
     private Set<Tourist> tourists = new HashSet<>();
 
+    @OneToMany(mappedBy = "service")
+    private List<AvailabilitySlot> availabilitySlots = new ArrayList<>();
+
+    @OneToMany(mappedBy = "service")
+    private List<Booking> serviceBookings = new ArrayList<>();
+
 }
