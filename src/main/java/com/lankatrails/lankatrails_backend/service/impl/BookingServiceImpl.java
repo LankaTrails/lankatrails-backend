@@ -5,6 +5,7 @@ import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.enums.BookingStatus;
 import com.lankatrails.lankatrails_backend.model.enums.BookingType;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import com.lankatrails.lankatrails_backend.repositories.*;
@@ -278,7 +279,7 @@ public class BookingServiceImpl implements BookingService {
                                 );
                                 if (timeSlotBookings.isEmpty()){
                                     return APIResponse.<String>builder()
-                                            .success(false)
+                                            .success(true)
                                             .message("Available for Time-Slot Bookings")
                                             .data("")
                                             .build();
@@ -312,37 +313,35 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public APIResponse<String> addNewBooking(BookingRequestDTO bookingRequestDTO, Long id) {
-        Booking prepareBooking = new Booking();
-        com.lankatrails.lankatrails_backend.model.Service service = serviceRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Service",id));
-        ServiceCategory category = service.getCategory().getCategoryName();
+        APIResponse<String> availabilityResponse=checkTimeSlotAvailability(bookingRequestDTO,id);
+        if (availabilityResponse.isSuccess()){
+            Booking prepareBooking = new Booking();
+            com.lankatrails.lankatrails_backend.model.Service service = serviceRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Service",id));
+            ServiceCategory category = service.getCategory().getCategoryName();
 
-        switch (category){
-            case ACCOMMODATION:
+            prepareBooking.setService(service);
+            prepareBooking.setAdults(bookingRequestDTO.getAdultCount());
+            prepareBooking.setChildren(bookingRequestDTO.getChildCount());
+            prepareBooking.setEndTime(bookingRequestDTO.getToTime());
+            prepareBooking.setStartTime(bookingRequestDTO.getFromTime());
+            prepareBooking.setTourist((Tourist) authUtils.loggedInUser());
+            prepareBooking.setBookingStatus(bookingRequestDTO.getBookingStatus());
+            prepareBooking.setFromDate(bookingRequestDTO.getFromDate());
+            prepareBooking.setToDate(bookingRequestDTO.getToDate());
+            prepareBooking.setBookingStatus(BookingStatus.PENDING);
 
-                break;
-            case TRANSPORT:
-                break;
-            case ACTIVITY:
-                break;
-            case TOUR_GUIDE:
-                break;
-            case FOOD_BEVERAGE:
-                break;
-
+            bookingRepository.save(prepareBooking);
+            return APIResponse.<String>builder()
+                    .success(true)
+                    .message("Booking Placed Successfully")
+                    .data("")
+                    .build();
         }
-//        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("HH:mm");
-//        LocalTime time = LocalTime.parse(bookingRequestDTO.getToTime().toString(), inputFormatter);
-        prepareBooking.setService(service);
-        prepareBooking.setAdults(bookingRequestDTO.getAdultCount());
-        prepareBooking.setChildren(bookingRequestDTO.getChildCount());
-        prepareBooking.setEndTime(bookingRequestDTO.getToTime());
-        prepareBooking.setStartTime(bookingRequestDTO.getFromTime());
-        prepareBooking.setTourist((Tourist) authUtils.loggedInUser());
-        prepareBooking.setBookingStatus(bookingRequestDTO.getBookingStatus());
-        prepareBooking.setFromDate(bookingRequestDTO.getFromDate());
-        prepareBooking.setToDate(bookingRequestDTO.getToDate());
 
-        bookingRepository.save(prepareBooking);
-        return null;
+        return APIResponse.<String>builder()
+                .success(false)
+                .message(availabilityResponse.getMessage())
+                .data("")
+                .build();
     }
 }
