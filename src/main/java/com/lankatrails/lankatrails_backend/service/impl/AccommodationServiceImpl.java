@@ -294,6 +294,7 @@ public class AccommodationServiceImpl implements  AccommodationService {
 
         // Update the accommodation details
         accommodation.setServiceName(accommodationService.getServiceName());
+        accommodation.setContactNo(accommodationService.getContactNo());
 //        accommodation.setStatus(accommodationService.getStatus());
         accommodation.setMaxGuests(accommodationService.getMaxGuests());
         accommodation.setNumberOfRooms(accommodationService.getNumberOfRooms());

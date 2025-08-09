@@ -154,8 +154,9 @@ public class TransportServiceImpl implements TransportService {
             tabReq.setContent(tab.getContent());
             tabs.add(tabReq);
         }
-        List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(authUtils.loggedInUserId(),4L);
+//        List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(authUtils.loggedInUserId(),4L);
 
+        List<PolicySection> policySection = transport.getPolicies().stream().toList();
         List<PolicySectionRequest> policies = new ArrayList<>();
 //
         for (PolicySection policy : policySection){
@@ -173,6 +174,7 @@ public class TransportServiceImpl implements TransportService {
         List<ImageRequestDTO> imgDTOs = new ArrayList<>();
         for (Image img : images){
             ImageRequestDTO imgDTO = new ImageRequestDTO();
+            imgDTO.setId(img.getImageId());
             imgDTO.setImageUrl(img.getImageUrl());
             imgDTOs.add(imgDTO);
 
@@ -353,6 +355,59 @@ public class TransportServiceImpl implements TransportService {
 
         }
 
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<String> updateTransport(Long id, TransportRequestDTO transportRequestDTO, List<MultipartFile> images) {
+        Transport transport=transportRepository.findById(id)
+                .orElseThrow(()->new ResourceNotFoundException("Transport Service",id));
+
+        VehicleCategory vehicleCategory = vehicleCategoryRepository.findByCategoryName(transportRequestDTO.getVehicleCategory())
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicle Category", transportRequestDTO.getVehicleCategory().name()));
+
+        // Update basic service properties
+        transport.setServiceName(transportRequestDTO.getServiceName());
+        transport.setContactNo(transportRequestDTO.getContactNo());
+        transport.setVehicleCapacity(transportRequestDTO.getVehicleCapacity());
+        transport.setVehicleQty(transportRequestDTO.getVehicleQty());
+        transport.setVehicleCategory(vehicleCategory);
+        transport.setDriverIncluded(transportRequestDTO.getDriverIncluded());
+        transport.setAirConditioned(transportRequestDTO.getAirConditioned());
+        transport.setTransmissionType(transportRequestDTO.getTransmissionType());
+        transport.setFuelType(transportRequestDTO.getFuelType());
+        transport.setContactNo(transportRequestDTO.getContactNo());
+//        transport.setStatus(transportRequestDTO.getStatus());
+        transport.setPrice(transportRequestDTO.getPrice());
+        transport.setPriceType(transportRequestDTO.getPriceType());
+        transport.setLocations(servicesForAll.setServiceLocation(transportRequestDTO));
+
+        // Update the transport object in the database
+        Transport updatedTransport = transportRepository.save(transport);
+
+        // Update tabs
+        tabsImpl.updateTabs(transportRequestDTO.getTabsSection(), updatedTransport);
+        tabsImpl.deleteTabs(transportRequestDTO.getDeletedTabs());
+
+        // Update policies
+        policiesImpl.updatePolicies(transportRequestDTO.getPolicySection(), updatedTransport);
+        policiesImpl.deletePolicies(transportRequestDTO.getDeletedPolicies(), updatedTransport);
+
+        // Upload new images if provided
+        if (images != null && !images.isEmpty()) {
+            imageService.uploadImagesForService(images, updatedTransport);
+        }
+
+        // Delete images if specified
+        if (transportRequestDTO.getDeletedImages() != null && !transportRequestDTO.getDeletedImages().isEmpty()) {
+            imageService.deleteImages(transportRequestDTO.getDeletedImages());
+        }
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Transport Updated Successfully")
+                .data("")
+                .build();
     }
 
 

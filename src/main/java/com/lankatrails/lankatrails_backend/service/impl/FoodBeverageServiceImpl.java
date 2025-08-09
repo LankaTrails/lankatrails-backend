@@ -291,6 +291,8 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
 
         // Update the fields
         foodAndBeverageService.setServiceName(foodBeverageRequest.getServiceName());
+//        foodAndBeverageService.setStatus(foodBeverageRequest.getStatus());
+        foodAndBeverageService.setContactNo(foodBeverageRequest.getContactNo());
         foodAndBeverageService.setOpenHours(foodBeverageRequest.getOpenHours());
         foodAndBeverageService.setVegetarianOptions(foodBeverageRequest.getVegetarianOptions());
         foodAndBeverageService.setHalalCertified(foodBeverageRequest.getHalalCertified());
