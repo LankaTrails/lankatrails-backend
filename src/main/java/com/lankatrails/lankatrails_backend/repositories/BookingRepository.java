@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface BookingRepository extends JpaRepository<Booking,Long> {
-    List<Booking> findByEndTimeAndStartTimeAndFromDateAndToDateAndService_ServiceId(
+    List<Booking> findByStartTimeAndEndTimeAndFromDateAndToDateAndService_ServiceId(
             LocalTime startTime,
             LocalTime endTime,
             LocalDate fromDate,

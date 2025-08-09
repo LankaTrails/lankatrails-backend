@@ -231,10 +231,7 @@ public class BookingServiceImpl implements BookingService {
                                             .data("")
                                             .build();
                                 }
-
                             }
-
-
                         }
                         //trying to place the booking for a day
                         if (bookingType == ONE_DAY){
@@ -262,20 +259,36 @@ public class BookingServiceImpl implements BookingService {
                                             .data("")
                                             .build();
                                 }
-
-
                             }else{
                                 return APIResponse.<String>builder()
                                         .success(false)
-                                        .message("Already Booked")
+                                        .message("Already Booked for One-Day bookings")
                                         .data("")
                                         .build();
                             }
-
                         }
-
+                        //trying to place the booking for time_slots
                         if (bookingType == TIME_SLOTS){
-
+                                List<Booking> timeSlotBookings=bookingRepository.findByStartTimeAndEndTimeAndFromDateAndToDateAndService_ServiceId(
+                                        requestedStartTime,
+                                        requestedEndTime,
+                                        bookingRequestDTO.getFromDate(),
+                                        bookingRequestDTO.getToDate(),
+                                        id
+                                );
+                                if (timeSlotBookings.isEmpty()){
+                                    return APIResponse.<String>builder()
+                                            .success(false)
+                                            .message("Available for Time-Slot Bookings")
+                                            .data("")
+                                            .build();
+                                }else{
+                                    return APIResponse.<String>builder()
+                                            .success(false)
+                                            .message("Already Booked for Time-Slots bookings")
+                                            .data("")
+                                            .build();
+                                }
                         }
                     }else{
                         return APIResponse.<String>builder()
@@ -285,10 +298,6 @@ public class BookingServiceImpl implements BookingService {
                                 .build();
                     }
 
-
-
-
-
             }else{
                 return APIResponse.<String>builder()
                         .success(false)
@@ -296,8 +305,6 @@ public class BookingServiceImpl implements BookingService {
                         .data("")
                         .build();
             }
-
-
 
         return null;
     }
