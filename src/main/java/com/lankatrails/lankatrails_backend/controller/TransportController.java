@@ -95,8 +95,7 @@ public class TransportController {
     }
     @GetMapping("/policy/transport")
     public ResponseEntity<APIResponse<List<PolicySectionRequest>>> guidePolicies (){
-        Provider provider = (Provider) authUtils.loggedInUser();
-        List<PolicySectionRequest> policies = policyImpl.getServicePolicies(provider.getUserId(),2L);
+        List<PolicySectionRequest> policies = policyImpl.getServicePolicies(authUtils.loggedInUserId(), 2L);
         APIResponse<List<PolicySectionRequest>> response =APIResponse.<List<PolicySectionRequest>>builder()
                 .success(true)
                 .message("Found Transport Policies")

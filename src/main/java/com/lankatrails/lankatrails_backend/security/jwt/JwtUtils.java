@@ -4,6 +4,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
+import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
@@ -44,6 +45,7 @@ public class JwtUtils {
 
     public String generateToken(UserDetailsImpl userDetails) {
         return Jwts.builder()
+                .id(UUID.randomUUID().toString()) // Generate a unique ID for the token
                 .subject(userDetails.getEmail())
                 .issuedAt(new Date())
                 .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
@@ -54,6 +56,7 @@ public class JwtUtils {
 
     public String generateRefreshToken(UserDetailsImpl userDetails) {
         return Jwts.builder()
+                .id(UUID.randomUUID().toString()) // Generate a unique ID for the refresh token
                 .subject(userDetails.getEmail())
                 .issuedAt(new Date())
                 .expiration(new Date((new Date()).getTime() + jwtExpirationMs * 24L)) // 24x longer expiry
@@ -157,24 +160,6 @@ public class JwtUtils {
         return null;
     }
 
-    public String generateTokenFromEmail(String email) {
-        return Jwts.builder()
-                .subject(email)
-                .issuedAt(new Date())
-                .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(key())
-                .compact();
-    }
-
-    public String generateRefreshTokenFromEmail(String email) {
-        return Jwts.builder()
-                .subject(email)
-                .issuedAt(new Date())
-                .expiration(new Date((new Date()).getTime() + jwtExpirationMs * 24L)) // 24x longer expiry
-                .signWith(key())
-                .compact();
-    }
-
     public String getJwtFromHeader(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
@@ -228,6 +213,7 @@ public class JwtUtils {
 
     public String generateEmailVerificationJwt(User user) {
         return Jwts.builder()
+                .id(UUID.randomUUID().toString()) // Generate a unique ID for the token
                 .subject(user.getEmail())
                 .claim("userId", user.getUserId())
                 .claim("type", "EMAIL_VERIFICATION")

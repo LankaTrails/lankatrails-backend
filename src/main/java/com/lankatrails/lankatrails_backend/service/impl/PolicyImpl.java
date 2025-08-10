@@ -4,9 +4,11 @@ import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.exception.PolicyExistsException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
+import com.lankatrails.lankatrails_backend.exception.UserNotFoundException;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.repositories.ActivityServiceRepository;
 import com.lankatrails.lankatrails_backend.repositories.PolicySectionRepository;
+import com.lankatrails.lankatrails_backend.repositories.ProviderRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.Policies;
 import org.modelmapper.ModelMapper;
@@ -28,6 +30,9 @@ public class PolicyImpl implements Policies {
     @Autowired
     ActivityServiceRepository activityServiceRepository;
 
+    @Autowired
+    ProviderRepository providerRepository;
+
     private Boolean status;
 
     @Override
@@ -41,9 +46,12 @@ public class PolicyImpl implements Policies {
             PolicySection policies = modelMapper.map(policy, PolicySection.class);
             PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
 
+            Provider provider = providerRepository.findByUserId(authUtils.loggedInUserId())
+                    .orElseThrow(() -> new UserNotFoundException("Provider not found for user ID: " + authUtils.loggedInUserId()));
+
             if (policyCheck==null){
                 //Policy doesn't exist
-                policies.setProvider((Provider) authUtils.loggedInUser());
+                policies.setProvider(provider);
                 policies.getServices().add(lastServiceAdded);
                 policies.setCategory(category);
                 lastServiceAdded.getPolicies().add(policies);

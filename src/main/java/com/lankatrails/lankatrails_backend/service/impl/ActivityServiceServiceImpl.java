@@ -120,7 +120,8 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         ActivityService mappedObj = modelMapper.map(services, ActivityService.class);
         mappedObj.setCategory(category);
 
-        Provider provider = (Provider) authUtils.loggedInUser();
+        Provider provider = providerRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
         mappedObj.setProvider(provider);
 
         mappedObj.setLocations(servicesForAll.setServiceLocation(services));
@@ -312,11 +313,14 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         ActivityService service=activityServiceRepository.findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("Activity Service",id));
 
+      Provider provider = providerRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
+
         //check whether the policy exists
         PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
         if (policyCheck==null){
             //Policy doesn't exist
-            policies.setProvider((Provider) authUtils.loggedInUser());
+            policies.setProvider(provider);
             policies.getServices().add(service);
             service.getPolicies().add(policies);
             policySectionRepository.save(policies);
@@ -347,11 +351,15 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     public APIResponse<String> addNewPolicy(PolicySection policies) {
         Category category = categoryRepository.findByCategoryName(ServiceCategory.ACTIVITY)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", 4L));
+
+        Provider provider = providerRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
+
         //check whether the policy exists
         PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
         if (policyCheck==null){
             //Policy doesn't exist
-            policies.setProvider((Provider) authUtils.loggedInUser());
+            policies.setProvider(provider);
             policies.setCategory(category);
             policySectionRepository.save(policies);
             return APIResponse.<String>builder()

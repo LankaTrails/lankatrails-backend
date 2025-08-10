@@ -5,8 +5,10 @@ import com.lankatrails.lankatrails_backend.dtos.request.TripRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TripResponseDTO;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
+import com.lankatrails.lankatrails_backend.exception.UserNotFoundException;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.BudgetCategory;
+import com.lankatrails.lankatrails_backend.repositories.TouristRepository;
 import com.lankatrails.lankatrails_backend.repositories.TripRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.TripService;
@@ -29,6 +31,9 @@ import java.util.Set;
 public class TripServiceImpl implements TripService {
     @Autowired
     private TripRepository tripRepository;
+
+    @Autowired
+    private TouristRepository touristRepository;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -64,7 +69,8 @@ public class TripServiceImpl implements TripService {
         trip.setTripBudgetCategoryLimits(initializeCategoryLimits(tripRequestDTO, trip));
 
         // Get and set logged-in user
-        User currentUser = authUtils.loggedInUser();
+        User currentUser = touristRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + authUtils.loggedInUserId()));
         if (!(currentUser instanceof Tourist leadTourist)) {
             throw new IllegalStateException("Only tourists can create trips");
         }
@@ -99,7 +105,8 @@ public class TripServiceImpl implements TripService {
     @Transactional
     public APIResponse<List<TripResponseDTO>> getAllMyTrips() {
         log.info("Fetching all trips for the logged-in user");
-        User currentUser = authUtils.loggedInUser();
+        User currentUser = touristRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new UserNotFoundException("Tourist not found with id: " + authUtils.loggedInUserId()));
         if (!(currentUser instanceof Tourist tourist)) {
             throw new IllegalStateException("Only tourists can fetch their trips");
         }

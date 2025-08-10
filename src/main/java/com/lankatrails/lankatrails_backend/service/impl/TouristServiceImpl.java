@@ -81,7 +81,8 @@ public class TouristServiceImpl implements TouristService {
     @Override
     @Transactional
     public APIResponse<FavouriteItemDTO> addFavourites(FavouriteItemDTO favouriteItemDTO) {
-        Tourist tourist = (Tourist) authUtils.loggedInUser();
+        Tourist tourist = touristRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new UserNotFoundException("Tourist not found with id: " + authUtils.loggedInUserId()));
         if (tourist == null) {
             log.error("Tourist not found for adding favourites");
             throw new UserNotFoundException("Tourist not found");
@@ -128,7 +129,8 @@ public class TouristServiceImpl implements TouristService {
     @Override
     @Transactional
     public APIResponse<Set<FavouriteItemDTO>> getFavourites() {
-        Tourist tourist = (Tourist) authUtils.loggedInUser();
+        Tourist tourist = touristRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new UserNotFoundException("Tourist not found with id: " + authUtils.loggedInUserId()));
         if (tourist == null) {
             log.error("Tourist not found for fetching favourites");
             throw new UserNotFoundException("Tourist not found");
@@ -151,7 +153,8 @@ public class TouristServiceImpl implements TouristService {
     @Override
     @Transactional
     public APIResponse<String> removeFavourite(FavouriteItemDTO favouriteItemDTO) {
-        Tourist tourist = (Tourist) authUtils.loggedInUser();
+        Tourist tourist = touristRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new UserNotFoundException("Tourist not found with id: " + authUtils.loggedInUserId()));
         if (tourist == null) {
             log.error("Tourist not found for removing favourites");
             throw new UserNotFoundException("Tourist not found");
