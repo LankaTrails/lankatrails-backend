@@ -16,6 +16,16 @@ public class BadRequestException extends BaseException{
         );
     }
 
+    public BadRequestException(String message) {
+        super(
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.BAD_REQUEST,
+                message,
+                "The request was invalid or cannot be served",
+                null
+        );
+    }
+
     private static Map<String, Object> buildMetadata(String resourceName, Long resourceId) {
         Map<String, Object> metadata = new LinkedHashMap<>();
         if (resourceName != null) {

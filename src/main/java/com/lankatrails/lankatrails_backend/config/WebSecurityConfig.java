@@ -69,13 +69,15 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/tourist/**").hasRole("TOURIST")
                         .requestMatchers("/api/trip/**").hasRole("TOURIST")
-                        .requestMatchers("/api/service/**").permitAll() // Allow search without auth
+                        .requestMatchers("/api/service/**").permitAll()
                         .requestMatchers("/api/provider/**").permitAll()
-                        .requestMatchers("/api/admin/**").permitAll()// Update to admin role
+                        .requestMatchers("/api/admin/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/api/user/**").permitAll()
-                        .requestMatchers("/api/locations/**").permitAll() // Allow access to location endpoints
-                        .requestMatchers("/uploads/**").permitAll() // Allow access to uploads
+                        .requestMatchers("/api/locations/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/api/chat-rooms/**").permitAll()
+                        .requestMatchers("/ws/**").permitAll() // Allow WebSocket connections
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(authTokenFilter(), UsernamePasswordAuthenticationFilter.class);
@@ -89,23 +91,6 @@ public class WebSecurityConfig {
     }
 
 
-//    @Bean
-//    public CorsConfigurationSource corsConfigurationSource() {
-//        CorsConfiguration config = new CorsConfiguration();
-//        config.setAllowedOrigins(Arrays.asList(
-//                "http://localhost:19006", // React Native
-//                "https://admin.lankatrails.com",
-//                "https://provider.lankatrails.com"
-//        ));
-//        config.setAllowedMethods(List.of("*"));
-//        config.setAllowedHeaders(List.of("*"));
-//        config.setExposedHeaders(List.of("Authorization"));
-//        config.setAllowCredentials(true);
-//
-//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//        source.registerCorsConfiguration("/**", config);
-//        return source;
-//    }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -119,6 +104,7 @@ public class WebSecurityConfig {
                 "http://localhost:19006",
                 "http://localhost:8081",
                 "http://localhost:8082",
+                "http://localhost:5500", // For local HTML testing
                 "http://192.168.x.x:19006", // Your local network IP
                 "https://admin.lankatrails.com",
                 "https://provider.lankatrails.com",
