@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
@@ -13,12 +14,15 @@ import com.lankatrails.lankatrails_backend.service.ChatService;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class ChatServiceImpl implements ChatService {
     private final MessageRepository messageRepository;
     private final RabbitTemplate rabbitTemplate;
     private final ChatRoomService chatRoomService;
+    private final AuthUtils authUtils;
 
     @Override
     public void processMessage(ChatMessageDto dto, Long userId) {
@@ -43,5 +47,23 @@ public class ChatServiceImpl implements ChatService {
                 "chat.room." + dto.getChatRoomId(),
                 dto
         );
+    }
+
+    public List<ChatMessageDto> getMessagesForRoom(Long roomId) {
+        if (!chatRoomService.isUserInRoom(authUtils.loggedInUserId(), roomId)) {
+            throw new BadRequestException("User is not part of this chat room");
+        }
+
+        return messageRepository.findByChatRoomIdOrderBySentAtAsc(roomId)
+                .stream()
+                .map(msg -> ChatMessageDto.builder()
+                        .chatRoomId(msg.getChatRoomId())
+                        .senderId(msg.getSenderId())
+                        .messageType(msg.getMessageType())
+                        .content(msg.getContent())
+                        .sentAt(msg.getSentAt())
+                        .build()
+                )
+                .toList();
     }
 }

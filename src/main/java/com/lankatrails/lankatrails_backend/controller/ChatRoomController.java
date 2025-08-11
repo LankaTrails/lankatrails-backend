@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/chat-rooms")
+@RequestMapping("/api/chat/rooms")
 public class ChatRoomController {
     @Autowired
     ChatRoomService chatRoomService;

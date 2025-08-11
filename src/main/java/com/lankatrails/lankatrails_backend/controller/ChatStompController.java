@@ -32,11 +32,6 @@ public class ChatStompController {
             throw new UnauthorizedException("Not authenticated");
         }
 
-        // Extract user ID from authentication
-//        Authentication auth = (Authentication) principal;
-//        UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
-//        Long userId = userDetails.getId();
-
         Long userId = ((UserDetailsImpl) ((Authentication) principal).getPrincipal()).getId();
         chatService.processMessage(message, userId);
     }
