@@ -10,8 +10,6 @@ import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
-import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
-import org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor;
 
 import java.time.Duration;
 
@@ -37,41 +35,48 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.setApplicationDestinationPrefixes("/app");
+        // Use a dedicated, low-privilege RabbitMQ user for the relay.
         registry.enableStompBrokerRelay("/topic", "/queue")
                 .setRelayHost(relayHost)
                 .setRelayPort(relayPort)
                 .setSystemLogin(username)
                 .setSystemPasscode(password)
                 .setClientLogin(username)
-                .setClientPasscode(password)
-                .setVirtualHost("/")
-                .setAutoStartup(true);
+                .setClientPasscode(password);
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // It is recommended to externalize allowed origins to application.properties
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns(
                         "https://*.lankatrails.com",
                         "https://lankatrails.com",
                         "http://localhost:3000",
-                        "http://localhost:8080",
                         "http://localhost:8081",
                         "http://localhost:8082",
                         "http://localhost:5500"
                 )
-                .setHandshakeHandler(new DefaultHandshakeHandler())
-                .addInterceptors(new HttpSessionHandshakeInterceptor())
-                .withSockJS()
-                .setSessionCookieNeeded(true);
+                .withSockJS();
     }
 
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
-        // We now only need our consolidated authentication interceptor and the rate limiter.
+        // The order of interceptors is critical for security.
         registration.interceptors(
+                // 1. Authentication and Authorization Interceptor (stompAuthChannelInterceptor):
+                //    - Runs first.
+                //    - Authenticates the user on CONNECT using their JWT.
+                //    - Authorizes SUBSCRIBE requests to ensure the user is a member of the requested chat room.
+                //    - Populates the SecurityContext for all subsequent messages in the session.
                 stompAuthChannelInterceptor,
-                new RateLimitingChannelInterceptor(100, Duration.ofSeconds(10))
+
+                // 2. Per-User Rate Limiting Interceptor:
+                //    - Runs after authentication.
+                //    - Applies a rate limit to each user's session individually.
+                //    - This prevents a single malicious or misbehaving user from overwhelming the system
+                //      and affecting other users.
+                new RateLimitingChannelInterceptor(10, Duration.ofSeconds(1)) // Example: 10 messages per second per user
         );
     }
 }

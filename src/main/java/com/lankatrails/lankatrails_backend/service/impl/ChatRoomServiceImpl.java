@@ -104,15 +104,15 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
     @Override
     public Boolean isUserInRoom(Long userId, Long chatRoomId) {
-        // Check if the user exists
-        if (!userRepository.existsById(userId)) {
-            throw new UserNotFoundException("User with ID " + userId + " does not exist");
-        }
-
-        // Check if the chat room exists
-        if (!chatRoomRepository.existsById(chatRoomId)) {
-            throw new BadRequestException("Chat room with ID " + chatRoomId + " does not exist");
-        }
+//        // Check if the user exists
+//        if (!userRepository.existsById(userId)) {
+//            throw new UserNotFoundException("User with ID " + userId + " does not exist");
+//        }
+//
+//        // Check if the chat room exists
+//        if (!chatRoomRepository.existsById(chatRoomId)) {
+//            throw new BadRequestException("Chat room with ID " + chatRoomId + " does not exist");
+//        }
 
         // Check if the user is a participant in the chat room
         return chatRoomRepository.existsByRoomIdAndParticipants_UserId(chatRoomId, userId);
