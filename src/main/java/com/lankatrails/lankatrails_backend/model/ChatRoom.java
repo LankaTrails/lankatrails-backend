@@ -32,10 +32,6 @@ public class ChatRoom {
     )
     private List<User> participants;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "service_id")
-//    private Service service;
-
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 }

@@ -13,14 +13,18 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/chat")
 @RequiredArgsConstructor
-public class ChatMessageRestController {
+public class ChatRestController {
 
     private final ChatService chatService;
 
     @GetMapping("/rooms/{roomId}/messages")
     public List<ChatMessageDto> getRoomMessages( @PathVariable Long roomId) {
-
         return chatService.getMessagesForRoom(roomId);
+    }
+
+    @GetMapping("/users/{user1Id}/{user2Id}/messages")
+    public List<ChatMessageDto> getMessagesBetweenUsers(@PathVariable Long user1Id, @PathVariable Long user2Id) {
+        return chatService.getMessagesBetweenUsers(user1Id, user2Id);
     }
 }
 

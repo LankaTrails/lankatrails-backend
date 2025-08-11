@@ -131,7 +131,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
                 if (chatRoomDto.getParticipantIds().size() != 2) {
                     throw new BadRequestException("Direct chat rooms must have exactly 2 participants");
                 }
-                return chatRoomRepository.findByParticipants_UserIdAndParticipants_UserIdAndChatRoomType(
+                return chatRoomRepository.findDirectRoomBetweenUsers(
                         chatRoomDto.getParticipantIds().get(0),
                         chatRoomDto.getParticipantIds().get(1),
                         chatRoomDto.getChatRoomType()

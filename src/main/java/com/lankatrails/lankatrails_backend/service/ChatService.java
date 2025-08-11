@@ -7,4 +7,5 @@ import java.util.List;
 public interface ChatService {
     void processMessage(ChatMessageDto dto, Long userId);
     List<ChatMessageDto> getMessagesForRoom(Long roomId);
+    List<ChatMessageDto> getMessagesBetweenUsers(Long user1Id, Long user2Id);
 }
