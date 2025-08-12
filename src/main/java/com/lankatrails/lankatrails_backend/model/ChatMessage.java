@@ -29,6 +29,10 @@ public class ChatMessage {
 
     private String content; // text or URL
 
+    private String replyToMessageId; // nullable, for replies
+
+    private Long serviceCardId; // nullable, for SERVICE_CARD messageType
+
     private Instant sentAt = Instant.now();
 
 //    private ServiceCard serviceCard; // nullable, for SERVICE_CARD messageType

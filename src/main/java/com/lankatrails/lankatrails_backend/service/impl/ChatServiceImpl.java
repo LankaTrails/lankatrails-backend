@@ -4,6 +4,8 @@ import com.lankatrails.lankatrails_backend.exception.UnauthorizedException;
 import com.lankatrails.lankatrails_backend.model.enums.ChatRoomType;
 import com.lankatrails.lankatrails_backend.repositories.ChatRoomRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
+import com.lankatrails.lankatrails_backend.service.ServiceService;
+import com.lankatrails.lankatrails_backend.service.ServicesForAll;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,7 @@ import com.lankatrails.lankatrails_backend.service.ChatRoomService;
 import com.lankatrails.lankatrails_backend.service.ChatService;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -27,6 +30,7 @@ public class ChatServiceImpl implements ChatService {
     private final ChatRoomService chatRoomService;
     private final AuthUtils authUtils;
     private final ChatRoomRepository chatRoomRepository;
+    private final ServicesForAll servicesForAll;
 
     @Override
     public void processMessage(ChatMessageDto dto, Long userId) {
@@ -42,6 +46,8 @@ public class ChatServiceImpl implements ChatService {
                 .senderId(dto.getSenderId()) // Use provided senderId
                 .messageType(dto.getMessageType())
                 .content(dto.getContent())
+                .replyToMessageId(dto.getReplyToMessageId()) // Nullable, for replies
+                .serviceCardId(dto.getServiceCardId()) // Nullable, for SERVICE_CARD messageType
                 .sentAt(dto.getSentAt())
                 .build();
 
@@ -54,6 +60,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
+    @Transactional
     public List<ChatMessageDto> getMessagesForRoom(Long roomId) {
         if (!chatRoomService.isUserInRoom(authUtils.loggedInUserId(), roomId)) {
             throw new BadRequestException("User is not part of this chat room");
@@ -62,10 +69,16 @@ public class ChatServiceImpl implements ChatService {
         return messageRepository.findByChatRoomIdOrderBySentAtAsc(roomId)
                 .stream()
                 .map(msg -> ChatMessageDto.builder()
-                        .chatRoomId(msg.getChatRoomId())
-                        .senderId(msg.getSenderId())
-                        .messageType(msg.getMessageType())
-                        .content(msg.getContent())
+                                .chatRoomId(msg.getChatRoomId())
+                                .senderId(msg.getSenderId())
+                                .messageType(msg.getMessageType())
+                                .content(msg.getContent())
+                                .replyToMessageId(msg.getReplyToMessageId()) // Nullable, for replies
+                                .serviceCardId(msg.getServiceCardId()) // Nullable, for SERVICE_CARD messageType
+                                .serviceCard(msg.getServiceCardId() != null
+                                        ? servicesForAll.getServiceDto(msg.getServiceCardId()).orElse(null)
+                                        : null
+                                )
                         .sentAt(msg.getSentAt())
                         .build()
                 )
