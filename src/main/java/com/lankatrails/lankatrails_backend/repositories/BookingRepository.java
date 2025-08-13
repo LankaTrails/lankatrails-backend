@@ -54,4 +54,10 @@ public interface BookingRepository extends JpaRepository<Booking,Long> {
             @Param("endTime") LocalTime endTime
     );
 
+    @Query("SELECT b FROM Booking b WHERE :date BETWEEN b.fromDate AND b.toDate AND b.service.serviceId = :serviceId")
+    List<Booking> findBookingsOnADay (
+            @Param("date") LocalDate date,
+            @Param("serviceId") Long serviceId
+    );
+
 }

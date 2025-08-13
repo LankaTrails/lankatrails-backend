@@ -2,6 +2,7 @@ package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.request.BookingRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.BookingResponseDTO;
 import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.*;
@@ -21,6 +22,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -342,6 +344,32 @@ public class BookingServiceImpl implements BookingService {
                 .success(false)
                 .message(availabilityResponse.getMessage())
                 .data("")
+                .build();
+    }
+
+    public APIResponse<BookingResponseDTO> getBookingsOnTheDay(BookingRequestDTO bookingRequestDTO,Long id){
+        List<Booking> bookings = bookingRepository.findBookingsOnADay(bookingRequestDTO.getFromDate(),id);
+        List<BookingRequestDTO> prepareResponse = new ArrayList<>();
+        for (Booking booking : bookings){
+            //map each to BookingRequestDTO
+            BookingRequestDTO setResponse = new BookingRequestDTO();
+            setResponse.setFromDate(booking.getFromDate());
+//            setResponse.setBookingStatus(booking.getBookingStatus());
+            setResponse.setToDate(booking.getToDate());
+            setResponse.setAdultCount(booking.getAdults());
+            setResponse.setChildCount(booking.getChildren());
+            setResponse.setFromTime(booking.getStartTime());
+            setResponse.setToTime(booking.getEndTime());
+
+            prepareResponse.add(setResponse);
+
+        }
+        BookingResponseDTO responseDTO = new BookingResponseDTO();
+        responseDTO.setContent(prepareResponse);
+        return  APIResponse.<BookingResponseDTO>builder()
+                .success(true)
+                .message("")
+                .data(responseDTO)
                 .build();
     }
 }
