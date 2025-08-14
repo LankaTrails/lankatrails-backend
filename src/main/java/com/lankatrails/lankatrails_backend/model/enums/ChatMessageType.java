@@ -5,5 +5,6 @@ public enum ChatMessageType {
     IMAGE,
     FILE,
     SERVICE_CARD,
-    SYSTEM
+    SYSTEM,
+    REPLY
 }

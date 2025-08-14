@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -106,6 +107,26 @@ public class serviceImpl implements ServicesForAll {
                         service.getPrice(),
                         service.getPriceType(),
                         service.getImages().getFirst().getImageUrl()
+                ));
+    }
+
+    @Override
+    public Map<Long, ServiceDTO> getServiceDtos(Set<Long> serviceIds) {
+        return serviceRepository.findAllById(serviceIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        Service::getServiceId,
+                        service -> new ServiceDTO(
+                                service.getServiceId(),
+                                service.getServiceName(),
+                                service.getCategory().getCategoryName(),
+                                service.getLocations().stream()
+                                        .map(location -> modelMapper.map(location, LocationDTO.class))
+                                        .collect(Collectors.toSet()),
+                                service.getPrice(),
+                                service.getPriceType(),
+                                service.getImages().isEmpty() ? null : service.getImages().getFirst().getImageUrl()
+                        )
                 ));
     }
 }
