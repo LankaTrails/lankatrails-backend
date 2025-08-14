@@ -12,7 +12,6 @@ import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.BookingService;
-import jakarta.persistence.Table;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,16 +20,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static com.lankatrails.lankatrails_backend.model.enums.BookingType.*;
-import static com.lankatrails.lankatrails_backend.model.enums.ServiceCategory.ACCOMMODATION;
 
 @Service
-//@Slf4j
+@Slf4j
 public class BookingServiceImpl implements BookingService {
     @Autowired
     AvailabilitySlotRepository availabilitySlotRepository;
@@ -46,6 +43,9 @@ public class BookingServiceImpl implements BookingService {
 
     @Autowired
     AccommodationRepository accommodationRepository;
+
+    @Autowired
+    TouristRepository touristRepository;
 
     @Autowired
     AuthUtils authUtils;
@@ -173,6 +173,7 @@ public class BookingServiceImpl implements BookingService {
                     if (overlapBookings.isEmpty()){
                         //start checking with the service
                         //trying to place the booking for multiple days
+                        log.info("Booking Type"+bookingType);
                         if (bookingType == MULTI_DAY){
                             //Find whether the service will get overlapping bookings because of the new booking
                             List<Booking> conflictingBookings=bookingRepository.findExactConflictingBookings(
@@ -224,6 +225,12 @@ public class BookingServiceImpl implements BookingService {
                                         return APIResponse.<String>builder()
                                                 .success(false)
                                                 .message("Amount of maximum guests, exceeded")
+                                                .data("")
+                                                .build();
+                                    }else{
+                                        return APIResponse.<String>builder()
+                                                .success(true)
+                                                .message("Available for Multi-Day accommodation Booking")
                                                 .data("")
                                                 .build();
                                     }
@@ -321,12 +328,16 @@ public class BookingServiceImpl implements BookingService {
             com.lankatrails.lankatrails_backend.model.Service service = serviceRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Service",id));
             ServiceCategory category = service.getCategory().getCategoryName();
 
+            Tourist tourist = touristRepository.findByUserId(authUtils.loggedInUserId()).orElseThrow(
+                    ()->new ResourceNotFoundException("Tourist", authUtils.loggedInUserId())
+            );
+
             prepareBooking.setService(service);
             prepareBooking.setAdults(bookingRequestDTO.getAdultCount());
             prepareBooking.setChildren(bookingRequestDTO.getChildCount());
             prepareBooking.setEndTime(bookingRequestDTO.getToTime());
             prepareBooking.setStartTime(bookingRequestDTO.getFromTime());
-            prepareBooking.setTourist((Tourist) authUtils.loggedInUser());
+            prepareBooking.setTourist(tourist);
             prepareBooking.setBookingStatus(bookingRequestDTO.getBookingStatus());
             prepareBooking.setFromDate(bookingRequestDTO.getFromDate());
             prepareBooking.setToDate(bookingRequestDTO.getToDate());

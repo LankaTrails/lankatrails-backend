@@ -37,7 +37,7 @@ public class BookingController {
         return new ResponseEntity<>(createBooking,HttpStatus.OK);
     }
 
-    //get all bookings in a day
+    //get all bookings in a day for food-beverage
     @GetMapping("/booking/provider/food-beverage/{id}")
     public ResponseEntity<APIResponse<BookingResponseDTO>> getFoodBeverageBookings(
             @PathVariable  Long id,
@@ -45,6 +45,41 @@ public class BookingController {
         APIResponse<BookingResponseDTO> loadBookings = bookingService.getBookingsOnTheDay(bookingRequestDTO,id);
         return new ResponseEntity<>(loadBookings,HttpStatus.OK);
     }
+
+    //get all bookings in a day for transportation
+    @GetMapping("/booking/provider/transport/{id}")
+    public ResponseEntity<APIResponse<BookingResponseDTO>> getTransportBookings(
+            @PathVariable  Long id,
+            @RequestBody BookingRequestDTO bookingRequestDTO){
+        APIResponse<BookingResponseDTO> loadBookings = bookingService.getBookingsOnTheDay(bookingRequestDTO,id);
+        return new ResponseEntity<>(loadBookings,HttpStatus.OK);
+    }
+    //get all bookings in a day for accommodation
+    @GetMapping("/booking/provider/accommodation/{id}")
+    public ResponseEntity<APIResponse<BookingResponseDTO>> getAccommodationBookings(
+            @PathVariable  Long id,
+            @RequestBody BookingRequestDTO bookingRequestDTO){
+        APIResponse<BookingResponseDTO> loadBookings = bookingService.getBookingsOnTheDay(bookingRequestDTO,id);
+        return new ResponseEntity<>(loadBookings,HttpStatus.OK);
+    }
+    //get all bookings in a day for tour-guide
+    @GetMapping("/booking/provider/tour-guide/{id}")
+    public ResponseEntity<APIResponse<BookingResponseDTO>> getTourGuideBookings(
+            @PathVariable  Long id,
+            @RequestBody BookingRequestDTO bookingRequestDTO){
+        APIResponse<BookingResponseDTO> loadBookings = bookingService.getBookingsOnTheDay(bookingRequestDTO,id);
+        return new ResponseEntity<>(loadBookings,HttpStatus.OK);
+    }
+
+    //get all bookings in a day for activity-provider
+    @GetMapping("/booking/provider/activity-provider/{id}")
+    public ResponseEntity<APIResponse<BookingResponseDTO>> getActivityBookings(
+            @PathVariable  Long id,
+            @RequestBody BookingRequestDTO bookingRequestDTO){
+        APIResponse<BookingResponseDTO> loadBookings = bookingService.getBookingsOnTheDay(bookingRequestDTO,id);
+        return new ResponseEntity<>(loadBookings,HttpStatus.OK);
+    }
+
 
 
 
