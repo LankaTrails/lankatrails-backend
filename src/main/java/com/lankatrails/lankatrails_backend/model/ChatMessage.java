@@ -38,5 +38,7 @@ public class ChatMessage {
 
     private Map<Long, Instant> readBy; // userId -> timestamp
 
+    private ChatFiles files; // nullable, for file attachments
+
 }
 

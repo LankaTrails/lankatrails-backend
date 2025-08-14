@@ -33,7 +33,7 @@ public class ChatStompController {
         }
 
         Long userId = ((UserDetailsImpl) ((Authentication) principal).getPrincipal()).getId();
-        chatService.processMessage(message, userId);
+        chatService.processMessage(message, userId, null);
     }
 
     @MessageExceptionHandler(BadRequestException.class)

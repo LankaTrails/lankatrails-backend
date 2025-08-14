@@ -10,7 +10,9 @@ public enum UploadCategory {
     COVER_PICTURE("cover-pictures"),
     BUSINESS_REGISTRATION("business-registration"),
     IDENTIFICATION("identification"),
-    LICENCE("licence");
+    LICENCE("licence"),
+    CHAT_IMAGE("chat-images"),
+    CHAT_FILE("chat-files");
 
 
     private final String directory;
@@ -19,7 +21,4 @@ public enum UploadCategory {
         this.directory = directory;
     }
 
-    public String getDirectory() {
-        return directory;
-    }
 }
