@@ -3,6 +3,7 @@ package com.lankatrails.lankatrails_backend.controller;
 import com.lankatrails.lankatrails_backend.dtos.request.BookingRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.BookingResponseDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.TimeSlotsResponseDTO;
 import com.lankatrails.lankatrails_backend.model.Booking;
 import com.lankatrails.lankatrails_backend.service.impl.BookingServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +39,7 @@ public class BookingController {
     }
 
     //get all bookings in a day for food-beverage
-    @GetMapping("/booking/provider/food-beverage/{id}")
+    @GetMapping("/provider/booking/food-beverage/{id}")
     public ResponseEntity<APIResponse<BookingResponseDTO>> getFoodBeverageBookings(
             @PathVariable  Long id,
             @RequestBody BookingRequestDTO bookingRequestDTO){
@@ -47,7 +48,7 @@ public class BookingController {
     }
 
     //get all bookings in a day for transportation
-    @GetMapping("/booking/provider/transport/{id}")
+    @GetMapping("/provider/booking/transport/{id}")
     public ResponseEntity<APIResponse<BookingResponseDTO>> getTransportBookings(
             @PathVariable  Long id,
             @RequestBody BookingRequestDTO bookingRequestDTO){
@@ -55,7 +56,7 @@ public class BookingController {
         return new ResponseEntity<>(loadBookings,HttpStatus.OK);
     }
     //get all bookings in a day for accommodation
-    @GetMapping("/booking/provider/accommodation/{id}")
+    @GetMapping("/provider/booking/accommodation/{id}")
     public ResponseEntity<APIResponse<BookingResponseDTO>> getAccommodationBookings(
             @PathVariable  Long id,
             @RequestBody BookingRequestDTO bookingRequestDTO){
@@ -63,7 +64,7 @@ public class BookingController {
         return new ResponseEntity<>(loadBookings,HttpStatus.OK);
     }
     //get all bookings in a day for tour-guide
-    @GetMapping("/booking/provider/tour-guide/{id}")
+    @GetMapping("/provider/booking/tour-guide/{id}")
     public ResponseEntity<APIResponse<BookingResponseDTO>> getTourGuideBookings(
             @PathVariable  Long id,
             @RequestBody BookingRequestDTO bookingRequestDTO){
@@ -72,14 +73,23 @@ public class BookingController {
     }
 
     //get all bookings in a day for activity-provider
-    @GetMapping("/booking/provider/activity-provider/{id}")
+    @GetMapping("/provider/booking/activity-provider/{id}")
     public ResponseEntity<APIResponse<BookingResponseDTO>> getActivityBookings(
             @PathVariable  Long id,
-            @RequestBody BookingRequestDTO bookingRequestDTO){
+            @RequestBody BookingRequestDTO bookingRequestDTO)
+    {
         APIResponse<BookingResponseDTO> loadBookings = bookingService.getBookingsOnTheDay(bookingRequestDTO,id);
         return new ResponseEntity<>(loadBookings,HttpStatus.OK);
     }
 
+    //Divide the tour-guide available time to slots based on the duration
+    //Needed when placing the booking
+    @GetMapping("/tourist/booking/tour-guide/slots")
+    public ResponseEntity<APIResponse<TimeSlotsResponseDTO>> getTouristDaySlots(@PathVariable Long id)
+    {
+        APIResponse<TimeSlotsResponseDTO> getDaySlots = bookingService.getTourGuideDaySlots(id);
+
+    }
 
 
 

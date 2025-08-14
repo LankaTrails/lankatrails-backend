@@ -3,6 +3,7 @@ package com.lankatrails.lankatrails_backend.service.impl;
 import com.lankatrails.lankatrails_backend.dtos.request.BookingRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.BookingResponseDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.TimeSlotsResponseDTO;
 import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.*;
@@ -46,6 +47,9 @@ public class BookingServiceImpl implements BookingService {
 
     @Autowired
     TouristRepository touristRepository;
+
+    @Autowired
+    TouristGuideRepository touristGuideRepository;
 
     @Autowired
     AuthUtils authUtils;
@@ -382,5 +386,43 @@ public class BookingServiceImpl implements BookingService {
                 .message("")
                 .data(responseDTO)
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<TimeSlotsResponseDTO> getTourGuideDaySlots(Long id) {
+        //Find the tour guide
+        TouristGuide touristGuide = touristGuideRepository.findByServiceId(id).orElseThrow(
+                ()->new ResourceNotFoundException("Tour Guide",id)
+        );
+        com.lankatrails.lankatrails_backend.model.Service service = serviceRepository.findById(id)
+                .orElseThrow(()-> new ResourceNotFoundException("Service",id));
+
+        //Get the current date
+        LocalDate currentDate = LocalDate.now();
+        //Get the day of the week which the current day belongs
+        List<AvailabilitySlot> availabilitySlotList = availabilitySlotRepository.findByService_ServiceId(id);
+        if (availabilitySlotList.isEmpty()){
+            throw new BadCredentialsException("Invalid Availability Slots","No Availability Slots Defined");
+        }
+        DayOfWeek requestedStartDay = currentDate.getDayOfWeek();
+        DayOfWeek requestedEndDay = currentDate.getDayOfWeek();
+        Optional<AvailabilitySlot> startDaySlot = availabilitySlotList.stream()
+                .filter(slot -> slot.getDayOfWeek().equalsIgnoreCase(requestedStartDay.toString()))
+                .findFirst();
+        Optional<AvailabilitySlot> endDaySlot = availabilitySlotList.stream()
+                .filter(slot -> slot.getDayOfWeek().equalsIgnoreCase(requestedEndDay.toString()))
+                .findFirst();
+
+        //Get the open time
+        LocalTime serviceOpenTime = LocalTime.parse(startDaySlot.get().getOpenTime());
+
+        //Get the close time
+        LocalTime serviceCloseTime = LocalTime.parse(endDaySlot.get().getCloseTime());
+
+        //Get the duration one guiding
+        touristGuide.getDuration();
+
+        return null;
     }
 }
