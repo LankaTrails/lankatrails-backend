@@ -164,8 +164,7 @@ public class ActivityServiceController {
     }
     @GetMapping("/provider/policy/activity")
     public ResponseEntity<APIResponse<List<PolicySectionRequest>>> activityPolicies (){
-        Provider provider = (Provider) authUtils.loggedInUser();
-        List<PolicySectionRequest> policies = policyImpl.getServicePolicies(provider.getUserId(),4L);
+        List<PolicySectionRequest> policies = policyImpl.getServicePolicies(authUtils.loggedInUserId(), 4L);
         APIResponse<List<PolicySectionRequest>> response =APIResponse.<List<PolicySectionRequest>>builder()
                 .success(true)
                 .message("Found Activity Policies")

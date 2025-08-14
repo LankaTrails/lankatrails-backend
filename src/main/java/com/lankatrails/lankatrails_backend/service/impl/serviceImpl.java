@@ -1,6 +1,8 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.request.AvailabilitySlotDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceRequest;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.ActivityService;
@@ -14,8 +16,11 @@ import com.lankatrails.lankatrails_backend.service.ServicesForAll;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.List;
@@ -86,5 +91,42 @@ public class serviceImpl implements ServicesForAll {
             }
         }
 
+    }
+
+    @Override
+    @Transactional
+    public Optional<ServiceDTO> getServiceDto(Long serviceId) {
+        return serviceRepository.findById(serviceId)
+                .map(service -> new ServiceDTO(
+                        service.getServiceId(),
+                        service.getServiceName(),
+                        service.getCategory().getCategoryName(),
+                        service.getLocations().stream()
+                                .map(location -> modelMapper.map(location, LocationDTO.class))
+                                .collect(Collectors.toSet()),
+                        service.getPrice(),
+                        service.getPriceType(),
+                        service.getImages().getFirst().getImageUrl()
+                ));
+    }
+
+    @Override
+    public Map<Long, ServiceDTO> getServiceDtos(Set<Long> serviceIds) {
+        return serviceRepository.findAllById(serviceIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        Service::getServiceId,
+                        service -> new ServiceDTO(
+                                service.getServiceId(),
+                                service.getServiceName(),
+                                service.getCategory().getCategoryName(),
+                                service.getLocations().stream()
+                                        .map(location -> modelMapper.map(location, LocationDTO.class))
+                                        .collect(Collectors.toSet()),
+                                service.getPrice(),
+                                service.getPriceType(),
+                                service.getImages().isEmpty() ? null : service.getImages().getFirst().getImageUrl()
+                        )
+                ));
     }
 }

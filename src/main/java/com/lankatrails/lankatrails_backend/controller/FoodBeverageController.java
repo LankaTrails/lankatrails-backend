@@ -82,8 +82,7 @@ public class FoodBeverageController {
     }
     @GetMapping("/policy/food-beverage")
     public ResponseEntity<APIResponse<List<PolicySectionRequest>>> foodbeveragePolicies (){
-        Provider provider = (Provider) authUtils.loggedInUser();
-        List<PolicySectionRequest> policies = policyImpl.getServicePolicies(provider.getUserId(),3L);
+        List<PolicySectionRequest> policies = policyImpl.getServicePolicies(authUtils.loggedInUserId(), 3L);
         APIResponse<List<PolicySectionRequest>> response =APIResponse.<List<PolicySectionRequest>>builder()
                 .success(true)
                 .message("Found Food-Beverage Policies")

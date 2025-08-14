@@ -51,6 +51,9 @@ public class TouristGuideImpl implements TouristGuideService {
     private TourGuideCategoryRepository tourGuideCategoryRepository;
 
     @Autowired
+    private ProviderRepository providerRepository;
+
+    @Autowired
     ServicesForAll servicesForAll;
 
     @Autowired
@@ -119,7 +122,8 @@ public class TouristGuideImpl implements TouristGuideService {
         Category category = categoryRepository.findByCategoryName(ServiceCategory.TOUR_GUIDE)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", 4L));
 
-        Provider provider = (Provider) authUtils.loggedInUser();
+        Provider provider = providerRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
         mappedObj.setCategory(category);
         mappedObj.setProvider(provider);
 
@@ -380,11 +384,15 @@ public class TouristGuideImpl implements TouristGuideService {
     public APIResponse<String> addNewPolicy(PolicySection policies) {
         Category category = categoryRepository.findByCategoryName(ServiceCategory.TOUR_GUIDE)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", 5L));
+
+        Provider provider = providerRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
+
         //check whether the policy exists
         PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
         if (policyCheck==null){
             //Policy doesn't exist
-            policies.setProvider((Provider) authUtils.loggedInUser());
+            policies.setProvider(provider);
             policies.setCategory(category);
             policySectionRepository.save(policies);
             return APIResponse.<String>builder()

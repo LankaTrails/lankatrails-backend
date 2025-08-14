@@ -80,4 +80,7 @@ public class Service {
     @OneToMany(mappedBy = "service")
     private List<Booking> serviceBookings = new ArrayList<>();
 
+//    @OneToMany(mappedBy = "service")
+//    private List<ChatRoom> chatRooms = new ArrayList<>();
+
 }

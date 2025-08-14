@@ -4,6 +4,7 @@ import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.BusinessDetailDTO;
 import com.lankatrails.lankatrails_backend.model.Provider;
+import com.lankatrails.lankatrails_backend.repositories.ProviderRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ProviderService;
 import com.lankatrails.lankatrails_backend.service.impl.PolicyImpl;
@@ -27,10 +28,14 @@ public class ProviderController {
     @Autowired
     ProviderService providerService;
 
+    @Autowired
+    ProviderRepository providerRepository;
+
     @PostMapping("/add/policy")
     public ResponseEntity<APIResponse<String>> addPublicPolicy
             (@RequestBody PolicySectionRequest policyReq){
-        Provider provider =(Provider) authUtils.loggedInUser();
+        Provider provider = providerRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new RuntimeException("Provider not found with id: " + authUtils.loggedInUserId()));
         policyReq.setProvider(provider);
         APIResponse<String> response = policyImplementation.providerAddPolicies(policyReq);
         return new ResponseEntity<>(response,HttpStatus.CREATED);
@@ -39,8 +44,7 @@ public class ProviderController {
 
     @GetMapping("/policies")
     public ResponseEntity<APIResponse<List<PolicySectionRequest>>> providerPolicies (){
-        Provider provider = (Provider) authUtils.loggedInUser();
-        List<PolicySectionRequest> policies = policyImplementation.getProviderPolicies(provider.getUserId());
+        List<PolicySectionRequest> policies = policyImplementation.getProviderPolicies(authUtils.loggedInUserId());
         APIResponse<List<PolicySectionRequest>> response =APIResponse.<List<PolicySectionRequest>>builder()
                 .success(true)
                 .message("Found Provider Policies")
@@ -53,9 +57,8 @@ public class ProviderController {
     //Policies of the provider and also the policies common to a single service
     @GetMapping("/policies/{categoryId}")
     public ResponseEntity<APIResponse<List<PolicySectionRequest>>> providerAndServicePolicies(@PathVariable Long categoryId){
-        Provider provider = (Provider) authUtils.loggedInUser();
         List<PolicySectionRequest> policies = policyImplementation
-                .getProviderAndServicePolicies(provider.getUserId(),categoryId);
+                .getProviderAndServicePolicies(authUtils.loggedInUserId(), categoryId);
         APIResponse<List<PolicySectionRequest>> response =APIResponse.<List<PolicySectionRequest>>builder()
                 .success(true)
                 .message("Found Provider and Service Policies")

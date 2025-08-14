@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.lankatrails.lankatrails_backend.dtos.request.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -18,11 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.lankatrails.lankatrails_backend.dtos.request.ActivityServiceRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.ImageRequestDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
@@ -124,7 +120,8 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         ActivityService mappedObj = modelMapper.map(services, ActivityService.class);
         mappedObj.setCategory(category);
 
-        Provider provider = (Provider) authUtils.loggedInUser();
+        Provider provider = providerRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
         mappedObj.setProvider(provider);
 
         mappedObj.setLocations(servicesForAll.setServiceLocation(services));
@@ -316,11 +313,14 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         ActivityService service=activityServiceRepository.findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("Activity Service",id));
 
+      Provider provider = providerRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
+
         //check whether the policy exists
         PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
         if (policyCheck==null){
             //Policy doesn't exist
-            policies.setProvider((Provider) authUtils.loggedInUser());
+            policies.setProvider(provider);
             policies.getServices().add(service);
             service.getPolicies().add(policies);
             policySectionRepository.save(policies);
@@ -351,11 +351,15 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     public APIResponse<String> addNewPolicy(PolicySection policies) {
         Category category = categoryRepository.findByCategoryName(ServiceCategory.ACTIVITY)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", 4L));
+
+        Provider provider = providerRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
+
         //check whether the policy exists
         PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
         if (policyCheck==null){
             //Policy doesn't exist
-            policies.setProvider((Provider) authUtils.loggedInUser());
+            policies.setProvider(provider);
             policies.setCategory(category);
             policySectionRepository.save(policies);
             return APIResponse.<String>builder()

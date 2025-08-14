@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.lankatrails.lankatrails_backend.repositories.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -35,12 +36,6 @@ import com.lankatrails.lankatrails_backend.model.TabsSection;
 import com.lankatrails.lankatrails_backend.model.Transport;
 import com.lankatrails.lankatrails_backend.model.VehicleCategory;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
-import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
-import com.lankatrails.lankatrails_backend.repositories.ImageRepository;
-import com.lankatrails.lankatrails_backend.repositories.PolicySectionRepository;
-import com.lankatrails.lankatrails_backend.repositories.TabsSectionRepository;
-import com.lankatrails.lankatrails_backend.repositories.TransportRepository;
-import com.lankatrails.lankatrails_backend.repositories.VehicleCategoryRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ImageService;
 import com.lankatrails.lankatrails_backend.service.ServicesForAll;
@@ -63,6 +58,9 @@ public class TransportServiceImpl implements TransportService {
 
     @Autowired
     ImageRepository imageRepository;
+
+    @Autowired
+    ProviderRepository providerRepository;
 
     @Autowired
     ServicesForAll servicesForAll;
@@ -270,7 +268,8 @@ public class TransportServiceImpl implements TransportService {
         Transport mappedObj=modelMapper.map(transportRequestDTO,Transport.class);
         mappedObj.setCategory(category);
 
-        Provider provider=(Provider) authUtils.loggedInUser();
+        Provider provider=providerRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
         mappedObj.setProvider(provider);
 
         mappedObj.setLocations(servicesForAll.setServiceLocation(transportRequestDTO));
@@ -333,11 +332,15 @@ public class TransportServiceImpl implements TransportService {
     public APIResponse<String> addNewPolicy(PolicySection policies) {
         Category category = categoryRepository.findByCategoryName(ServiceCategory.TRANSPORT)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", 2L));
+
+        Provider provider = providerRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
+
         //check whether the policy exists
         PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
         if (policyCheck==null){
             //Policy doesn't exist
-            policies.setProvider((Provider) authUtils.loggedInUser());
+            policies.setProvider(provider);
             policies.setCategory(category);
             policySectionRepository.save(policies);
             return APIResponse.<String>builder()
