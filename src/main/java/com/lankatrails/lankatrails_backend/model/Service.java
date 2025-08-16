@@ -34,6 +34,8 @@ public class Service {
 
     private Double price;
 
+    private Long duration;
+
     @Enumerated(EnumType.STRING)
     private PriceType priceType;
 

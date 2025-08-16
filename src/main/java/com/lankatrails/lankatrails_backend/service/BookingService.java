@@ -16,4 +16,6 @@ public interface BookingService {
     APIResponse<BookingResponseDTO> getBookingsOnTheDay(BookingRequestDTO bookingRequestDTO, Long id);
     APIResponse<List<String>> getTourGuideDaySlots(Long id);
     APIResponse<List<String>> generateTimeSlots( LocalTime openTime, LocalTime closeTime, Long slotDuration);
+    APIResponse<List<String>> getAllFreeTimeSlots(BookingRequestDTO bookingRequestDTO, Long id);
+    APIResponse<List<String>> getServiceTimeSlots (Long id);
 }

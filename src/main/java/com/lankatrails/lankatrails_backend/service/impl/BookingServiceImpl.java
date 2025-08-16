@@ -19,6 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.DayOfWeek;
 import java.time.Duration;
@@ -28,6 +30,7 @@ import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.lankatrails.lankatrails_backend.model.enums.BookingType.*;
 
@@ -60,6 +63,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
+    //checking the availability of the time slot based on the booking type of the service
     public APIResponse<String> checkTimeSlotAvailability(BookingRequestDTO bookingRequestDTO, Long id) {
         List<AvailabilitySlot> availabilitySlotList = availabilitySlotRepository.findByService_ServiceId(id);
         if (availabilitySlotList.isEmpty()){
@@ -329,6 +333,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
+    //Insert new booking
     public APIResponse<String> addNewBooking(BookingRequestDTO bookingRequestDTO, Long id) {
         APIResponse<String> availabilityResponse=checkTimeSlotAvailability(bookingRequestDTO,id);
         if (availabilityResponse.isSuccess()){
@@ -366,6 +371,7 @@ public class BookingServiceImpl implements BookingService {
                 .build();
     }
 
+    //find the bookings a service has on a particular day
     public APIResponse<BookingResponseDTO> getBookingsOnTheDay(BookingRequestDTO bookingRequestDTO,Long id){
         List<Booking> bookings = bookingRepository.findBookingsOnADay(bookingRequestDTO.getFromDate(),id);
         List<BookingRequestDTO> prepareResponse = new ArrayList<>();
@@ -394,14 +400,13 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
+    //find the available slots of the tour guide
     public APIResponse<List<String>> getTourGuideDaySlots(Long id) {
+
         //Find the tour guide
         TouristGuide touristGuide = touristGuideRepository.findByServiceId(id).orElseThrow(
                 ()->new ResourceNotFoundException("Tour Guide",id)
         );
-        com.lankatrails.lankatrails_backend.model.Service service = serviceRepository.findById(id)
-                .orElseThrow(()-> new ResourceNotFoundException("Service",id));
-
         //Get the current date
         LocalDate currentDate = LocalDate.now();
         //Get the day of the week which the current day belongs
@@ -436,11 +441,8 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public APIResponse<List<String>> generateTimeSlots(
-            LocalTime openTime,
-            LocalTime closeTime,
-            Long hoursPerSlot
-    ) {
+    //generating all the time slots based on the open time, close time and duration of one slot
+    public APIResponse<List<String>> generateTimeSlots(LocalTime openTime, LocalTime closeTime, Long hoursPerSlot) {
         log.info("hours per slot" +hoursPerSlot);
         // 1. Validate input
         if (hoursPerSlot <= 0) {
@@ -481,4 +483,111 @@ public class BookingServiceImpl implements BookingService {
                 .data(slots)
                 .build();
     }
+
+    @Override
+    public APIResponse<List<String>> getAllFreeTimeSlots(BookingRequestDTO bookingRequestDTO, Long id) {
+        //check the availability
+        APIResponse<String> availabilityCheck = checkTimeSlotAvailability(bookingRequestDTO,id);
+        //if available, load all the free slots on the particular day it is selected
+        if (availabilityCheck.isSuccess()){
+            //Find the service
+            com.lankatrails.lankatrails_backend.model.Service service = serviceRepository.findById(id)
+                    .orElseThrow(()-> new ResourceNotFoundException("Service",id));
+            BookingType bookingType = service.getBookingType();
+
+            //load the available free slots
+            List<String> slots = new ArrayList<>();
+            if(bookingType == TIME_SLOTS ){
+                //load the free time slots that are not booked on the particular date
+                //get all the time slots
+                APIResponse<List<String>> allTimeSlots = getServiceTimeSlots(id);
+                List<String> allTimeSlotsList = allTimeSlots.getData();
+
+                //check bookings received on those time slots
+                APIResponse<BookingResponseDTO> allBookingsOnTheDay = getBookingsOnTheDay(bookingRequestDTO,id);
+                BookingResponseDTO bookingResponseDTO = allBookingsOnTheDay.getData();
+                List<BookingRequestDTO> bookingResponseList = bookingResponseDTO.getContent();
+                for (BookingRequestDTO bookingRequest : bookingResponseList){
+                    slots.add(String.format("%02d:%02d - %02d:%02d",
+                            bookingRequest.getToTime().getHour(),bookingRequest.getToTime().getMinute(),
+                            bookingRequest.getFromTime().getHour(), bookingRequest.getFromTime().getMinute()
+                            ));
+                }
+                //remove the bookings received time slots
+                List<String> availableForBookingSlots = allTimeSlotsList.stream()
+                        .filter(item -> !slots.contains(item))
+                        .collect(Collectors.toList());
+
+                return APIResponse.<List<String>>builder()
+                        .success(true)
+                        .message("Available slots for booking")
+                        .data(availableForBookingSlots)
+                        .build();
+
+            }else{
+                return APIResponse.<List<String>>builder()
+                        .success(true)
+                        .message(availabilityCheck.getMessage())
+                        .data(new ArrayList<>())
+                        .build();
+            }
+//            else if (bookingType == MULTI_DAY) {
+//                return APIResponse.<List<String>>builder()
+//                        .success(true)
+//                        .message("Available slots for booking")
+//                        .data(availableForBookingSlots)
+//                        .build();
+//            } else if(bookingType == ONE_DAY){
+//
+//            }
+
+        }else{
+            return APIResponse.<List<String>>builder()
+                    .success(true)
+                    .message(availabilityCheck.getMessage())
+                    .data(new ArrayList<>())
+                    .build();
+        }
+
+    }
+
+    //generate the timeslots available for a day
+    public APIResponse<List<String>> getServiceTimeSlots (Long id){
+        com.lankatrails.lankatrails_backend.model.Service service = serviceRepository.findById(id)
+                .orElseThrow(()-> new ResourceNotFoundException("Service",id));
+        //Get the current date
+        LocalDate currentDate = LocalDate.now();
+        //Get the day of the week which the current day belongs
+        List<AvailabilitySlot> availabilitySlotList = availabilitySlotRepository.findByService_ServiceId(id);
+        if (availabilitySlotList.isEmpty()){
+            throw new BadCredentialsException("Invalid Availability Slots","No Availability Slots Defined");
+        }
+        DayOfWeek requestedStartDay = currentDate.getDayOfWeek();
+        DayOfWeek requestedEndDay = currentDate.getDayOfWeek();
+        Optional<AvailabilitySlot> startDaySlot = availabilitySlotList.stream()
+                .filter(slot -> slot.getDayOfWeek().equalsIgnoreCase(requestedStartDay.toString()))
+                .findFirst();
+        Optional<AvailabilitySlot> endDaySlot = availabilitySlotList.stream()
+                .filter(slot -> slot.getDayOfWeek().equalsIgnoreCase(requestedEndDay.toString()))
+                .findFirst();
+
+        //Get the open time
+        LocalTime serviceOpenTime = LocalTime.parse(startDaySlot.get().getOpenTime());
+
+        //Get the close time
+        LocalTime serviceCloseTime = LocalTime.parse(endDaySlot.get().getCloseTime());
+
+        //Get the duration one guiding
+        Long duration = service.getDuration();
+        APIResponse<List<String>> timeSlotsResponse = generateTimeSlots(serviceOpenTime,serviceCloseTime,duration);
+
+
+
+        return timeSlotsResponse;
+    }
+
+
+
+
+
 }
