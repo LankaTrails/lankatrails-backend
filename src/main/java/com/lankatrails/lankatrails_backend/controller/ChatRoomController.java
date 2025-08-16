@@ -18,18 +18,27 @@ public class ChatRoomController {
     @PostMapping("/create")
     public APIResponse<ChatRoomDto> createChatRoom(@Valid @RequestBody ChatRoomDto chatRoomDto) {
         log.info("Creating chat room with details: {}", chatRoomDto);
-        APIResponse<ChatRoomDto> response = chatRoomService.createChatRoom(chatRoomDto);
+        APIResponse<ChatRoomDto> response = chatRoomService.getChatRoom(chatRoomDto);
         log.info("Chat room created successfully: {}", response.getData());
         return response;
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{roomId}")
     public APIResponse<ChatRoomDto> getChatRoomById(@PathVariable Long roomId) {
         log.info("Fetching chat room with ID: {}", roomId);
         APIResponse<ChatRoomDto> response = chatRoomService.getChatRoomById(roomId);
         log.info("Fetched chat room: {}", response.getData());
         return response;
     }
+
+
+//    @GetMapping("/trip/{tripId}")
+//    public APIResponse<ChatRoomDto> getChatRoomByTripId(@PathVariable Long tripId) {
+//        log.info("Fetching chat room by trip ID: {}", tripId);
+//        APIResponse<ChatRoomDto> response = chatRoomService.getChatRoomByTripId(tripId);
+//        log.info("Fetched chat room: {}", response.getData());
+//        return response;
+//    }
 
     @PostMapping("/get-by-type-and-participants")
     public APIResponse<ChatRoomDto> getChatRoomByTypeAndParticipants(ChatRoomDto chatRoomDto) {

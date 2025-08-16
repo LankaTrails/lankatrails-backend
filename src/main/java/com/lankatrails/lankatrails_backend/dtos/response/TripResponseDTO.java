@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.dtos.response;
 
+import com.lankatrails.lankatrails_backend.dtos.ChatRoomDto;
 import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,4 +22,6 @@ public class TripResponseDTO {
     private Double totalBudget;
     private Double totalBudgetLimit;
     private Double totalDistance;
+    private ChatRoomDto chatRoom;
+    private String tripStatus;
 }

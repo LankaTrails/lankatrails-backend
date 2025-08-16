@@ -9,6 +9,7 @@ import java.util.Optional;
 
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     Optional<ChatRoom> findByParticipants_UserIdAndParticipants_UserIdAndChatRoomType(Long user1Id, Long user2Id, ChatRoomType chatRoomType);
+
     Boolean existsByRoomIdAndParticipants_UserId(Long roomId, Long userId);
 
     @Query("""
@@ -26,4 +27,6 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
             Long user2Id,
             ChatRoomType chatRoomType
     );
+
+    Optional<ChatRoom> findByTrip_TripId(Long tripId);
 }

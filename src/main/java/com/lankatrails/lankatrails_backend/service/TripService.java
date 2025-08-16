@@ -15,4 +15,8 @@ public interface TripService {
     APIResponse<TripResponseDTO> getTripById(Long tripId);
 
     APIResponse<List<TripItemDTO>> getTripItemsByTripId(Long tripId);
+
+    APIResponse<String> addTouristToTrip(Long tripId, Long touristId);
+
+    APIResponse<String> removeTouristFromTrip(Long tripId, Long touristId);
 }
