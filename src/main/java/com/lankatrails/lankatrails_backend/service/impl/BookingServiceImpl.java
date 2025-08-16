@@ -1,10 +1,8 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.request.BookingRequestDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.TimeSlotsRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.BookingResponseDTO;
-import com.lankatrails.lankatrails_backend.dtos.response.TimeSlotsResponseDTO;
 import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
@@ -19,14 +17,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -160,13 +155,14 @@ public class BookingServiceImpl implements BookingService {
             com.lankatrails.lankatrails_backend.model.Service service = serviceRepository.findById(id)
                 .orElseThrow(()-> new ResourceNotFoundException("Service",id));
 
-            //check whether a booking is added on the same time slot
-            List<Booking> sameSlot_touristBookings = bookingRepository.findByStartTimeAndEndTimeAndFromDateAndToDateAndTourist_UserId(
+            //check whether a booking is added on the same time slot in the trip
+            List<Booking> sameSlot_touristBookings = bookingRepository.findByStartTimeAndEndTimeAndFromDateAndToDateAndTourist_UserIdAndBookingStatus(
                     requestedStartTime,
                     requestedEndTime,
                     bookingRequestDTO.getFromDate(),
                     bookingRequestDTO.getToDate(),
-                    authUtils.loggedInUser().getUserId()
+                    authUtils.loggedInUser().getUserId(),
+                    BookingStatus.BOOKED
             );
             BookingType bookingType = service.getBookingType();
             if (sameSlot_touristBookings.isEmpty()){
@@ -176,7 +172,8 @@ public class BookingServiceImpl implements BookingService {
                             bookingRequestDTO.getFromDate(),
                             bookingRequestDTO.getToDate(),
                             requestedStartTime,
-                            requestedEndTime
+                            requestedEndTime,
+                            BookingStatus.BOOKED
                     );
                     //if no conflicting items are available for the booking
                     //validate for the availability of the quantities if available
@@ -193,7 +190,8 @@ public class BookingServiceImpl implements BookingService {
                                     bookingRequestDTO.getFromDate(),
                                     requestedStartTime,
                                     bookingRequestDTO.getToDate(),
-                                    requestedEndTime
+                                    requestedEndTime,
+                                    BookingStatus.BOOKED
                             );
 
 
@@ -257,7 +255,7 @@ public class BookingServiceImpl implements BookingService {
                         }
                         //trying to place the booking for a day
                         if (bookingType == ONE_DAY){
-                            Optional<Booking> oneDayConflict =bookingRepository.findByFromDateAndService_ServiceId(bookingRequestDTO.getFromDate(),id);
+                            Optional<Booking> oneDayConflict =bookingRepository.findByFromDateAndService_ServiceIdAndBookingStatus(bookingRequestDTO.getFromDate(),id,BookingStatus.BOOKED);
                             if (oneDayConflict.isEmpty()){
                                 if (service.getCategory().getCategoryName() == ServiceCategory.ACCOMMODATION) {
                                     Accommodation accommodation = accommodationRepository.findByServiceId(id).orElseThrow(() -> new ResourceNotFoundException("Accommodation", id));
@@ -291,12 +289,13 @@ public class BookingServiceImpl implements BookingService {
                         }
                         //trying to place the booking for time_slots
                         if (bookingType == TIME_SLOTS){
-                                List<Booking> timeSlotBookings=bookingRepository.findByStartTimeAndEndTimeAndFromDateAndToDateAndService_ServiceId(
+                                List<Booking> timeSlotBookings=bookingRepository.findByStartTimeAndEndTimeAndFromDateAndToDateAndService_ServiceIdAndBookingStatus(
                                         requestedStartTime,
                                         requestedEndTime,
                                         bookingRequestDTO.getFromDate(),
                                         bookingRequestDTO.getToDate(),
-                                        id
+                                        id,
+                                        BookingStatus.BOOKED
                                 );
                                 if (timeSlotBookings.isEmpty()){
                                     return APIResponse.<String>builder()
@@ -354,7 +353,7 @@ public class BookingServiceImpl implements BookingService {
             prepareBooking.setBookingStatus(bookingRequestDTO.getBookingStatus());
             prepareBooking.setFromDate(bookingRequestDTO.getFromDate());
             prepareBooking.setToDate(bookingRequestDTO.getToDate());
-            prepareBooking.setBookingStatus(BookingStatus.PENDING);
+            prepareBooking.setBookingStatus(BookingStatus.BOOKED);
 
             bookingRepository.save(prepareBooking);
             return APIResponse.<String>builder()
