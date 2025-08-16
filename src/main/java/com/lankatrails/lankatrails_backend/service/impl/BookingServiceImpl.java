@@ -372,7 +372,7 @@ public class BookingServiceImpl implements BookingService {
 
     //find the bookings a service has on a particular day
     public APIResponse<BookingResponseDTO> getBookingsOnTheDay(BookingRequestDTO bookingRequestDTO,Long id){
-        List<Booking> bookings = bookingRepository.findBookingsOnADay(bookingRequestDTO.getFromDate(),id);
+        List<Booking> bookings = bookingRepository.findBookingsOnADay(bookingRequestDTO.getFromDate(),id,BookingStatus.BOOKED);
         List<BookingRequestDTO> prepareResponse = new ArrayList<>();
         for (Booking booking : bookings){
             //map each to BookingRequestDTO

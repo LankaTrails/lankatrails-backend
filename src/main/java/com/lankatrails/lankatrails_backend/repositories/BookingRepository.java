@@ -61,10 +61,11 @@ public interface BookingRepository extends JpaRepository<Booking,Long> {
             @Param("bookingStatus") BookingStatus bookingStatus
     );
 
-    @Query("SELECT b FROM Booking b WHERE :date BETWEEN b.fromDate AND b.toDate AND b.service.serviceId = :serviceId")
+    @Query("SELECT b FROM Booking b WHERE :date BETWEEN b.fromDate AND b.toDate AND b.service.serviceId = :serviceId AND b.bookingStatus = :bookingStatus")
     List<Booking> findBookingsOnADay (
             @Param("date") LocalDate date,
-            @Param("serviceId") Long serviceId
+            @Param("serviceId") Long serviceId,
+            @Param("bookingStatus") BookingStatus bookingStatus
     );
 
 }

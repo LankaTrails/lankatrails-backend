@@ -41,5 +41,7 @@ public class Booking {
 
     private LocalDate fromDate;
     private LocalDate toDate;
-    private Enum<BookingStatus> bookingStatus;
+
+    @Enumerated(EnumType.STRING)
+    private BookingStatus bookingStatus;
 }
