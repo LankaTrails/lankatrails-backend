@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 
 import com.lankatrails.lankatrails_backend.dtos.ChatMessageDto;
+import com.lankatrails.lankatrails_backend.dtos.ReadReceiptDto;
 import com.lankatrails.lankatrails_backend.dtos.response.WebSocketErrorResponse;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.exception.UnauthorizedException;
@@ -34,6 +35,19 @@ public class ChatStompController {
 
         Long userId = ((UserDetailsImpl) ((Authentication) principal).getPrincipal()).getId();
         chatService.processMessage(message, userId, null);
+    }
+
+    @MessageMapping("/markAsRead")
+    public void markMessageAsRead(@Payload ReadReceiptDto readReceiptDto) {
+        if (readReceiptDto.getMessageId() != null) {
+            // Mark single message as read
+            chatService.markMessageAsRead(readReceiptDto.getMessageId());
+        } else if (readReceiptDto.getRoomId() != null) {
+            // Mark all messages in room as read
+            chatService.markAllMessagesAsReadInRoom(readReceiptDto.getRoomId());
+        } else {
+            throw new BadRequestException("Either messageId or roomId must be provided");
+        }
     }
 
     @MessageExceptionHandler(BadRequestException.class)

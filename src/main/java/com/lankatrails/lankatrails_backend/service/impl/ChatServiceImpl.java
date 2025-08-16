@@ -2,8 +2,10 @@ package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.ChatFilesDto;
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.exception.UnauthorizedException;
 import com.lankatrails.lankatrails_backend.model.ChatFiles;
+import com.lankatrails.lankatrails_backend.model.ChatRoom;
 import com.lankatrails.lankatrails_backend.model.enums.ChatMessageType;
 import com.lankatrails.lankatrails_backend.model.enums.ChatRoomType;
 import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
@@ -27,9 +29,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -137,10 +141,87 @@ public class ChatServiceImpl implements ChatService {
             throw new UnauthorizedException("You are not part of this conversation");
         }
 
-        Long roomId = chatRoomRepository.findDirectRoomBetweenUsers(user1Id, user2Id, ChatRoomType.DIRECT)
-                .orElseThrow(() -> new BadRequestException("No direct chat room found between the users"))
-                .getRoomId();
-        return getMessagesForRoom(roomId);
+        ChatRoom chatRoom = chatRoomRepository.findDirectRoomBetweenUsers(user1Id, user2Id, ChatRoomType.DIRECT)
+                .orElseThrow(() -> new BadRequestException("No direct chat room found between the users"));
+        return getMessagesForRoom(chatRoom.getRoomId());
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<String> markMessageAsRead(String messageId) {
+        // Find the message
+        Optional<ChatMessage> messageOpt = messageRepository.findById(messageId);
+        if (messageOpt.isEmpty()) {
+            throw new BadRequestException("Message not found");
+        }
+
+        ChatMessage message = messageOpt.get();
+
+        Long userId = authUtils.loggedInUserId();
+        
+        // Check if user is part of the chat room
+        if (!chatRoomService.isUserInRoom(userId, message.getChatRoomId())) {
+            throw new BadRequestException("User is not part of this chat room");
+        }
+
+        // Don't mark own messages as read
+        if (message.getSenderId().equals(userId)) {
+            return APIResponse.<String>builder()
+                    .success(true)
+                    .message("Own message cannot be marked as read")
+                    .data(null)
+                    .build();
+        }
+
+        // Initialize readBy if null
+        if (message.getReadBy() == null) {
+            message.setReadBy(new HashMap<>());
+        }
+
+        // Mark as read if not already read
+        if (!message.getReadBy().containsKey(userId)) {
+            message.getReadBy().put(userId, Instant.now());
+            messageRepository.save(message);
+        }
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Message marked as read")
+                .data(null)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<String> markAllMessagesAsReadInRoom(Long roomId) {
+        Long userId = authUtils.loggedInUserId();
+        // Check if user is part of the chat room
+        if (!chatRoomService.isUserInRoom(userId, roomId)) {
+            throw new BadRequestException("User is not part of this chat room");
+        }
+
+        // Get all messages in the room that are not sent by this user and not yet read by this user
+        List<ChatMessage> unreadMessages = messageRepository.findUnreadMessagesInRoomForUser(
+                roomId, userId, userId.toString());
+
+        // Mark all as read
+        Instant readTime = Instant.now();
+        for (ChatMessage message : unreadMessages) {
+            if (message.getReadBy() == null) {
+                message.setReadBy(new HashMap<>());
+            }
+            message.getReadBy().put(userId, readTime);
+        }
+
+        if (!unreadMessages.isEmpty()) {
+            messageRepository.saveAll(unreadMessages);
+        }
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("All messages in the room marked as read")
+                .data(null)
+                .build();
     }
 
     private Map<Long, ServiceDTO> fetchServiceCards(List<ChatMessage> messages) {
@@ -155,6 +236,7 @@ public class ChatServiceImpl implements ChatService {
 
     private ChatMessageDto convertToDto(ChatMessage msg, Map<Long, ServiceDTO> serviceCards) {
         return ChatMessageDto.builder()
+                .id(msg.getId()) // Include message ID
                 .chatRoomId(msg.getChatRoomId())
                 .senderId(msg.getSenderId())
                 .messageType(msg.getMessageType())
@@ -163,6 +245,15 @@ public class ChatServiceImpl implements ChatService {
                 .serviceCardId(msg.getServiceCardId())
                 .serviceCard(serviceCards.get(msg.getServiceCardId()))
                 .sentAt(msg.getSentAt())
+                .readBy(msg.getReadBy()) // Include read receipts
+                .files(msg.getFiles() != null 
+                    ? ChatFilesDto.builder()
+                        .id(msg.getFiles().getId())
+                        .fileName(msg.getFiles().getFileName())
+                        .fileType(msg.getFiles().getFileType())
+                        .fileUrl(msg.getFiles().getFileUrl())
+                        .build()
+                    : null)
                 .build();
     }
 }
