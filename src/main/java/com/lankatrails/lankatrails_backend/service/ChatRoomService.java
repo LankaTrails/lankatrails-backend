@@ -5,12 +5,13 @@ import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.model.ChatRoom;
 import com.lankatrails.lankatrails_backend.model.Trip;
 
+import java.util.List;
+
 public interface ChatRoomService {
-    APIResponse<ChatRoomDto> getChatRoom(ChatRoomDto chatRoomDto);
+    APIResponse<ChatRoomDto> getDirectChatRoom(Long userId);
+    APIResponse<List<ChatRoomDto>> getMyChatRooms();
     APIResponse<ChatRoomDto> getChatRoomById(Long chatRoomId);
-    APIResponse<ChatRoomDto> getChatRoomByTypeAndParticipants(ChatRoomDto chatRoomDto);
-    APIResponse<ChatRoomDto> getChatRoomByTripId(Long tripId);
     Boolean isUserInRoom(Long userId, Long chatRoomId);
     ChatRoomDto mapToDto(ChatRoom chatRoom);
-    void setChatRoomForTrip(Trip trip);
+    ChatRoomDto setChatRoomForTrip(Trip trip);
 }

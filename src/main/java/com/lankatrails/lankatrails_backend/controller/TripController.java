@@ -72,18 +72,18 @@ public class TripController {
     }
 
     @PutMapping("/{tripId}/add-tourist/{touristId}")
-    public ResponseEntity<APIResponse<String>> addTouristToTrip(@PathVariable Long tripId, @PathVariable Long touristId) {
+    public ResponseEntity<APIResponse<TripResponseDTO>> addTouristToTrip(@PathVariable Long tripId, @PathVariable Long touristId) {
         log.info("Adding tourist with ID: {} to trip with ID: {}", touristId, tripId);
-        APIResponse<String> response = tripService.addTouristToTrip(tripId, touristId);
+        APIResponse<TripResponseDTO> response = tripService.addTouristToTrip(tripId, touristId);
         log.info("Tourist added to trip successfully: {}", response.getData());
         return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
     }
 
     @PutMapping("/{tripId}/remove-tourist/{touristId}")
-    public ResponseEntity<APIResponse<String>> removeTouristFromTrip(@PathVariable Long tripId, @PathVariable Long touristId) {
+    public ResponseEntity<APIResponse<TripResponseDTO>> removeTouristFromTrip(@PathVariable Long tripId, @PathVariable Long touristId) {
         log.info("Removing tourist with ID: {} from trip with ID: {}", touristId, tripId);
-        APIResponse<String> response = tripService.removeTouristFromTrip(tripId, touristId);
+        APIResponse<TripResponseDTO> response = tripService.removeTouristFromTrip(tripId, touristId);
         log.info("Tourist removed from trip successfully: {}", response.getData());
         return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
