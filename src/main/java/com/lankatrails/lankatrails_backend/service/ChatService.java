@@ -11,6 +11,6 @@ public interface ChatService {
     void processMessage(ChatMessageDto dto, Long userId, MultipartFile file);
     APIResponse<List<ChatMessageDto>> getMessagesForRoom(Long roomId);
     APIResponse<List<ChatMessageDto>> getMessagesBetweenUsers(Long user1Id, Long user2Id);
-    APIResponse<String> markMessageAsRead(String messageId);
-    APIResponse<String> markAllMessagesAsReadInRoom(Long roomId);
+    APIResponse<String> markMessageAsRead(String messageId, Long userId);
+    APIResponse<String> markAllMessagesAsReadInRoom(Long roomId, Long userId);
 }

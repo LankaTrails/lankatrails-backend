@@ -155,7 +155,10 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     @Transactional
-    public APIResponse<String> markMessageAsRead(String messageId) {
+    public APIResponse<String> markMessageAsRead(String messageId, Long userId) {
+        if (userId == null) {
+            userId = authUtils.loggedInUserId();
+        }
         // Find the message
         Optional<ChatMessage> messageOpt = messageRepository.findById(messageId);
         if (messageOpt.isEmpty()) {
@@ -163,8 +166,6 @@ public class ChatServiceImpl implements ChatService {
         }
 
         ChatMessage message = messageOpt.get();
-
-        Long userId = authUtils.loggedInUserId();
         
         // Check if user is part of the chat room
         if (!chatRoomService.isUserInRoom(userId, message.getChatRoomId())) {
@@ -200,8 +201,10 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     @Transactional
-    public APIResponse<String> markAllMessagesAsReadInRoom(Long roomId) {
-        Long userId = authUtils.loggedInUserId();
+    public APIResponse<String> markAllMessagesAsReadInRoom(Long roomId, Long userId) {
+        if (userId == null) {
+            userId = authUtils.loggedInUserId();
+        }
         // Check if user is part of the chat room
         if (!chatRoomService.isUserInRoom(userId, roomId)) {
             throw new BadRequestException("User is not part of this chat room");

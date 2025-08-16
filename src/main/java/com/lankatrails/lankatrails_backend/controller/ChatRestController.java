@@ -3,7 +3,9 @@ package com.lankatrails.lankatrails_backend.controller;
 import java.security.Principal;
 import java.util.List;
 
+import com.lankatrails.lankatrails_backend.dtos.TypingStateDto;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.service.TypingService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -23,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class ChatRestController {
 
     private final ChatService chatService;
+    private final TypingService typingService;
 
     @GetMapping("/rooms/{roomId}/messages")
     public ResponseEntity<APIResponse<List<ChatMessageDto>>> getRoomMessages( @PathVariable Long roomId) {
@@ -54,16 +57,23 @@ public class ChatRestController {
 
     @PutMapping("/messages/{messageId}/read")
     public ResponseEntity<APIResponse<String>> markMessageAsRead(@PathVariable String messageId) {
-        APIResponse<String> response = chatService.markMessageAsRead(messageId);
+        APIResponse<String> response = chatService.markMessageAsRead(messageId, null);
         return ResponseEntity.status(HttpStatus.OK)
                              .body(response);
     }
 
     @PutMapping("/rooms/{roomId}/read-all")
     public ResponseEntity<APIResponse<String>> markAllMessagesAsRead(@PathVariable Long roomId) {
-        APIResponse<String> response = chatService.markAllMessagesAsReadInRoom(roomId);
+        APIResponse<String> response = chatService.markAllMessagesAsReadInRoom(roomId, null);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
+    }
+
+    @GetMapping("/rooms/{roomId}/typing")
+    public ResponseEntity<APIResponse<List<TypingStateDto>>> getTypingUsersInRoom(@PathVariable Long roomId) {
+        APIResponse<List<TypingStateDto>> typingUsers = typingService.getTypingUsersInRoom(roomId);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(typingUsers);
     }
 
 }
