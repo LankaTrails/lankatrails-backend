@@ -7,12 +7,7 @@ import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.lankatrails.lankatrails_backend.dtos.ChatMessageDto;
@@ -30,13 +25,17 @@ public class ChatRestController {
     private final ChatService chatService;
 
     @GetMapping("/rooms/{roomId}/messages")
-    public List<ChatMessageDto> getRoomMessages( @PathVariable Long roomId) {
-        return chatService.getMessagesForRoom(roomId);
+    public ResponseEntity<APIResponse<List<ChatMessageDto>>> getRoomMessages( @PathVariable Long roomId) {
+        APIResponse<List<ChatMessageDto>> response = chatService.getMessagesForRoom(roomId);
+        return ResponseEntity.status(HttpStatus.FOUND)
+                             .body(response);
     }
 
     @GetMapping("/users/{user1Id}/{user2Id}/messages")
-    public List<ChatMessageDto> getMessagesBetweenUsers(@PathVariable Long user1Id, @PathVariable Long user2Id) {
-        return chatService.getMessagesBetweenUsers(user1Id, user2Id);
+    public ResponseEntity<APIResponse<List<ChatMessageDto>>> getMessagesBetweenUsers(@PathVariable Long user1Id, @PathVariable Long user2Id) {
+        APIResponse<List<ChatMessageDto>> response = chatService.getMessagesBetweenUsers(user1Id, user2Id);
+        return ResponseEntity.status(HttpStatus.FOUND)
+                             .body(response);
     }
 
     @PostMapping("/{roomId}/send-file")
@@ -53,14 +52,14 @@ public class ChatRestController {
         chatService.processMessage(message, userId, file);
     }
 
-    @PostMapping("/messages/{messageId}/read")
+    @PutMapping("/messages/{messageId}/read")
     public ResponseEntity<APIResponse<String>> markMessageAsRead(@PathVariable String messageId) {
         APIResponse<String> response = chatService.markMessageAsRead(messageId);
         return ResponseEntity.status(HttpStatus.OK)
                              .body(response);
     }
 
-    @PostMapping("/rooms/{roomId}/read-all")
+    @PutMapping("/rooms/{roomId}/read-all")
     public ResponseEntity<APIResponse<String>> markAllMessagesAsRead(@PathVariable Long roomId) {
         APIResponse<String> response = chatService.markAllMessagesAsReadInRoom(roomId);
         return ResponseEntity.status(HttpStatus.OK)

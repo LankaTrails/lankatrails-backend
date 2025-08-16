@@ -9,8 +9,8 @@ import com.lankatrails.lankatrails_backend.dtos.ChatMessageDto;
 
 public interface ChatService {
     void processMessage(ChatMessageDto dto, Long userId, MultipartFile file);
-    List<ChatMessageDto> getMessagesForRoom(Long roomId);
-    List<ChatMessageDto> getMessagesBetweenUsers(Long user1Id, Long user2Id);
+    APIResponse<List<ChatMessageDto>> getMessagesForRoom(Long roomId);
+    APIResponse<List<ChatMessageDto>> getMessagesBetweenUsers(Long user1Id, Long user2Id);
     APIResponse<String> markMessageAsRead(String messageId);
     APIResponse<String> markAllMessagesAsReadInRoom(Long roomId);
 }

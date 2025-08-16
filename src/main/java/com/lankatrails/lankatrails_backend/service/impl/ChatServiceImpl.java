@@ -119,7 +119,7 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     @Transactional
-    public List<ChatMessageDto> getMessagesForRoom(Long roomId) {
+    public APIResponse<List<ChatMessageDto>> getMessagesForRoom(Long roomId) {
         if (!chatRoomService.isUserInRoom(authUtils.loggedInUserId(), roomId)) {
             throw new BadRequestException("User is not part of this chat room");
         }
@@ -129,13 +129,20 @@ public class ChatServiceImpl implements ChatService {
         // Batch fetch service cards
         Map<Long, ServiceDTO> serviceCards = fetchServiceCards(messages);
 
-        return messages.stream()
+        // Convert to DTOs
+        List<ChatMessageDto> messageDtos = messages.stream()
                 .map(msg -> convertToDto(msg, serviceCards))
-                .toList();
+                .collect(Collectors.toList());
+
+        return APIResponse.<List<ChatMessageDto>>builder()
+                .success(true)
+                .message("Messages fetched successfully")
+                .data(messageDtos)
+                .build();
     }
 
     @Override
-    public List<ChatMessageDto> getMessagesBetweenUsers(Long user1Id, Long user2Id) {
+    public APIResponse<List<ChatMessageDto>> getMessagesBetweenUsers(Long user1Id, Long user2Id) {
         Long loggedIn = authUtils.loggedInUserId();
         if (!loggedIn.equals(user1Id) && !loggedIn.equals(user2Id)) {
             throw new UnauthorizedException("You are not part of this conversation");
