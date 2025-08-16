@@ -1,9 +1,11 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.request.BookingRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.TimeSlotsRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.BookingResponseDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.TimeSlotsResponseDTO;
+import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.*;
@@ -19,8 +21,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -390,7 +394,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public APIResponse<TimeSlotsResponseDTO> getTourGuideDaySlots(Long id) {
+    public APIResponse<List<String>> getTourGuideDaySlots(Long id) {
         //Find the tour guide
         TouristGuide touristGuide = touristGuideRepository.findByServiceId(id).orElseThrow(
                 ()->new ResourceNotFoundException("Tour Guide",id)
@@ -421,8 +425,60 @@ public class BookingServiceImpl implements BookingService {
         LocalTime serviceCloseTime = LocalTime.parse(endDaySlot.get().getCloseTime());
 
         //Get the duration one guiding
-        touristGuide.getDuration();
+        Long duration = touristGuide.getDuration();
+        Duration totalAvailableDuration = Duration.between(serviceOpenTime,serviceCloseTime);
+        //no. of slots
+//        Long availableSlots = totalAvailableDuration.dividedBy(duration);
 
-        return null;
+        APIResponse<List<String>> timeSlotsResponse = generateTimeSlots(serviceOpenTime,serviceCloseTime,duration);
+
+        return timeSlotsResponse;
+    }
+
+    @Override
+    public APIResponse<List<String>> generateTimeSlots(
+            LocalTime openTime,
+            LocalTime closeTime,
+            Long hoursPerSlot
+    ) {
+        log.info("hours per slot" +hoursPerSlot);
+        // 1. Validate input
+        if (hoursPerSlot <= 0) {
+            throw new APIException("Hours per slot duration should be greater than 0");
+        }
+
+        // 2. Create duration (ensure this shows PT2H in logs for 2 hours)
+        Duration slotDuration = Duration.ofHours(hoursPerSlot);
+        log.info("Slot duration: {}", slotDuration);
+
+        // 3. Initialize variables
+        List<String> slots = new ArrayList<>();
+        LocalTime current = openTime;
+        int safetyCounter = 0;
+        final int MAX_SLOTS = 24; // Absolute maximum for 1-hour slots
+
+        // 4. Generate slots
+        while (!current.plus(slotDuration).isAfter(closeTime)
+                && safetyCounter++ < MAX_SLOTS && current.isBefore(closeTime)) {
+
+            LocalTime end = current.plus(slotDuration);
+            log.info("Adding slot: {} - {}", current, end);
+            slots.add(String.format("%02d:%02d - %02d:%02d",
+                    current.getHour(), current.getMinute(),
+                    end.getHour(), end.getMinute()));
+
+            current = end; // CRITICAL: Update current time
+
+            // Safety check
+            if (safetyCounter >= MAX_SLOTS) {
+                throw new IllegalStateException("Possible infinite loop detected");
+            }
+        }
+
+        return APIResponse.<List<String>>builder()
+                .success(true)
+                .message("Time slots created successfully")
+                .data(slots)
+                .build();
     }
 }

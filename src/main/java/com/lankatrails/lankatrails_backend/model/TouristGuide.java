@@ -27,5 +27,5 @@ public class TouristGuide extends Service {
     @JoinColumn(name = "tour_guide_category_id")
     private TourGuideCategory tourGuideCategory;
 
-    private Duration duration;
+    private Long duration;
 }

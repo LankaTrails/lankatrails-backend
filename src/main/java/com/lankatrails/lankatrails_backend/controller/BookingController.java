@@ -84,10 +84,11 @@ public class BookingController {
 
     //Divide the tour-guide available time to slots based on the duration
     //Needed when placing the booking
-    @GetMapping("/tourist/booking/tour-guide/slots")
-    public ResponseEntity<APIResponse<TimeSlotsResponseDTO>> getTouristDaySlots(@PathVariable Long id)
+    @GetMapping("/tourist/booking/tour-guide/slots/{id}")
+    public ResponseEntity<APIResponse<List<String>>> getTouristDaySlots(@PathVariable Long id)
     {
-        APIResponse<TimeSlotsResponseDTO> getDaySlots = bookingService.getTourGuideDaySlots(id);
+        APIResponse<List<String>> getDaySlots = bookingService.getTourGuideDaySlots(id);
+        return  new ResponseEntity<>(getDaySlots,HttpStatus.OK);
 
     }
 
