@@ -5,6 +5,7 @@ import com.lankatrails.lankatrails_backend.model.Image;
 import com.lankatrails.lankatrails_backend.model.Location;
 import com.lankatrails.lankatrails_backend.model.enums.PriceType;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,6 +14,7 @@ import java.util.Set;
 
 @Getter
 @Setter
+@AllArgsConstructor
 public class ServiceDTO {
     private Long serviceId;
     private String serviceName;
@@ -22,7 +24,7 @@ public class ServiceDTO {
     private PriceType priceType;
     private String mainImageUrl;
 
-    private List<AvailabilitySlotDTO> availabilitySlots;
+//    private List<AvailabilitySlotDTO> availabilitySlots;
 
 }
 

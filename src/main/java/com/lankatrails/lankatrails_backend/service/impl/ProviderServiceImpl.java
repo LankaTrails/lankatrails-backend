@@ -4,6 +4,7 @@ import com.lankatrails.lankatrails_backend.dtos.request.ContactPersonDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.BusinessDetailDTO;
 import com.lankatrails.lankatrails_backend.model.Provider;
+import com.lankatrails.lankatrails_backend.repositories.ProviderRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ProviderService;
 import org.modelmapper.ModelMapper;
@@ -18,11 +19,15 @@ public class ProviderServiceImpl implements ProviderService {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Autowired
+    private ProviderRepository providerRepository;
+
     @Override
     public APIResponse<BusinessDetailDTO> getBusinessDetails() {
         BusinessDetailDTO businessDetail = new BusinessDetailDTO();
         // Assuming the provider is fetched from the AuthUtils
-        Provider provider = (Provider) authUtils.loggedInUser();
+        Provider provider = providerRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new RuntimeException("Provider not found with id: " + authUtils.loggedInUserId()));
 
         if (provider == null) {
             return APIResponse.<BusinessDetailDTO>builder()

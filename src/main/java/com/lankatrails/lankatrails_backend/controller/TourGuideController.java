@@ -92,8 +92,7 @@ public class TourGuideController {
     }
     @GetMapping("/policy/tour-guide")
     public ResponseEntity<APIResponse<List<PolicySectionRequest>>> guidePolicies (){
-        Provider provider = (Provider) authUtils.loggedInUser();
-        List<PolicySectionRequest> policies = policyImpl.getServicePolicies(provider.getUserId(),5L);
+        List<PolicySectionRequest> policies = policyImpl.getServicePolicies(authUtils.loggedInUserId(), 5L);
         APIResponse<List<PolicySectionRequest>> response =APIResponse.<List<PolicySectionRequest>>builder()
                 .success(true)
                 .message("Found TourGuide Policies")

@@ -99,7 +99,8 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         FoodAndBeverage mappedObj = modelMapper.map(foodBeverageRequest, FoodAndBeverage.class);
         mappedObj.setCategory(category);
 
-        Provider provider = (Provider) authUtils.loggedInUser();
+        Provider provider = providerRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
         mappedObj.setProvider(provider);
 
         mappedObj.setLocations(servicesForAll.setServiceLocation(foodBeverageRequest));
@@ -255,11 +256,15 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
     public APIResponse<String> addNewPolicy(PolicySection policies) {
         Category category = categoryRepository.findByCategoryName(ServiceCategory.FOOD_BEVERAGE)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", 3L));
+
+        Provider provider = providerRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
+
         //check whether the policy exists
         PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
         if (policyCheck==null){
             //Policy doesn't exist
-            policies.setProvider((Provider) authUtils.loggedInUser());
+            policies.setProvider(provider);
             policies.setCategory(category);
             policySectionRepository.save(policies);
             return APIResponse.<String>builder()

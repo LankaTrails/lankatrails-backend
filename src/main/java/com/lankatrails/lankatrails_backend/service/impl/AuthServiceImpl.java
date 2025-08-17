@@ -290,8 +290,7 @@ public class AuthServiceImpl implements AuthService {
     public APIResponse<String> logoutUser(HttpServletRequest request) {
         log.info("Attempting logout for request: {}", request.getRequestURI());
 
-        String jwtToken = jwtUtils.getJwtToken(request);
-        String email = jwtUtils.getUserNameFromJwtToken(jwtToken);
+        String email = authUtills.loggedInEmail();
         if (email == null) {
             log.warn("Logout failed: Email not found in JWT token.");
             throw new UnauthorizedException("Email not found in JWT token.");
@@ -299,6 +298,7 @@ public class AuthServiceImpl implements AuthService {
 
         // Delete refresh token from Redis
         refreshTokenRedisService.deleteToken(email);
+        SecurityContextHolder.clearContext();
         log.info("Refresh token deleted for email: {}", email);
 
         log.info("User {} logged out successfully.", email);
@@ -426,8 +426,9 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
 
-        String newJwt = jwtUtils.generateTokenFromEmail(email);
-        String newRefreshToken = jwtUtils.generateRefreshTokenFromEmail(email);
+        UserDetailsImpl userDetails = UserDetailsImpl.build(user);
+        String newJwt = jwtUtils.generateToken(userDetails);
+        String newRefreshToken = jwtUtils.generateRefreshToken(userDetails);
 
         // Update the Redis store with the new refresh token
         refreshTokenRedisService.storeToken(email, newRefreshToken);
@@ -516,7 +517,8 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public APIResponse<String> changePassword(ChangePaswordRequest changePasswordRequest) {
-        User user = authUtills.loggedInUser();
+        User user = userRepository.findByEmail(authUtills.loggedInEmail())
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + authUtills.loggedInEmail()));
         log.info("Changing password for user: {}", user.getEmail());
 
         if (changePasswordRequest.getNewPassword() == null || changePasswordRequest.getNewPassword().isEmpty()) {

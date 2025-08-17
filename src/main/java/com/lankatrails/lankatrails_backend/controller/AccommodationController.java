@@ -83,8 +83,7 @@ public class AccommodationController {
     }
     @GetMapping("/provider/policy/accommodation")
     public ResponseEntity<APIResponse<List<PolicySectionRequest>>> accommodationPolicies(){
-        Provider provider = (Provider) authUtils.loggedInUser();
-        List<PolicySectionRequest> policies = policyImpl.getServicePolicies(provider.getUserId(),1L);
+        List<PolicySectionRequest> policies = policyImpl.getServicePolicies(authUtils.loggedInUserId(), 1L);
         APIResponse<List<PolicySectionRequest>> response =APIResponse.<List<PolicySectionRequest>>builder()
                 .success(true)
                 .message("Found Accommodation Policies")
