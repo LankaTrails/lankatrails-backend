@@ -1,14 +1,13 @@
 package com.lankatrails.lankatrails_backend.controller;
 
+import com.lankatrails.lankatrails_backend.dtos.request.ApproveLicenseDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.ApproveLicenseResponse;
 import com.lankatrails.lankatrails_backend.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -23,4 +22,25 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
     }
+
+    //Get all the licenses
+    @GetMapping("/approve-provider-service")
+    public ResponseEntity<APIResponse<ApproveLicenseResponse>> approveProviderService(){
+        APIResponse<ApproveLicenseResponse> response = authService.approveProviderService();
+        return new ResponseEntity<>(response,HttpStatus.OK);
+    }
+
+    //Check the licenses and update service status
+    @PostMapping("/approve-provider/service-category/{providerId}")
+    public ResponseEntity<APIResponse<ApproveLicenseResponse>> approveProviderServiceCategory(@PathVariable Long providerId){
+        APIResponse<ApproveLicenseResponse> response = authService.loadLicensesOfEachServiceCategory(providerId);
+        return new ResponseEntity<>(response,HttpStatus.OK);
+    }
+
+
+
+
+
+
+
 }

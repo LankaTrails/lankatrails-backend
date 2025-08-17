@@ -5,6 +5,7 @@ import com.lankatrails.lankatrails_backend.dtos.response.*;
 import com.lankatrails.lankatrails_backend.exception.*;
 import com.lankatrails.lankatrails_backend.factory.*;
 import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.enums.ApprovalStatus;
 import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
 import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
@@ -32,10 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -53,6 +51,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private final AdminRepository adminRepository;
+
+    @Autowired
+    private final LicenseRepository licenseRepository;
 
     @Autowired
     private final PasswordEncoder passwordEncoder;
@@ -81,6 +82,7 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private ModelMapper modelMapper;
 
+
     private void sendVerificationEmail(User user) {
         String jwtToken = jwtUtils.generateEmailVerificationJwt(user);
 
@@ -97,7 +99,6 @@ public class AuthServiceImpl implements AuthService {
                 params
         );
     }
-
 
     @Override
     @Transactional
@@ -538,6 +539,145 @@ public class AuthServiceImpl implements AuthService {
                 .success(true)
                 .message("Password changed successfully.")
                 .data("Password changed successfully.")
+                .build();
+    }
+
+    @Override
+    public APIResponse<ApproveLicenseResponse> approveProviderService() {
+        Provider provider = providerRepository.findByUserId(authUtills.loggedInUserId())
+                .orElseThrow(()->new ResourceNotFoundException("Provider",authUtills.loggedInUserId()));
+
+        return null;
+    }
+
+    @Override
+    //Load the licenses of the service categories of a provider
+    public APIResponse<ApproveLicenseResponse> loadLicensesOfEachServiceCategory(Long providerId) {
+        Provider provider = providerRepository.findByUserId(providerId)
+                .orElseThrow(()->new ResourceNotFoundException("Provider",providerId));
+
+        List<LicenseDTO> activity = new ArrayList<>();
+        List<LicenseDTO> accommodation = new ArrayList<>();
+        List<LicenseDTO> foodBeverage = new ArrayList<>();
+        List<LicenseDTO> transport = new ArrayList<>();
+        List<LicenseDTO> tourGuide = new ArrayList<>();
+        ApproveLicenseDTO prepareResponse = new ApproveLicenseDTO();
+        if (provider.getActivityApprovalStatus() == ApprovalStatus.PENDING){
+            //load all the unapproved license details of the activity
+            List<License> licenses = licenseRepository.findByProvider_UserIdAndCategory_CategoryId(providerId,2);
+            if (!licenses.isEmpty()){
+                for (License license : licenses){
+                    LicenseDTO licenseDTO = new LicenseDTO();
+                    if (license.getExpiryDate().isBefore(LocalDate.now())){
+                        throw new LicenseExpiredException("License Has Expired");
+                    }else{
+                        //set license data to the DTO
+                        licenseDTO.setExpiryDate(license.getExpiryDate());
+                        licenseDTO.setLicenseNumber(license.getLicenseNumber());
+                        licenseDTO.setLicenseUrl(license.getLicenseNumber());
+                        licenseDTO.setCategory(license.getCategory().getCategoryName());
+                        licenseDTO.setProviderId(providerId);
+                        activity.add(licenseDTO);
+                    }
+                }
+                //set to the response
+                prepareResponse.setActivity(activity);
+            }
+
+        } else if (provider.getAccommodationApprovalStatus() == ApprovalStatus.PENDING) {
+            //load all the unapproved license details of the accommodation
+            List<License> licenses = licenseRepository.findByProvider_UserIdAndCategory_CategoryId(providerId,1);
+            if (!licenses.isEmpty()){
+                for (License license : licenses){
+                    LicenseDTO licenseDTO = new LicenseDTO();
+                    if (license.getExpiryDate().isBefore(LocalDate.now())){
+                        throw new LicenseExpiredException("License Has Expired");
+                    }else{
+                        //set license data to the DTO
+                        licenseDTO.setExpiryDate(license.getExpiryDate());
+                        licenseDTO.setLicenseNumber(license.getLicenseNumber());
+                        licenseDTO.setLicenseUrl(license.getLicenseNumber());
+                        licenseDTO.setCategory(license.getCategory().getCategoryName());
+                        licenseDTO.setProviderId(providerId);
+                        accommodation.add(licenseDTO);
+                    }
+                }
+                //set to the response
+                prepareResponse.setAccommodation(accommodation);
+            }
+
+        } else if (provider.getFoodApprovalStatus() == ApprovalStatus.PENDING) {
+            //load all the unapproved license details of the food and beverage services
+            List<License> licenses = licenseRepository.findByProvider_UserIdAndCategory_CategoryId(providerId,5);
+            if (!licenses.isEmpty()){
+                for (License license : licenses){
+                    LicenseDTO licenseDTO = new LicenseDTO();
+                    if (license.getExpiryDate().isBefore(LocalDate.now())){
+                        throw new LicenseExpiredException("License Has Expired");
+                    }else{
+                        //set license data to the DTO
+                        licenseDTO.setExpiryDate(license.getExpiryDate());
+                        licenseDTO.setLicenseNumber(license.getLicenseNumber());
+                        licenseDTO.setLicenseUrl(license.getLicenseNumber());
+                        licenseDTO.setCategory(license.getCategory().getCategoryName());
+                        licenseDTO.setProviderId(providerId);
+                        foodBeverage.add(licenseDTO);
+                    }
+                }
+                //set to the response
+                prepareResponse.setFoodBeverage(foodBeverage);
+            }
+        } else if ( provider.getTransportApprovalStatus() == ApprovalStatus.PENDING) {
+            //load all the unapproved license details of the transportation
+            List<License> licenses = licenseRepository.findByProvider_UserIdAndCategory_CategoryId(providerId,4);
+            if (!licenses.isEmpty()){
+                for (License license : licenses){
+                    LicenseDTO licenseDTO = new LicenseDTO();
+                    if (license.getExpiryDate().isBefore(LocalDate.now())){
+                        throw new LicenseExpiredException("License Has Expired");
+                    }else{
+                        //set license data to the DTO
+                        licenseDTO.setExpiryDate(license.getExpiryDate());
+                        licenseDTO.setLicenseNumber(license.getLicenseNumber());
+                        licenseDTO.setLicenseUrl(license.getLicenseNumber());
+                        licenseDTO.setCategory(license.getCategory().getCategoryName());
+                        licenseDTO.setProviderId(providerId);
+                        transport.add(licenseDTO);
+                    }
+                }
+                //set to the response
+                prepareResponse.setTransport(transport);
+            }
+
+        } else if (provider.getTourGuideApprovalStatus() == ApprovalStatus.PENDING) {
+            //load all the unapproved license details of the tourist guide
+            List<License> licenses = licenseRepository.findByProvider_UserIdAndCategory_CategoryId(providerId,3);
+            if (!licenses.isEmpty()){
+                for (License license : licenses){
+                    LicenseDTO licenseDTO = new LicenseDTO();
+                    if (license.getExpiryDate().isBefore(LocalDate.now())){
+                        throw new LicenseExpiredException("License Has Expired");
+                    }else{
+                        //set license data to the DTO
+                        licenseDTO.setExpiryDate(license.getExpiryDate());
+                        licenseDTO.setLicenseNumber(license.getLicenseNumber());
+                        licenseDTO.setLicenseUrl(license.getLicenseNumber());
+                        licenseDTO.setCategory(license.getCategory().getCategoryName());
+                        licenseDTO.setProviderId(providerId);
+                        tourGuide.add(licenseDTO);
+                    }
+                }
+                //set to the response
+                prepareResponse.setTourGuide(tourGuide);
+            }
+        }
+        //set the response
+        ApproveLicenseResponse response = new ApproveLicenseResponse();
+        response.setContent(prepareResponse);
+        return APIResponse.<ApproveLicenseResponse>builder()
+                .success(true)
+                .message("Successfully loaded the services for pending license approval")
+                .data(response)
                 .build();
     }
 

@@ -18,4 +18,5 @@ public class LicenseDTO {
     private LocalDate expiryDate;
     private String licenseUrl;
     private ServiceCategory category;
+    private Long providerId;
 }

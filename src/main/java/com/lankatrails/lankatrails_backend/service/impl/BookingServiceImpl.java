@@ -161,7 +161,7 @@ public class BookingServiceImpl implements BookingService {
                     requestedEndTime,
                     bookingRequestDTO.getFromDate(),
                     bookingRequestDTO.getToDate(),
-                    authUtils.loggedInUser().getUserId(),
+                    authUtils.loggedInUserId(),
                     BookingStatus.BOOKED
             );
             BookingType bookingType = service.getBookingType();
@@ -193,7 +193,6 @@ public class BookingServiceImpl implements BookingService {
                                     requestedEndTime,
                                     BookingStatus.BOOKED
                             );
-
 
                             //accommodation, food-beverage can have many tourists at once
                             //therefore should check whether the newly received booking exceeds the maximum head count possible in the given range
@@ -584,9 +583,6 @@ public class BookingServiceImpl implements BookingService {
 
         return timeSlotsResponse;
     }
-
-
-
 
 
 }
