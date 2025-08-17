@@ -32,6 +32,14 @@ public class ChatRoom {
     )
     private List<User> participants;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "trip_id", referencedColumnName = "trip_id")
+    private Trip trip;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "admin_id", referencedColumnName = "user_id")
+    private Tourist admin;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 }

@@ -1,16 +1,20 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.dtos.ChatRoomDto;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TripResponseDTO;
+import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.UserNotFoundException;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.BudgetCategory;
+import com.lankatrails.lankatrails_backend.model.enums.TripStatus;
 import com.lankatrails.lankatrails_backend.repositories.TouristRepository;
 import com.lankatrails.lankatrails_backend.repositories.TripRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
+import com.lankatrails.lankatrails_backend.service.ChatRoomService;
 import com.lankatrails.lankatrails_backend.service.TripService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +45,9 @@ public class TripServiceImpl implements TripService {
     @Autowired
     private AuthUtils authUtils;
 
+    @Autowired
+    private ChatRoomService chatRoomService;
+
     @Override
     @Transactional
     public APIResponse<TripResponseDTO> createTrip(TripRequestDTO tripRequestDTO) {
@@ -60,6 +67,9 @@ public class TripServiceImpl implements TripService {
 
         // Convert DTO to entity
         Trip trip = modelMapper.map(tripRequestDTO, Trip.class);
+
+        // Set additional properties
+        trip.setTripStatus(TripStatus.PLANNING);
 
         // Initialize collections
         trip.setTourists(new HashSet<>());
@@ -128,10 +138,8 @@ public class TripServiceImpl implements TripService {
     @Transactional
     public APIResponse<TripResponseDTO> getTripById(Long tripId) {
         log.info("Fetching trip with ID: {}", tripId);
-        Trip trip = tripRepository.findByTripId(tripId);
-        if (trip == null) {
-            return new APIResponse<>(false, "Trip not found", null);
-        }
+        Trip trip = tripRepository.findByTripId(tripId)
+                .orElseThrow(() -> new ResourceNotFoundException("Trip", tripId));
 
         TripResponseDTO responseDTO = modelMapper.map(trip, TripResponseDTO.class);
         return new APIResponse<>(true, "Trip fetched successfully", responseDTO);
@@ -141,10 +149,8 @@ public class TripServiceImpl implements TripService {
     @Transactional
     public APIResponse<List<TripItemDTO>> getTripItemsByTripId(Long tripId) {
         log.info("Fetching trip items for trip with ID: {}", tripId);
-        Trip trip = tripRepository.findByTripId(tripId);
-        if (trip == null) {
-            throw  new ResourceNotFoundException("Trip", tripId);
-        }
+        Trip trip = tripRepository.findByTripId(tripId)
+                .orElseThrow(() -> new ResourceNotFoundException("Trip", tripId));
 
         List<TripItemDTO> tripItemDTOs = new ArrayList<>();
         for (TripItem item : trip.getTripItems()) {
@@ -152,6 +158,72 @@ public class TripServiceImpl implements TripService {
         }
 
         return new APIResponse<>(true, "Trip items fetched successfully", tripItemDTOs);
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<TripResponseDTO> addTouristToTrip(Long tripId, Long touristId) {
+        log.info("Adding tourist with ID: {} to trip with ID: {}", touristId, tripId);
+        Trip trip = tripRepository.findByTripId(tripId)
+                .orElseThrow(() -> new ResourceNotFoundException("Trip", tripId));
+
+        Tourist tourist = touristRepository.findById(touristId)
+                .orElseThrow(() -> new UserNotFoundException("Tourist not found with id: " + touristId));
+
+        // Check if the tourist is already part of the trip
+        if (trip.getTourists().contains(tourist)) {
+            throw new BadRequestException("Tourist is already part of this trip");
+        }
+
+        // Add the tourist to the trip
+        trip.getTourists().add(tourist);
+        Trip updatedTrip = tripRepository.save(trip);
+
+        TripResponseDTO tripResponseDTO = modelMapper.map(updatedTrip, TripResponseDTO.class);
+
+        // Update the chat room for the trip
+        ChatRoomDto chatRoomDto = chatRoomService.setChatRoomForTrip(trip);
+        tripResponseDTO.setChatRoom(chatRoomDto);
+
+        return new APIResponse<>(true, "Tourist added to trip successfully", tripResponseDTO);
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<TripResponseDTO> removeTouristFromTrip(Long tripId, Long touristId) {
+        log.info("Removing tourist with ID: {} from trip with ID: {}", touristId, tripId);
+
+        Trip trip = tripRepository.findByTripId(tripId)
+                .orElseThrow(() -> new ResourceNotFoundException("Trip", tripId));
+
+        if (!trip.getLeadTourist().getUserId().equals(authUtils.loggedInUserId())) {
+            throw new BadRequestException("Only the lead tourist can remove tourists from the trip");
+        }
+
+        // Validate tourist lead tourist
+        if (trip.getLeadTourist().getUserId().equals(touristId)) {
+            throw new BadRequestException("Cannot remove the lead tourist from the trip");
+        }
+
+        Tourist tourist = touristRepository.findById(touristId)
+                .orElseThrow(() -> new UserNotFoundException("Tourist not found with id: " + touristId));
+
+        // Check if the tourist is part of the trip
+        if (!trip.getTourists().contains(tourist)) {
+            throw new BadRequestException("Tourist is not part of this trip");
+        }
+
+        // Remove the tourist from the trip
+        trip.getTourists().remove(tourist);
+        Trip updatedTrip = tripRepository.save(trip);
+
+        TripResponseDTO tripResponseDTO = modelMapper.map(updatedTrip, TripResponseDTO.class);
+
+        // Update the chat room for the trip
+        ChatRoomDto chatRoomDto = chatRoomService.setChatRoomForTrip(trip);
+        tripResponseDTO.setChatRoom(chatRoomDto);
+
+        return new APIResponse<>(true, "Tourist removed from trip successfully", tripResponseDTO);
     }
 
     private Set<TripBudgetCategoryLimit> initializeCategoryLimits(TripRequestDTO tripRequestDTO, Trip trip) {

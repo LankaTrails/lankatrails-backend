@@ -64,6 +64,9 @@ public class Trip {
     @JoinColumn(name = "lead_tourist_id", referencedColumnName = "user_id")
     private Tourist leadTourist;
 
+    @OneToOne(mappedBy = "trip", fetch = FetchType.LAZY)
+    private ChatRoom chatRoom;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "trip_tourists",
             joinColumns = @JoinColumn(name = "trip_id"),
