@@ -10,6 +10,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.lankatrails.lankatrails_backend.dtos.request.*;
+import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -151,9 +152,12 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
             // Set the availability slots
             List<AvailabilitySlotDTO> availabilitySlots = services.getAvailabilitySlots();
-//            System.out.println("Availability Slots1" + availabilitySlots);
+            for(AvailabilitySlotDTO availabilitySlotDTO : availabilitySlots){
+                if(availabilitySlotDTO.getCloseTime().isEmpty() || availabilitySlotDTO.getOpenTime().isEmpty()){
+                    throw new BadCredentialsException("Invalid Availability Slots","All Week Days should have the schedule");
+                }
+            }
             serviceImpl.setAvailabilitySlots(availabilitySlots,lastServiceAdded);
-
 
         } else {
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());

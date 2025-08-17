@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.model;
 
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -25,4 +26,6 @@ public class TouristGuide extends Service {
     @ManyToOne
     @JoinColumn(name = "tour_guide_category_id")
     private TourGuideCategory tourGuideCategory;
+
+
 }
