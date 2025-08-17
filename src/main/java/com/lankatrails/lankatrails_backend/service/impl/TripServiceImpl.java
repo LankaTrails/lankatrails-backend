@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.ChatRoomDto;
+import com.lankatrails.lankatrails_backend.dtos.TripPeriodDto;
 import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripRequestDTO;
@@ -257,6 +258,27 @@ public class TripServiceImpl implements TripService {
         tripResponseDTO.setChatRoom(chatRoomDto);
 
         return new APIResponse<>(true, "Tourist removed from trip successfully", tripResponseDTO);
+    }
+
+    @Override
+    public APIResponse<List<TripPeriodDto>> getMyTripPeriod() {
+        log.info("Fetching trip period for the logged-in user");
+        User currentUser = touristRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new UserNotFoundException("Tourist not found with id: " + authUtils.loggedInUserId()));
+        if (!(currentUser instanceof Tourist tourist)) {
+            throw new IllegalStateException("Only tourists can fetch their trip period");
+        }
+
+        List<Trip> trips = tripRepository.findByTouristsContaining(tourist);
+        if (trips.isEmpty()) {
+            return new APIResponse<>(false, "No trips found for the user", null);
+        }
+        List<TripPeriodDto> tripPeriods = new ArrayList<>();
+        for (Trip trip : trips) {
+            tripPeriods.add(modelMapper.map(trip, TripPeriodDto.class));
+        }
+
+        return new APIResponse<>(true, "Trip periods fetched successfully", tripPeriods);
     }
 
     private Set<TripBudgetCategoryLimit> initializeCategoryLimits(TripRequestDTO tripRequestDTO, Trip trip) {
