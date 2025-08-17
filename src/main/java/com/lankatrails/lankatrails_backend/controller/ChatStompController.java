@@ -2,6 +2,7 @@ package com.lankatrails.lankatrails_backend.controller;
 
 import java.security.Principal;
 
+import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -60,37 +61,40 @@ public class ChatStompController {
     }
 
     @MessageMapping("/typing/start/room/{roomId}")
-    public void startTyping(@PathVariable Long roomId, Principal principal) {
+    public void startTyping(@DestinationVariable Long roomId, Principal principal) {
         if (principal == null) {
             throw new UnauthorizedException("Not authenticated");
         }
 
-        Long userId = ((UserDetailsImpl) ((Authentication) principal).getPrincipal()).getId();
-        String username = ((UserDetailsImpl) ((Authentication) principal).getPrincipal()).getUsername();
-        
+        UserDetailsImpl userDetails = (UserDetailsImpl) ((Authentication) principal).getPrincipal();
+        Long userId = userDetails.getId();
+        String username = userDetails.getUsername();
+
         // Validate user is in the room
         if (!chatRoomService.isUserInRoom(userId, roomId)) {
             throw new BadRequestException("User is not part of this chat room");
         }
-        
+
         typingService.startTyping(roomId, userId, username);
         log.debug("User {} started typing in room {}", userId, roomId);
     }
 
     @MessageMapping("/typing/stop/room/{roomId}")
-    public void stopTyping(@PathVariable Long roomId, Principal principal) {
+    public void stopTyping(@DestinationVariable Long roomId, Principal principal) {
         if (principal == null) {
             throw new UnauthorizedException("Not authenticated");
         }
 
-        Long userId = ((UserDetailsImpl) ((Authentication) principal).getPrincipal()).getId();
-        
+        UserDetailsImpl userDetails = (UserDetailsImpl) ((Authentication) principal).getPrincipal();
+        Long userId = userDetails.getId();
+        String username = userDetails.getUsername();
+
         // Validate user is in the room
         if (!chatRoomService.isUserInRoom(userId, roomId)) {
             throw new BadRequestException("User is not part of this chat room");
         }
         
-        typingService.stopTyping(roomId, userId);
+        typingService.stopTyping(roomId, userId, username);
         log.debug("User {} stopped typing in room {}", userId, roomId);
     }
 

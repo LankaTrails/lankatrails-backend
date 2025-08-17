@@ -68,13 +68,5 @@ public class ChatRestController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
     }
-
-    @GetMapping("/rooms/{roomId}/typing")
-    public ResponseEntity<APIResponse<List<TypingStateDto>>> getTypingUsersInRoom(@PathVariable Long roomId) {
-        APIResponse<List<TypingStateDto>> typingUsers = typingService.getTypingUsersInRoom(roomId);
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(typingUsers);
-    }
-
 }
 

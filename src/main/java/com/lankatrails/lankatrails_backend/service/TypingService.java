@@ -7,7 +7,5 @@ import java.util.List;
 
 public interface TypingService {
     void startTyping(Long roomId, Long userId, String username);
-    void stopTyping(Long roomId, Long userId);
-    APIResponse<List<TypingStateDto>> getTypingUsersInRoom(Long roomId);
-    void cleanupExpiredTypingStates();
+    void stopTyping(Long roomId, Long userId, String username);
 }

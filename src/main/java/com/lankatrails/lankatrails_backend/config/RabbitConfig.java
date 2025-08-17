@@ -28,16 +28,25 @@ public class RabbitConfig {
         return new TopicExchange(EXCHANGE, true, false);
     }
 
-    // Each backend instance can have its own queue. For dev use AnonymousQueue.
     @Bean
-    public Queue instanceQueue() {
+    public Queue chatQueue() {
         return new AnonymousQueue();
     }
 
     @Bean
-    public Binding instanceBinding(Queue instanceQueue, TopicExchange chatExchange) {
-        // subscribe to all room keys (safer)
-        return BindingBuilder.bind(instanceQueue).to(chatExchange).with("chat.room.#");
+    public Queue typingQueue() {
+        return new AnonymousQueue();
     }
+
+    @Bean
+    public Binding chatBinding(Queue chatQueue, TopicExchange chatExchange) {
+        return BindingBuilder.bind(chatQueue).to(chatExchange).with("chat.room.*");
+    }
+
+    @Bean
+    public Binding typingBinding(Queue typingQueue, TopicExchange chatExchange) {
+        return BindingBuilder.bind(typingQueue).to(chatExchange).with("chat.typing.*");
+    }
+
 }
 
