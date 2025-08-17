@@ -7,6 +7,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 @Entity
 @Table(name = "tourists")
 @Getter
@@ -25,11 +29,33 @@ public class Tourist extends User {
     @Column(name = "country")
     private String country;
 
+    @Size(max = 15)
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
     @PrePersist
     protected void onCreate() {
-        super.setRole(UserRole.TOURIST);
+        super.setRole(UserRole.ROLE_TOURIST);
         super.setStatus(UserStatus.ACTIVE);
     }
+
+    @ManyToMany(mappedBy = "tourists", fetch = FetchType.LAZY)
+    private Set<Trip> trips;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "tourist_favourite_services",
+            joinColumns = @JoinColumn(name = "tourist_id"),
+            inverseJoinColumns = @JoinColumn(name = "service_id"))
+    private Set<Service> favouriteServices;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "tourist_favourite_places",
+            joinColumns = @JoinColumn(name = "tourist_id"),
+            inverseJoinColumns = @JoinColumn(name = "place_id"))
+    private Set<Place> favouritePlaces;
+
+    @OneToMany(mappedBy = "tourist")
+    private List<Booking> bookings = new ArrayList<>();
 
     public @Size(max = 20) String getFirstName() {
         return firstName;
@@ -54,4 +80,6 @@ public class Tourist extends User {
     public void setLastName(@Size(max = 20) String lastName) {
         this.lastName = lastName;
     }
+
+
 }

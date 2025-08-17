@@ -17,8 +17,11 @@ public class TouristRegistrationRequest extends RegistrationRequest{
     @Size(max = 50)
     private String country;
 
+    @Size(max = 15)
+    private String phoneNumber;
+
     public TouristRegistrationRequest() {
-        this.setUserRole(UserRole.PROVIDER);
+        this.setUserRole(UserRole.ROLE_PROVIDER);
     }
 
     public @Size(max = 20) String getFirstName() {

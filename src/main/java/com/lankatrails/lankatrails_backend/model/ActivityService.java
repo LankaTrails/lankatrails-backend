@@ -10,12 +10,15 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class ActivityService extends Services{
-    private  String activity_type;
+public class ActivityService extends Service {
 
-    private String activity_details;
+    @ManyToOne
+    @JoinColumn(name = "activityCategory_id")
+    private  ActivityCategory activityCategory;
 
-    private String safety_instructions;
+    private String activityDetails;
 
+    private String safetyInstructions;
 
+    private String activityDuration;
 }

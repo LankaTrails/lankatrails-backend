@@ -1,12 +1,13 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
-import com.lankatrails.lankatrails_backend.model.Category;
-import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
+import com.lankatrails.lankatrails_backend.model.enums.ApprovalStatus;
+import com.lankatrails.lankatrails_backend.model.enums.BusinessType;
 import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -15,42 +16,30 @@ public class ProviderRegistrationRequest extends RegistrationRequest {
     @Size(max = 50)
     private String businessName;
 
-    @Size(max = 100)
     private String businessDescription;
 
-    @Size(max = 255)
-    private String logoUrl;
+    private BusinessType businessType;
 
-    @Setter
-    @Getter
-    private Set<String> categories;
+    private LocationDTO location;
 
-    public ProviderRegistrationRequest() {
-        this.setUserRole(UserRole.PROVIDER);
-    }
+    private String coverImageUrl;
 
-    public @Size(max = 50) String getBusinessName() {
-        return businessName;
-    }
+    private String businessRegistrationNumber;
 
-    public void setBusinessName(@Size(max = 50) String businessName) {
-        this.businessName = businessName;
-    }
+    private String businessRegistrationUrl;
 
-    public @Size(max = 100) String getBusinessDescription() {
-        return businessDescription;
-    }
+    private ApprovalStatus accommodationApprovalStatus;
 
-    public void setBusinessDescription(@Size(max = 100) String businessDescription) {
-        this.businessDescription = businessDescription;
-    }
+    private ApprovalStatus tourGuideApprovalStatus;
 
-    public @Size(max = 255) String getLogoUrl() {
-        return logoUrl;
-    }
+    private ApprovalStatus transportApprovalStatus;
 
-    public void setLogoUrl(@Size(max = 255) String logoUrl) {
-        this.logoUrl = logoUrl;
-    }
+    private ApprovalStatus activityApprovalStatus;
+
+    private ApprovalStatus foodApprovalStatus;
+
+    private ContactPersonDTO contactPerson;
+
+    private List<LicenseDTO> licenses;
 
 }

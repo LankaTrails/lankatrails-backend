@@ -43,19 +43,19 @@ public class User {
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "role")
+    @Column(name = "role", nullable = false, columnDefinition = "VARCHAR(20)")
     private UserRole role;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status")
+    @Column(name = "status", nullable = false, columnDefinition = "VARCHAR(20)")
     private UserStatus status;
 
     @Builder.Default
     @Column(name = "email_verified")
-    private boolean emailVerified = true;
+    private boolean emailVerified = false;
 
-    @Column(name = "email_verification_token")
-    private String emailVerificationToken;
+    @Column(name = "profile_picture_url")
+    private String profilePictureUrl;
 
     @CreationTimestamp
     @Column(name = "created_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
@@ -64,6 +64,10 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private LocalDateTime updatedAt;
+
+    @ManyToMany(mappedBy = "participants")
+    @Column(name = "chat_rooms")
+    private List<ChatRoom> chatRooms;
 
     public Boolean getEmailVerified() {
         return emailVerified;

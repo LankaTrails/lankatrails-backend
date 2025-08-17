@@ -1,6 +1,9 @@
 package com.lankatrails.lankatrails_backend.security.jwt;
 
+import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.exception.EmailNotVerifiedException;
+import com.lankatrails.lankatrails_backend.exception.UnauthorizedException;
+import com.lankatrails.lankatrails_backend.exception.UserNotFoundException;
 import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
 import com.lankatrails.lankatrails_backend.security.service.UserDetailsServiceImpl;
 import jakarta.servlet.FilterChain;
@@ -12,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -37,19 +41,9 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         try {
-            String jwt = parseJwt(request);
+            String jwt = jwtUtils.getJwtToken(request);
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
-                String username = jwtUtils.getUserNameFromJwtToken(jwt);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                authenticateUser(jwt, request);
             }
         } catch (Exception e) {
             log.error("Cannot set user authentication: {}", e.getMessage());
@@ -58,14 +52,37 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private String parseJwt(HttpServletRequest request) {
-        // Check Authorization header first
-        String headerAuth = request.getHeader("Authorization");
-        if (headerAuth != null && headerAuth.startsWith("Bearer ")) {
-            return headerAuth.substring(7);
+    private void authenticateUser(String jwt, HttpServletRequest request) {
+        String username = jwtUtils.getUserNameFromJwtToken(jwt);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities()
+                );
+        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    // This method can be used to authenticate a user based on JWT token
+    public Authentication authenticateUser(String jwt) {
+        if (!jwtUtils.validateJwtToken(jwt)) {
+            throw new BadRequestException("Invalid token");
         }
 
-        // Fallback to cookie
-        return jwtUtils.getJwtFromCookies(request);
+        String username = jwtUtils.getUserNameFromJwtToken(jwt);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+        if (userDetails == null) {
+            throw new UserNotFoundException("User not found: " + username);
+        }
+
+        return new UsernamePasswordAuthenticationToken(
+                userDetails,
+                null,
+                userDetails.getAuthorities()
+        );
     }
 }

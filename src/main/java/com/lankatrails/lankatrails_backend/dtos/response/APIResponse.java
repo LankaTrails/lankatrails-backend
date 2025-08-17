@@ -1,22 +1,22 @@
 package com.lankatrails.lankatrails_backend.dtos.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.http.HttpStatus;
 
 @Getter
 @Setter
 @Builder
 @AllArgsConstructor
+@RequiredArgsConstructor
 public class APIResponse<T> {
-    private HttpStatus status;
+    private boolean success;
     private String message;
     private T data;
+    private Object details = null;
 
-    public APIResponse(HttpStatus status, String message) {
-        this.status = status;
-        this.message = message;
+    public APIResponse(boolean b, String s, T data) {
+        this.success = b;
+        this.message = s;
+        this.data = data;
     }
 }

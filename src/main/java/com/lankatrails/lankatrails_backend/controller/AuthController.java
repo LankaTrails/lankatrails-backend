@@ -2,32 +2,27 @@ package com.lankatrails.lankatrails_backend.controller;
 
 
 import com.lankatrails.lankatrails_backend.config.ApplicationRateLimiterConfig;
+import com.lankatrails.lankatrails_backend.dtos.request.ChangePaswordRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.LoginRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.ProviderRegistrationRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TouristRegistrationRequest;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.LoginResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.RegistrationResponse;
-import com.lankatrails.lankatrails_backend.model.enums.UserRole;
+import com.lankatrails.lankatrails_backend.dtos.response.UserProfileDto;
 import com.lankatrails.lankatrails_backend.security.jwt.JwtUtils;
+import com.lankatrails.lankatrails_backend.security.service.RefreshTokenRedisService;
 import com.lankatrails.lankatrails_backend.service.AuthService;
-import io.github.resilience4j.bulkhead.Bulkhead;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -38,40 +33,112 @@ public class AuthController {
     private final JwtUtils jwtUtils;
     private final ApplicationRateLimiterConfig rateLimiterConfig;
     private final RateLimiter loginRateLimiter;
+    private final RefreshTokenRedisService refreshTokenRedisService;
+
+//    @PostMapping(value = "/signup/tourist", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<APIResponse<RegistrationResponse>> registerTourist(
+//            @RequestPart("user") @Valid TouristRegistrationRequest request,
+//            @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture) {
+//        APIResponse<RegistrationResponse> tourist = authService.registerTourist(request, profilePicture);
+//        return ResponseEntity.status(HttpStatus.CREATED)
+//                .body(tourist);
+//    }
 
     @PostMapping("/signup/tourist")
-    public ResponseEntity<RegistrationResponse> registerTourist(
+    public ResponseEntity<APIResponse<RegistrationResponse>> registerTourist(
             @Valid @RequestBody TouristRegistrationRequest request) {
-        RegistrationResponse tourist = authService.registerTourist(request);
+        APIResponse<RegistrationResponse> tourist = authService.registerTourist(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(tourist);
     }
 
-    @PostMapping("/signup/provider")
-    public ResponseEntity<RegistrationResponse> registerProvider(
-            @Valid @RequestBody ProviderRegistrationRequest request) {
-        RegistrationResponse provider = authService.registerProvider(request);
+    @PostMapping(value = "/signup/provider", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<APIResponse<RegistrationResponse>> registerProvider(
+            @RequestPart("provider") @Valid ProviderRegistrationRequest request,
+            @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture,
+            @RequestPart(value = "coverPhoto", required = false) MultipartFile coverPhoto,
+            @RequestPart(value = "businessRegistrationFile", required = false) MultipartFile businessRegistrationFile,
+            @RequestPart(value = "contactPersonIdentityFile", required = false) MultipartFile contactPersonIdentityFile,
+            @RequestPart(value = "licenseFiles", required = false) List<MultipartFile> licenseFiles) {
+        APIResponse<RegistrationResponse> provider = authService.registerProvider(request, profilePicture, coverPhoto, businessRegistrationFile, contactPersonIdentityFile, licenseFiles);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(provider);
     }
 
+//    @PostMapping("/signup/provider")
+//    public ResponseEntity<APIResponse<RegistrationResponse>> registerProvider(
+//            @Valid @RequestBody ProviderRegistrationRequest request) {
+//        APIResponse<RegistrationResponse> provider = authService.registerProvider(request);
+//        return ResponseEntity.status(HttpStatus.CREATED)
+//                .body(provider);
+//    }
+
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(
+    public ResponseEntity<APIResponse<LoginResponse>> login(
             @Valid @RequestBody LoginRequest request,
-            HttpServletResponse httpResponse) {
+            HttpServletRequest httpServletRequest) {
 
         if (!loginRateLimiter.acquirePermission()) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
         }
 
-        LoginResponse loginResponse = authService.authenticateUser(request);
+        APIResponse<LoginResponse> loginResponse = authService.authenticateUser(request, httpServletRequest);
 
-        ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(loginResponse.getJwtToken());
-        ResponseCookie refreshCookie = jwtUtils.generateRefreshCookie(loginResponse.getRefreshToken());
+        ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(loginResponse.getData().getJwtToken());
+        ResponseCookie refreshCookie = jwtUtils.generateRefreshCookie(loginResponse.getData().getRefreshToken());
 
-        return ResponseEntity.ok()
+        return ResponseEntity.status(HttpStatus.OK)
                 .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .body(loginResponse);
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<APIResponse<String>> logout(HttpServletRequest request) {
+        APIResponse<String> responseMessage = authService.logoutUser(request);
+
+        ResponseCookie jwtCookie = jwtUtils.getCleanJwtCookie();
+        ResponseCookie refreshCookie = jwtUtils.getCleanRefreshCookie();
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(responseMessage);
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<APIResponse<LoginResponse>> refreshToken(HttpServletRequest request) {
+        APIResponse<LoginResponse> loginResponse = authService.refreshToken(request);
+
+        ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(loginResponse.getData().getJwtToken());
+        ResponseCookie refreshCookie = jwtUtils.generateRefreshCookie(loginResponse.getData().getRefreshToken());
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(loginResponse);
+    }
+
+    @GetMapping("/logged-user")
+    public ResponseEntity<APIResponse<UserProfileDto>> getLoggedUserProfile(HttpServletRequest request) {
+        APIResponse<UserProfileDto> userProfileResponse = authService.getLoggedUserProfile(request);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(userProfileResponse);
+    }
+
+    @GetMapping("/verify-email")
+    public ResponseEntity<APIResponse<String>> verifyEmail(@RequestParam String token) {
+        APIResponse<String> response = authService.verifyEmail(token);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<APIResponse<String>> changePassword(
+            @RequestBody ChangePaswordRequest changePasswordRequest,
+            HttpServletRequest request) {
+        APIResponse<String> response = authService.changePassword(changePasswordRequest);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
 }

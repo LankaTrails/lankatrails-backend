@@ -4,29 +4,25 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.experimental.SuperBuilder;
 
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Inheritance(strategy = InheritanceType.JOINED)
-@Table(name = "services")
+@Table(name = "policy_section")
 @Getter
 @Setter
 @NoArgsConstructor
-@SuperBuilder
-public class Services {
-
+public class PolicySection {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long service_id;
+    private Long id;
 
-    private String service_name;
+    private String heading;
+    private String policy;
 
-    private String location_based;
-
-    private String contact_no;
+    @ManyToMany(mappedBy = "policies")
+    private Set<Service> services = new HashSet<>();
 
     @ManyToOne
     @JoinColumn(name = "provider_id")
@@ -34,8 +30,7 @@ public class Services {
 
     @ManyToOne
     @JoinColumn(name = "category_id")
-    private  Category category;
-
+    private Category category;
 
 
 }

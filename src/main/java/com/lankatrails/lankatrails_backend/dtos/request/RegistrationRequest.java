@@ -29,6 +29,9 @@ public abstract class RegistrationRequest {
     @Getter
     private UserRole userRole;
 
+    private String profilePictureUrl;
+
+
     public @NotBlank @Size(max = 50) String getEmail() {
         return email;
     }

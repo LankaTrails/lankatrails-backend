@@ -15,26 +15,70 @@ import java.util.Set;
 public class UserFactory {
 
     private final CategoryRepository categoryRepository;
+    private final LocationFactory locationFactory;
+    private final ContactPersonFactory contactPersonFactory;
+    private final LicenseFactory licenseFactory;
 
     public User createUser(TouristRegistrationRequest request) {
         Tourist tourist = new Tourist();
-        tourist.setEmail(request.getEmail());
+        tourist.setEmail(request.getEmail().toLowerCase());
         tourist.setFirstName(request.getFirstName());
         tourist.setLastName(request.getLastName());
-        tourist.setCountry(request.getCountry());
-        tourist.setRole(UserRole.TOURIST);
+        tourist.setCountry(request.getCountry().toLowerCase());
+        tourist.setPhoneNumber(request.getPhoneNumber());
+        tourist.setRole(UserRole.ROLE_TOURIST);
         return tourist;
     }
 
     public User createUser(ProviderRegistrationRequest request) {
         Provider provider = new Provider();
-        provider.setEmail(request.getEmail());
+
+        // Set basic info
+        provider.setEmail(request.getEmail().toLowerCase());
+        provider.setRole(UserRole.ROLE_PROVIDER);
+        provider.setStatus(UserStatus.PENDING);
+        provider.setProfilePictureUrl(request.getProfilePictureUrl());
+
+        // Set provider-specific info
         provider.setBusinessName(request.getBusinessName());
         provider.setBusinessDescription(request.getBusinessDescription());
-        provider.setLogoUrl(request.getLogoUrl());
-        provider.setCategories(mapCategories(request.getCategories()));
-        provider.setRole(UserRole.PROVIDER);
+        provider.setBusinessType(request.getBusinessType());
+
+        // Set business info
+        provider.setBusinessRegistrationNumber(request.getBusinessRegistrationNumber());
+        provider.setBusinessRegistrationUrl(request.getBusinessRegistrationUrl());
+        provider.setCoverImageUrl(request.getCoverImageUrl());
+
+        // Set approval statuses
+        provider.setAccommodationApprovalStatus(request.getAccommodationApprovalStatus());
+        provider.setTourGuideApprovalStatus(request.getTourGuideApprovalStatus());
+        provider.setTransportApprovalStatus(request.getTransportApprovalStatus());
+        provider.setActivityApprovalStatus(request.getActivityApprovalStatus());
+        provider.setFoodApprovalStatus(request.getFoodApprovalStatus());
+
+        // Create and set related entities using dedicated factories
+        provider.setLocation(locationFactory.createFromDTO(request.getLocation()));
+        provider.setContactPerson(contactPersonFactory.createFromDTO(request.getContactPerson()));
+
+        // Add licenses
+        if (request.getLicenses() != null) {
+            request.getLicenses().forEach(licenseDTO ->
+                    provider.addLicense(licenseFactory.createFromDTO(licenseDTO))
+            );
+        }
+
         return provider;
+    }
+
+    private ApprovalStatus parseApprovalStatus(ApprovalStatus status) {
+        if (status == null) {
+            return ApprovalStatus.NOT_REQUESTED;
+        }
+        try {
+            return ApprovalStatus.valueOf(status.name());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid approval status: " + status);
+        }
     }
 
     private Set<Category> mapCategories(Set<String> categoryNames) {
