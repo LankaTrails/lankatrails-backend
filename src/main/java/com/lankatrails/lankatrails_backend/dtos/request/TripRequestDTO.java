@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -26,7 +27,7 @@ public class TripRequestDTO {
     private LocationDTO startLocation;
 
     @NotNull(message = "At least one location is required")
-    private Set<LocationDTO> locations;
+    private List<LocationDTO> locations;
 
     private Integer numberOfAdults = 1;
     private Integer numberOfChildren = 0;

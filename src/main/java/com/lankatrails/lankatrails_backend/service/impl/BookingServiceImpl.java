@@ -161,7 +161,7 @@ public class BookingServiceImpl implements BookingService {
                     requestedEndTime,
                     bookingRequestDTO.getFromDate(),
                     bookingRequestDTO.getToDate(),
-                    authUtils.loggedInUser().getUserId(),
+                    authUtils.loggedInUserId(),
                     BookingStatus.BOOKED
             );
             BookingType bookingType = service.getBookingType();
