@@ -681,4 +681,41 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
+    @Override
+    public APIResponse<ProviderInfoResponse> getBasicProviderInfo() {
+        List<Provider> providers = providerRepository.findByAccommodationApprovalStatusOrTourGuideApprovalStatusOrTransportApprovalStatusOrActivityApprovalStatusOrFoodApprovalStatus(
+                ApprovalStatus.PENDING,
+                ApprovalStatus.PENDING,
+                ApprovalStatus.PENDING,
+                ApprovalStatus.PENDING,
+                ApprovalStatus.PENDING
+        );
+        if (providers.isEmpty()){
+            return APIResponse.<ProviderInfoResponse>builder()
+                    .success(true)
+                    .message("No pending provider service approvals")
+                    .data(new ProviderInfoResponse())
+                    .build();
+        }else{
+            ProviderInfoResponse response = new ProviderInfoResponse();
+            List<ProviderInfoDTO> responseList = new ArrayList<>();
+            for (Provider provider : providers){
+                ProviderInfoDTO providerInfoDTO = new ProviderInfoDTO();
+                providerInfoDTO.setBusinessName(provider.getBusinessName());
+                providerInfoDTO.setBusinessType(provider.getBusinessType());
+                providerInfoDTO.setBusinessRegistrationNumber(provider.getBusinessRegistrationNumber());
+                providerInfoDTO.setStatus(provider.getStatus());
+                responseList.add(providerInfoDTO);
+
+            }
+            response.setContent(responseList);
+            return APIResponse.<ProviderInfoResponse>builder()
+                    .success(true)
+                    .message("No pending provider service approvals")
+                    .data(response)
+                    .build();
+        }
+
+    }
+
 }

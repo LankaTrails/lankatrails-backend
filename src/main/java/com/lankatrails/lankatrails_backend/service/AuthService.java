@@ -38,5 +38,8 @@ public interface AuthService {
     APIResponse<String> changePassword(ChangePaswordRequest changePasswordRequest);
 
     APIResponse<ApproveLicenseResponse> approveProviderService();
+
     APIResponse<ApproveLicenseResponse> loadLicensesOfEachServiceCategory(Long id);
+
+    APIResponse<ProviderInfoResponse> getBasicProviderInfo();
 }
