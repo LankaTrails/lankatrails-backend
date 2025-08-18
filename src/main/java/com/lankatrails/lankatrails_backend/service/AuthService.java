@@ -1,10 +1,7 @@
 package com.lankatrails.lankatrails_backend.service;
 
 
-import com.lankatrails.lankatrails_backend.dtos.request.ChangePaswordRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.LoginRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.ProviderRegistrationRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TouristRegistrationRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.dtos.response.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
@@ -39,7 +36,9 @@ public interface AuthService {
 
     APIResponse<ApproveLicenseResponse> approveProviderService();
 
-    APIResponse<ApproveLicenseResponse> loadLicensesOfEachServiceCategory(Long id);
+    APIResponse<ProviderViewInfoResponse> loadAllRequestedProviders(Long id);
 
     APIResponse<ProviderInfoResponse> getBasicProviderInfo();
+
+    APIResponse<String> approveOrRejectRequest(AcceptRejectDTO acceptRejectDTO);
 }

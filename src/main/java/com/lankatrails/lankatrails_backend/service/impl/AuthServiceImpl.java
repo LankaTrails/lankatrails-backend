@@ -5,10 +5,7 @@ import com.lankatrails.lankatrails_backend.dtos.response.*;
 import com.lankatrails.lankatrails_backend.exception.*;
 import com.lankatrails.lankatrails_backend.factory.*;
 import com.lankatrails.lankatrails_backend.model.*;
-import com.lankatrails.lankatrails_backend.model.enums.ApprovalStatus;
-import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
-import com.lankatrails.lankatrails_backend.model.enums.UserRole;
-import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
+import com.lankatrails.lankatrails_backend.model.enums.*;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.jwt.JwtUtils;
 import com.lankatrails.lankatrails_backend.security.service.RefreshTokenRedisService;
@@ -551,11 +548,24 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    //Load the licenses of the service categories of a provider
-    public APIResponse<ApproveLicenseResponse> loadLicensesOfEachServiceCategory(Long providerId) {
+    //Load the licenses and the provider details
+    public APIResponse<ProviderViewInfoResponse> loadAllRequestedProviders(Long providerId) {
         Provider provider = providerRepository.findByUserId(providerId)
                 .orElseThrow(()->new ResourceNotFoundException("Provider",providerId));
 
+        //set the necessary provider details
+        ProviderViewInfoDTO providerViewInfoDTO = new ProviderViewInfoDTO();
+        providerViewInfoDTO.setEmail(provider.getEmail());
+        providerViewInfoDTO.setProfilePicUrl(provider.getProfilePictureUrl());
+        providerViewInfoDTO.setStatus(provider.getStatus());
+        providerViewInfoDTO.setBusinessDescription(provider.getBusinessDescription());
+        providerViewInfoDTO.setBusinessName(provider.getBusinessName());
+        providerViewInfoDTO.setBusinessRegistrationNumber(provider.getBusinessRegistrationNumber());
+        providerViewInfoDTO.setBusinessRegistrationUrl(providerViewInfoDTO.getBusinessRegistrationUrl());
+        providerViewInfoDTO.setBusinessType(provider.getBusinessType());
+        providerViewInfoDTO.setCoverImgUrl(provider.getCoverImageUrl());
+
+        //load the licenses that are needed to be approved
         List<LicenseDTO> activity = new ArrayList<>();
         List<LicenseDTO> accommodation = new ArrayList<>();
         List<LicenseDTO> foodBeverage = new ArrayList<>();
@@ -574,7 +584,7 @@ public class AuthServiceImpl implements AuthService {
                         //set license data to the DTO
                         licenseDTO.setExpiryDate(license.getExpiryDate());
                         licenseDTO.setLicenseNumber(license.getLicenseNumber());
-                        licenseDTO.setLicenseUrl(license.getLicenseNumber());
+                        licenseDTO.setLicenseUrl(license.getLicenseUrl());
                         licenseDTO.setCategory(license.getCategory().getCategoryName());
                         licenseDTO.setProviderId(providerId);
                         activity.add(licenseDTO);
@@ -596,7 +606,7 @@ public class AuthServiceImpl implements AuthService {
                         //set license data to the DTO
                         licenseDTO.setExpiryDate(license.getExpiryDate());
                         licenseDTO.setLicenseNumber(license.getLicenseNumber());
-                        licenseDTO.setLicenseUrl(license.getLicenseNumber());
+                        licenseDTO.setLicenseUrl(license.getLicenseUrl());
                         licenseDTO.setCategory(license.getCategory().getCategoryName());
                         licenseDTO.setProviderId(providerId);
                         accommodation.add(licenseDTO);
@@ -618,7 +628,7 @@ public class AuthServiceImpl implements AuthService {
                         //set license data to the DTO
                         licenseDTO.setExpiryDate(license.getExpiryDate());
                         licenseDTO.setLicenseNumber(license.getLicenseNumber());
-                        licenseDTO.setLicenseUrl(license.getLicenseNumber());
+                        licenseDTO.setLicenseUrl(license.getLicenseUrl());
                         licenseDTO.setCategory(license.getCategory().getCategoryName());
                         licenseDTO.setProviderId(providerId);
                         foodBeverage.add(licenseDTO);
@@ -639,7 +649,7 @@ public class AuthServiceImpl implements AuthService {
                         //set license data to the DTO
                         licenseDTO.setExpiryDate(license.getExpiryDate());
                         licenseDTO.setLicenseNumber(license.getLicenseNumber());
-                        licenseDTO.setLicenseUrl(license.getLicenseNumber());
+                        licenseDTO.setLicenseUrl(license.getLicenseUrl());
                         licenseDTO.setCategory(license.getCategory().getCategoryName());
                         licenseDTO.setProviderId(providerId);
                         transport.add(licenseDTO);
@@ -661,7 +671,7 @@ public class AuthServiceImpl implements AuthService {
                         //set license data to the DTO
                         licenseDTO.setExpiryDate(license.getExpiryDate());
                         licenseDTO.setLicenseNumber(license.getLicenseNumber());
-                        licenseDTO.setLicenseUrl(license.getLicenseNumber());
+                        licenseDTO.setLicenseUrl(license.getLicenseUrl());
                         licenseDTO.setCategory(license.getCategory().getCategoryName());
                         licenseDTO.setProviderId(providerId);
                         tourGuide.add(licenseDTO);
@@ -671,10 +681,15 @@ public class AuthServiceImpl implements AuthService {
                 prepareResponse.setTourGuide(tourGuide);
             }
         }
-        //set the response
-        ApproveLicenseResponse response = new ApproveLicenseResponse();
-        response.setContent(prepareResponse);
-        return APIResponse.<ApproveLicenseResponse>builder()
+        //set the license response
+        ApproveLicenseResponse licenseResponse = new ApproveLicenseResponse();
+        licenseResponse.setContent(prepareResponse);
+        providerViewInfoDTO.setPendingLicenses(licenseResponse);
+
+        //set the provider view response
+        ProviderViewInfoResponse response = new ProviderViewInfoResponse();
+        response.setContent(providerViewInfoDTO);
+        return APIResponse.<ProviderViewInfoResponse>builder()
                 .success(true)
                 .message("Successfully loaded the services for pending license approval")
                 .data(response)
@@ -682,6 +697,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
+    //Load the basic details of the provider
     public APIResponse<ProviderInfoResponse> getBasicProviderInfo() {
         List<Provider> providers = providerRepository.findByAccommodationApprovalStatusOrTourGuideApprovalStatusOrTransportApprovalStatusOrActivityApprovalStatusOrFoodApprovalStatus(
                 ApprovalStatus.PENDING,
@@ -705,6 +722,8 @@ public class AuthServiceImpl implements AuthService {
                 providerInfoDTO.setBusinessType(provider.getBusinessType());
                 providerInfoDTO.setBusinessRegistrationNumber(provider.getBusinessRegistrationNumber());
                 providerInfoDTO.setStatus(provider.getStatus());
+                providerInfoDTO.setEmail(provider.getEmail());
+                providerInfoDTO.setCity(provider.getLocation().getCity());
                 responseList.add(providerInfoDTO);
 
             }
@@ -716,6 +735,35 @@ public class AuthServiceImpl implements AuthService {
                     .build();
         }
 
+    }
+
+    @Override
+    public APIResponse<String> approveOrRejectRequest(AcceptRejectDTO acceptRejectDTO) {
+        Provider provider = providerRepository.findByUserId(acceptRejectDTO.getProviderId())
+                .orElseThrow(()-> new ResourceNotFoundException("Provider",acceptRejectDTO.getProviderId()));
+
+        //set the acceptance or rejection status
+        Category category = acceptRejectDTO.getCategory();
+        log.info("Approve or Reject"+category.getCategoryName().toString());
+        if(category.getCategoryName() == ServiceCategory.ACCOMMODATION){
+                provider.setAccommodationApprovalStatus(acceptRejectDTO.getStatus());
+        }else if(category.getCategoryName() == ServiceCategory.TOUR_GUIDE){
+                provider.setTourGuideApprovalStatus(acceptRejectDTO.getStatus());
+        }else if (category.getCategoryName() == ServiceCategory.TRANSPORT){
+                provider.setTransportApprovalStatus(acceptRejectDTO.getStatus());
+        }else if (category.getCategoryName() == ServiceCategory.FOOD_BEVERAGE){
+                provider.setFoodApprovalStatus(acceptRejectDTO.getStatus());
+        }else if (category.getCategoryName() == ServiceCategory.ACTIVITY){
+                provider.setActivityApprovalStatus(acceptRejectDTO.getStatus());
+        }
+        //update the provider record
+        providerRepository.save(provider);
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Provider service status updated successfully")
+                .data("")
+                .build();
     }
 
 }

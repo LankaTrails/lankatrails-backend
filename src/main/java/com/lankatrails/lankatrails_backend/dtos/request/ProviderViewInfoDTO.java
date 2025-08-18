@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
+import com.lankatrails.lankatrails_backend.dtos.response.ApproveLicenseResponse;
 import com.lankatrails.lankatrails_backend.model.enums.BusinessType;
 import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
 import lombok.AllArgsConstructor;
@@ -11,11 +12,16 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProviderInfoDTO {
-    private String businessName;
-    private BusinessType businessType;
-    private String businessRegistrationNumber;
-    private UserStatus status;
+public class ProviderViewInfoDTO {
     private String email;
-    private String city;
+    private String profilePicUrl;
+    private UserStatus status;
+    private String businessDescription;
+    private String businessName;
+    private String businessRegistrationNumber;
+    private String businessRegistrationUrl;
+    private BusinessType businessType;
+    private String coverImgUrl;
+    private ApproveLicenseResponse pendingLicenses;
+
 }

@@ -1,10 +1,7 @@
 package com.lankatrails.lankatrails_backend.controller;
 
-import com.lankatrails.lankatrails_backend.dtos.request.ApproveLicenseDTO;
-import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.ApproveLicenseResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.ProviderDetailsDTO;
-import com.lankatrails.lankatrails_backend.dtos.response.ProviderInfoResponse;
+import com.lankatrails.lankatrails_backend.dtos.request.AcceptRejectDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.*;
 import com.lankatrails.lankatrails_backend.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -33,9 +30,9 @@ public class AdminController {
     }
 
     //Load all the licenses
-    @PostMapping("/approve-provider/service-category/{providerId}")
-    public ResponseEntity<APIResponse<ApproveLicenseResponse>> approveProviderServiceCategory(@PathVariable Long providerId){
-        APIResponse<ApproveLicenseResponse> response = authService.loadLicensesOfEachServiceCategory(providerId);
+    @GetMapping("/approve-provider/service-category/{providerId}")
+    public ResponseEntity<APIResponse<ProviderViewInfoResponse>> approveProviderServiceCategory(@PathVariable Long providerId){
+        APIResponse<ProviderViewInfoResponse> response = authService.loadAllRequestedProviders(providerId);
         return new ResponseEntity<>(response,HttpStatus.OK);
     }
 
@@ -46,6 +43,12 @@ public class AdminController {
         return new ResponseEntity<>(response,HttpStatus.OK);
     }
 
+    //Approve or Reject request
+    @PutMapping("/approve-provider/providers/{providerId}")
+    public ResponseEntity<APIResponse<String>> approveOrReject(@RequestBody AcceptRejectDTO acceptRejectDTO){
+        APIResponse<String> approvalStatus = authService.approveOrRejectRequest(acceptRejectDTO);
+        return new ResponseEntity<>(approvalStatus,HttpStatus.OK);
+    }
 
 
 
