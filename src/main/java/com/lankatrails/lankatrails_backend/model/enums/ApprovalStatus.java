@@ -7,4 +7,5 @@ public enum ApprovalStatus {
     CANCELLED,
     EXPIRED,
     NOT_REQUESTED,
+    RENEWAL
 }
