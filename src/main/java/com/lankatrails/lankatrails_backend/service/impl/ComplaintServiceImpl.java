@@ -2,7 +2,9 @@ package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.request.ComplaintDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.ComplaintImgDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.ComplaintInfoDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.ComplaintInfoResponse;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.Complaint;
 import com.lankatrails.lankatrails_backend.model.ComplaintImage;
@@ -16,7 +18,12 @@ import com.lankatrails.lankatrails_backend.repositories.TouristRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ComplaintService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+
+@org.springframework.stereotype.Service
 public class ComplaintServiceImpl implements ComplaintService {
     @Autowired
     ComplaintRepository complaintRepository;
@@ -34,6 +41,7 @@ public class ComplaintServiceImpl implements ComplaintService {
     AuthUtils authUtils;
 
     @Override
+    @Transactional
     public APIResponse<String> addNewComplaint(ComplaintDTO complaintDTO) {
         Service service = serviceRepository.findById(complaintDTO.getServiceId())
                 .orElseThrow(()->new ResourceNotFoundException("Service",complaintDTO.getServiceId()));
@@ -63,5 +71,44 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .message("Complaint Added successfully")
                 .data("")
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<ComplaintInfoResponse> getAllComplaints() {
+        List<Complaint> complaints = complaintRepository.findByComplaintStatus(ComplaintStatus.PENDING);
+        if (!complaints.isEmpty()){
+            List<ComplaintInfoDTO> responseList = new ArrayList<>();
+            for (Complaint complaint : complaints){
+                Service service = serviceRepository.findById(complaint.getService().getServiceId())
+                        .orElseThrow(()->new ResourceNotFoundException("Service",complaint.getService().getServiceId()));
+
+                Tourist tourist = touristRepository.findByUserId(authUtils.loggedInUserId())
+                        .orElseThrow(()->new ResourceNotFoundException("Tourist", authUtils.loggedInUserId()));
+                ComplaintInfoDTO complaintInfoDTO = new ComplaintInfoDTO();
+                complaintInfoDTO.setBusinessName(service.getServiceName());
+                complaintInfoDTO.setComplaintStatus(complaint.getComplaintStatus());
+                complaintInfoDTO.setTouristEmail(tourist.getEmail());
+                complaintInfoDTO.setBusinessType(service.getProvider().getBusinessType());
+
+                //add to responseList
+                responseList.add(complaintInfoDTO);
+            }
+            ComplaintInfoResponse complaintInfoResponse = new ComplaintInfoResponse();
+            complaintInfoResponse.setContent(responseList);
+
+            return APIResponse.<ComplaintInfoResponse>builder()
+                    .success(true)
+                    .message("Loaded all the status pending complaints")
+                    .data(complaintInfoResponse)
+                    .build();
+        }else{
+            return APIResponse.<ComplaintInfoResponse>builder()
+                    .success(true)
+                    .message("No pending complaints to resolve")
+                    .data(new ComplaintInfoResponse())
+                    .build();
+        }
+
     }
 }
