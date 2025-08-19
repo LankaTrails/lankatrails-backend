@@ -101,8 +101,8 @@ public class TripServiceImpl implements TripService {
         trip.setLocations(new ArrayList<>());
         trip.setTripItems(new ArrayList<>());
         trip.setTripExpenses(new ArrayList<>());
-        trip.setTripBudgetCategoryLimits(initializeCategoryLimits(tripRequestDTO, trip));
-
+//        trip.setTripBudgetCategoryLimits(initializeCategoryLimits(tripRequestDTO, trip));
+        trip.setTripBudgetCategoryLimits(new HashSet<>());
         trip.setLeadTourist(leadTourist);
         trip.getTourists().add(leadTourist);
 
