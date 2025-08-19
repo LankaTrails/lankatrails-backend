@@ -1,0 +1,8 @@
+package com.lankatrails.lankatrails_backend.service;
+
+import com.lankatrails.lankatrails_backend.dtos.request.ComplaintDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+
+public interface ComplaintService {
+    APIResponse<String> addNewComplaint(ComplaintDTO complaintDTO);
+}
