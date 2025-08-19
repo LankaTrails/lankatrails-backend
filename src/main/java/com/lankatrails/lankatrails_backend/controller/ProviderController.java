@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.controller;
 
+import com.lankatrails.lankatrails_backend.dtos.request.LicenseDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.BusinessDetailDTO;
@@ -8,11 +9,15 @@ import com.lankatrails.lankatrails_backend.repositories.ProviderRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ProviderService;
 import com.lankatrails.lankatrails_backend.service.impl.PolicyImpl;
+import com.lankatrails.lankatrails_backend.service.impl.ProviderServiceImpl;
 import io.vavr.API;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -40,7 +45,6 @@ public class ProviderController {
         APIResponse<String> response = policyImplementation.providerAddPolicies(policyReq);
         return new ResponseEntity<>(response,HttpStatus.CREATED);
     }
-
 
     @GetMapping("/policies")
     public ResponseEntity<APIResponse<List<PolicySectionRequest>>> providerPolicies (){
@@ -80,5 +84,14 @@ public class ProviderController {
     public ResponseEntity<APIResponse<String>> removePolicy(@PathVariable Long id){
         APIResponse<String> response= policyImplementation.removePolicies(id);
         return new ResponseEntity<>(response,HttpStatus.OK);
+    }
+
+    @PostMapping(value = "/license-renewal", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<APIResponse<String>> renewLicense(
+            @RequestPart("license") @Valid List<LicenseDTO> licenseDTO,
+            @RequestPart(value = "licenseFiles", required = false )List<MultipartFile> licenseFiles){
+
+        APIResponse<String> response = providerService.licenseRenewal(licenseDTO,licenseFiles);
+        return null;
     }
 }
