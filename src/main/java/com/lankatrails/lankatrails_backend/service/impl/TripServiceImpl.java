@@ -1,6 +1,8 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.ChatRoomDto;
+import com.lankatrails.lankatrails_backend.dtos.TripPeriodDto;
+import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
@@ -11,6 +13,7 @@ import com.lankatrails.lankatrails_backend.exception.UserNotFoundException;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.BudgetCategory;
 import com.lankatrails.lankatrails_backend.model.enums.TripStatus;
+import com.lankatrails.lankatrails_backend.repositories.LocationRepository;
 import com.lankatrails.lankatrails_backend.repositories.TouristRepository;
 import com.lankatrails.lankatrails_backend.repositories.TripRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
@@ -48,10 +51,26 @@ public class TripServiceImpl implements TripService {
     @Autowired
     private ChatRoomService chatRoomService;
 
+    @Autowired
+    private LocationRepository locationRepository;
+
     @Override
     @Transactional
     public APIResponse<TripResponseDTO> createTrip(TripRequestDTO tripRequestDTO) {
         log.info("Creating trip with request: {}", tripRequestDTO);
+        // Get and set logged-in user
+        User currentUser = touristRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + authUtils.loggedInUserId()));
+        if (!(currentUser instanceof Tourist leadTourist)) {
+            throw new IllegalStateException("Only tourists can create trips");
+        }
+
+        // Validate existing trips in the same period
+         List<Trip> existingTrips = tripRepository.findOverlappingTripsForTourist(leadTourist, tripRequestDTO.getStartDate(), tripRequestDTO.getEndDate());
+        if (!existingTrips.isEmpty()) {
+            throw new BadRequestException("You already have a trip scheduled during this period");
+        }
+
         // Validate dates
         if (tripRequestDTO.getStartDate().isBefore(LocalDate.now())) {
             throw new IllegalArgumentException("Start date must be today or in the future");
@@ -73,23 +92,18 @@ public class TripServiceImpl implements TripService {
 
         // Initialize collections
         trip.setTourists(new HashSet<>());
-        trip.setLocations(new HashSet<>());
+        trip.setLocations(new ArrayList<>());
         trip.setTripItems(new ArrayList<>());
         trip.setTripExpenses(new ArrayList<>());
         trip.setTripBudgetCategoryLimits(initializeCategoryLimits(tripRequestDTO, trip));
 
-        // Get and set logged-in user
-        User currentUser = touristRepository.findById(authUtils.loggedInUserId())
-                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + authUtils.loggedInUserId()));
-        if (!(currentUser instanceof Tourist leadTourist)) {
-            throw new IllegalStateException("Only tourists can create trips");
-        }
-
         trip.setLeadTourist(leadTourist);
         trip.getTourists().add(leadTourist);
 
-        //add start location to locations
-//        trip.getLocations().add(modelMapper.map(tripRequestDTO.getStartLocation(), Location.class));
+        // Set locations for the trip
+        List<Location> locations = setLocationsForTrip(tripRequestDTO.getLocations(), tripRequestDTO.getStartLocation());
+        trip.setLocations(locations);
+        trip.setStartLocation(locations.getFirst());
 
         // Set default values if not provided
         if (trip.getNumberOfAdults() == null) {
@@ -109,6 +123,20 @@ public class TripServiceImpl implements TripService {
         TripResponseDTO responseDTO = modelMapper.map(savedTrip, TripResponseDTO.class);
 
         return new APIResponse<>(true, "Trip created successfully", responseDTO);
+    }
+
+    private List<Location> setLocationsForTrip(List<LocationDTO> locationDtos, LocationDTO startLocation) {
+        List<Location> locations = new ArrayList<>();
+        // Convert start location DTO to entity and add to locations
+        if (startLocation != null) {
+            locations.add(modelMapper.map(startLocation, Location.class));
+        }
+        for (LocationDTO locationDto : locationDtos) {
+            locations.add(modelMapper.map(locationDto, Location.class));
+        }
+
+        // Save locations to the database
+        return locationRepository.saveAll(locations);
     }
 
     @Override
@@ -175,6 +203,12 @@ public class TripServiceImpl implements TripService {
             throw new BadRequestException("Tourist is already part of this trip");
         }
 
+        // Validate tourist has not overlapping trips
+        List<Trip> overlappingTrips = tripRepository.findOverlappingTripsForTourist(tourist, trip.getStartDate(), trip.getEndDate());
+        if (!overlappingTrips.isEmpty()) {
+            throw new BadRequestException("Tourist has overlapping trips during this period");
+        }
+
         // Add the tourist to the trip
         trip.getTourists().add(tourist);
         Trip updatedTrip = tripRepository.save(trip);
@@ -224,6 +258,27 @@ public class TripServiceImpl implements TripService {
         tripResponseDTO.setChatRoom(chatRoomDto);
 
         return new APIResponse<>(true, "Tourist removed from trip successfully", tripResponseDTO);
+    }
+
+    @Override
+    public APIResponse<List<TripPeriodDto>> getMyTripPeriod() {
+        log.info("Fetching trip period for the logged-in user");
+        User currentUser = touristRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new UserNotFoundException("Tourist not found with id: " + authUtils.loggedInUserId()));
+        if (!(currentUser instanceof Tourist tourist)) {
+            throw new IllegalStateException("Only tourists can fetch their trip period");
+        }
+
+        List<Trip> trips = tripRepository.findByTouristsContaining(tourist);
+        if (trips.isEmpty()) {
+            return new APIResponse<>(false, "No trips found for the user", null);
+        }
+        List<TripPeriodDto> tripPeriods = new ArrayList<>();
+        for (Trip trip : trips) {
+            tripPeriods.add(modelMapper.map(trip, TripPeriodDto.class));
+        }
+
+        return new APIResponse<>(true, "Trip periods fetched successfully", tripPeriods);
     }
 
     private Set<TripBudgetCategoryLimit> initializeCategoryLimits(TripRequestDTO tripRequestDTO, Trip trip) {

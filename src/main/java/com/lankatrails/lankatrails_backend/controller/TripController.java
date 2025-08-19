@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.controller;
 
+import com.lankatrails.lankatrails_backend.dtos.TripPeriodDto;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
@@ -40,6 +41,15 @@ public class TripController {
         log.info("Fetching all trips for the authenticated user");
         APIResponse<List<TripResponseDTO>> response = tripService.getAllMyTrips();
         log.info("Fetched {} trips", response.getData().size());
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
+    }
+
+    @GetMapping("/my-trip-period")
+    public ResponseEntity<APIResponse<List<TripPeriodDto>>> getMyTripPeriod() {
+        log.info("Fetching trip periods for the authenticated user");
+        APIResponse<List<TripPeriodDto>> response = tripService.getMyTripPeriod();
+        log.info("Fetched {} trip periods", response.getData().size());
         return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
     }
