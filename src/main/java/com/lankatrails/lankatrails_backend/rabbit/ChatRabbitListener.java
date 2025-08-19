@@ -12,7 +12,7 @@ public class ChatRabbitListener {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    @RabbitListener(queues = "#{instanceQueue.name}")
+    @RabbitListener(queues = "#{chatQueue.name}")
     public void handleChatMessage(ChatMessageDto message) {
         messagingTemplate.convertAndSend("/topic/room." + message.getChatRoomId(), message);
     }

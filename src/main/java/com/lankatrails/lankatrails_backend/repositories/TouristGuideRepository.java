@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface TouristGuideRepository extends JpaRepository<TouristGuide,Long> {
     Optional<TouristGuide> findByServiceName(String serviceName);
+    Optional<TouristGuide> findByServiceId(Long Id);
 }

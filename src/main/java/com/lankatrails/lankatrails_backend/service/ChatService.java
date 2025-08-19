@@ -1,12 +1,16 @@
 package com.lankatrails.lankatrails_backend.service;
 
-import com.lankatrails.lankatrails_backend.dtos.ChatMessageDto;
+import java.util.List;
+
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+import com.lankatrails.lankatrails_backend.dtos.ChatMessageDto;
 
 public interface ChatService {
     void processMessage(ChatMessageDto dto, Long userId, MultipartFile file);
-    List<ChatMessageDto> getMessagesForRoom(Long roomId);
-    List<ChatMessageDto> getMessagesBetweenUsers(Long user1Id, Long user2Id);
+    APIResponse<List<ChatMessageDto>> getMessagesForRoom(Long roomId);
+    APIResponse<List<ChatMessageDto>> getMessagesBetweenUsers(Long user1Id, Long user2Id);
+    APIResponse<String> markMessageAsRead(String messageId, Long userId);
+    APIResponse<String> markAllMessagesAsReadInRoom(Long roomId, Long userId);
 }

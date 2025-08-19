@@ -110,23 +110,51 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
             return false;
         }
 
-        // This logic assumes your destination follows the pattern "/topic/room.{roomId}"
-        // You MUST make this logic robust for your specific destination scheme.
-        String prefix = "/topic/room.";
-        if (destination.startsWith(prefix)) {
-            try {
-                Long roomId = Long.parseLong(destination.substring(prefix.length()));
-                UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-                Long userId = userDetails.getId();
+        try {
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            Long userId = userDetails.getId();
 
-                // CRITICAL: This service method must be implemented to check if the user is a member of the room.
+            // Check for chat room messages: /topic/room.{roomId}
+            String roomPrefix = "/topic/room.";
+            if (destination.startsWith(roomPrefix)) {
+                Long roomId = Long.parseLong(destination.substring(roomPrefix.length()));
                 return chatRoomService.isUserInRoom(userId, roomId);
-            } catch (NumberFormatException | ClassCastException e) {
-                log.error("Could not parse room ID or get User ID from destination: {}", destination, e);
-                return false;
             }
+
+            // Check for typing indicators: /topic/typing.{roomId}
+            String typingPrefix = "/topic/typing.";
+            if (destination.startsWith(typingPrefix)) {
+                Long roomId = Long.parseLong(destination.substring(typingPrefix.length()));
+                return chatRoomService.isUserInRoom(userId, roomId);
+            }
+
+            // Check for user-specific error messages: /user/queue/errors
+            // This should only be accessible by the authenticated user themselves
+            if (destination.equals("/user/queue/errors")) {
+                return true; // User can always subscribe to their own error queue
+            }
+
+            // Check for user-specific destinations: /user/{username}/queue/...
+            // This pattern allows users to subscribe only to their own user-specific queues
+            String userQueuePrefix = "/user/" + userDetails.getUsername() + "/";
+            if (destination.startsWith(userQueuePrefix)) {
+                return true; // User can subscribe to their own user-specific destinations
+            }
+
+            // Check for user ID-based destinations: /user/{userId}/queue/...
+            String userIdQueuePrefix = "/user/" + userId + "/";
+            if (destination.startsWith(userIdQueuePrefix)) {
+                return true; // User can subscribe to their own user ID-specific destinations
+            }
+
+            log.warn("Unauthorized subscription attempt to destination: {} by user: {}", destination, userId);
+
+        } catch (NumberFormatException | ClassCastException e) {
+            log.error("Could not parse destination or get User details from authentication. Destination: {}", destination, e);
+            return false;
         }
-        // Deny by default if the destination does not match the expected pattern.
+
+        // Deny by default if the destination does not match any expected pattern
         return false;
     }
 

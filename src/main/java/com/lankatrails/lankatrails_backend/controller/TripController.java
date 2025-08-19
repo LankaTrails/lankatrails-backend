@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.controller;
 
+import com.lankatrails.lankatrails_backend.dtos.TripPeriodDto;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
@@ -44,6 +45,15 @@ public class TripController {
                 .body(response);
     }
 
+    @GetMapping("/my-trip-period")
+    public ResponseEntity<APIResponse<List<TripPeriodDto>>> getMyTripPeriod() {
+        log.info("Fetching trip periods for the authenticated user");
+        APIResponse<List<TripPeriodDto>> response = tripService.getMyTripPeriod();
+        log.info("Fetched {} trip periods", response.getData().size());
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
+    }
+
     @GetMapping("/{tripId}")
     public ResponseEntity<APIResponse<TripResponseDTO>> getTripById(@PathVariable Long tripId) {
         log.info("Fetching trip with ID: {}", tripId);
@@ -70,4 +80,23 @@ public class TripController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
     }
+
+    @PutMapping("/{tripId}/add-tourist/{touristId}")
+    public ResponseEntity<APIResponse<TripResponseDTO>> addTouristToTrip(@PathVariable Long tripId, @PathVariable Long touristId) {
+        log.info("Adding tourist with ID: {} to trip with ID: {}", touristId, tripId);
+        APIResponse<TripResponseDTO> response = tripService.addTouristToTrip(tripId, touristId);
+        log.info("Tourist added to trip successfully: {}", response.getData());
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
+    }
+
+    @PutMapping("/{tripId}/remove-tourist/{touristId}")
+    public ResponseEntity<APIResponse<TripResponseDTO>> removeTouristFromTrip(@PathVariable Long tripId, @PathVariable Long touristId) {
+        log.info("Removing tourist with ID: {} from trip with ID: {}", touristId, tripId);
+        APIResponse<TripResponseDTO> response = tripService.removeTouristFromTrip(tripId, touristId);
+        log.info("Tourist removed from trip successfully: {}", response.getData());
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
+    }
+
 }

@@ -5,10 +5,13 @@ import com.lankatrails.lankatrails_backend.model.enums.ChatRoomType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
-    Optional<ChatRoom> findByParticipants_UserIdAndParticipants_UserIdAndChatRoomType(Long user1Id, Long user2Id, ChatRoomType chatRoomType);
+    Set<ChatRoom> findByParticipants_UserIdAndChatRoomType(Long user1Id, ChatRoomType chatRoomType);
+
     Boolean existsByRoomIdAndParticipants_UserId(Long roomId, Long userId);
 
     @Query("""
@@ -26,4 +29,8 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
             Long user2Id,
             ChatRoomType chatRoomType
     );
+
+    Optional<ChatRoom> findByTrip_TripId(Long tripId);
+
+    List<ChatRoom> findByParticipants_UserId(Long userId);
 }

@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -39,7 +40,7 @@ public class Trip {
     @JoinTable(name = "trip_locations",
             joinColumns = @JoinColumn(name = "trip_id"),
             inverseJoinColumns = @JoinColumn(name = "location_id"))
-    private Set<Location> locations = new HashSet<>();
+    private List<Location> locations = new ArrayList<>();
 
     @Column(name = "number_of_adults", nullable = false)
     private Integer numberOfAdults = 1;
@@ -63,6 +64,9 @@ public class Trip {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lead_tourist_id", referencedColumnName = "user_id")
     private Tourist leadTourist;
+
+    @OneToOne(mappedBy = "trip", fetch = FetchType.LAZY)
+    private ChatRoom chatRoom;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "trip_tourists",

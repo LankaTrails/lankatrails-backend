@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.service;
 
+import com.lankatrails.lankatrails_backend.dtos.TripPeriodDto;
 import com.lankatrails.lankatrails_backend.dtos.request.ExpenseDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripRequestDTO;
@@ -17,8 +18,14 @@ public interface TripService {
     APIResponse<TripResponseDTO> getTripById(Long tripId);
 
     APIResponse<List<TripItemDTO>> getTripItemsByTripId(Long tripId);
-    
+
+    APIResponse<TripResponseDTO> addTouristToTrip(Long tripId, Long touristId);
+
+    APIResponse<TripResponseDTO> removeTouristFromTrip(Long tripId, Long touristId);
+
+    APIResponse<List<TripPeriodDto>> getMyTripPeriod();
+
     APIResponse<ExpenseResponseDTO> createExpense(ExpenseDTO expenseDTO);
-    
+
     APIResponse<List<ExpenseResponseDTO>> getExpensesByTripId(Long tripId);
 }
