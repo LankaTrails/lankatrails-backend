@@ -71,4 +71,40 @@ public class TripBudgetServiceImpl implements TripBudgetService {
         log.info("Trip budget limit added successfully: {}", savedLimit);
         return new APIResponse<>(true, "Trip budget limit added successfully", modelMapper.map(savedLimit, TripBudgetLimitDto.class));
     }
+
+    @Override
+    @Transactional
+    public APIResponse<TripBudgetLimitDto> updateTripBudgetLimit(TripBudgetLimitDto tripBudgetLimitDto) {
+        log.info("Updating trip budget limit: {}", tripBudgetLimitDto);
+        Long touristId = authUtils.loggedInUserId();
+
+        // Validate trip existence
+        Trip trip = tripRepository.findById(tripBudgetLimitDto.getTripId())
+                .orElseThrow(() -> new IllegalArgumentException("Trip not found with ID: " + tripBudgetLimitDto.getTripId()));
+
+        // Check if the tourist exists in trip's tourist list
+        if (trip.getTourists().stream().noneMatch(t -> t.getUserId().equals(touristId))) {
+            log.error("Tourist with ID {} is not part of trip with ID {}", touristId, tripBudgetLimitDto.getTripId());
+            return new APIResponse<>(false, "Tourist not part of the trip", null);
+        }
+
+        // Validate budget limit
+        if (tripBudgetLimitDto.getLimitAmount() <= 0) {
+            throw new BadRequestException("Limit amount must be greater than zero");
+        }
+
+        // Find existing limit
+        TripBudgetCategoryLimit existingLimit = tripBudgetCategoryLimitRepository.findById(tripBudgetLimitDto.getLimitId())
+                .orElseThrow(() -> new IllegalArgumentException("Budget limit not found with ID: " + tripBudgetLimitDto.getLimitId()));
+
+        // Update fields
+        existingLimit.setBudgetCategory(tripBudgetLimitDto.getBudgetCategory());
+        existingLimit.setLimitAmount(tripBudgetLimitDto.getLimitAmount());
+
+        // Save updated limit
+        TripBudgetCategoryLimit updatedLimit = tripBudgetCategoryLimitRepository.save(existingLimit);
+
+        log.info("Trip budget limit updated successfully: {}", updatedLimit);
+        return new APIResponse<>(true, "Trip budget limit updated successfully", modelMapper.map(updatedLimit, TripBudgetLimitDto.class));
+    }
 }
