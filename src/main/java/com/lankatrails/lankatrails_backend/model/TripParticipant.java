@@ -46,4 +46,7 @@ public class TripParticipant {
     @Column(name = "privilege")
     private Set<TripPrivilege> privileges = new HashSet<>();
 
+    @ManyToMany(mappedBy = "participants")
+    private Set<GroupChatRoom> chatRooms = new HashSet<>();
+
 }

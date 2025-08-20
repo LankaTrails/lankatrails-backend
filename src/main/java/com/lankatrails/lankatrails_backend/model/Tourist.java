@@ -57,4 +57,8 @@ public class Tourist extends User {
     @OneToMany(mappedBy = "tourist")
     private List<Booking> bookings = new ArrayList<>();
 
+    @OneToMany(mappedBy = "tourist", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    private List<DirectChatRoom> directChatRooms = new ArrayList<>();
+
 }

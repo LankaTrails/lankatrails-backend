@@ -3,6 +3,7 @@ package com.lankatrails.lankatrails_backend.security.service;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.lankatrails.lankatrails_backend.model.User;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
+import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -28,14 +29,18 @@ public class UserDetailsImpl implements UserDetails {
     @Getter
     private Boolean emailVerified;
 
+    @Getter
+    private UserRole role;
+
     private final Collection<? extends GrantedAuthority> authorities;
 
-    public UserDetailsImpl(Long id, String email, String password, Boolean emailVerified,
+    public UserDetailsImpl(Long id, String email, String password, Boolean emailVerified, UserRole role,
                            Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.email = email;
         this.password = password;
         this.emailVerified = emailVerified;
+        this.role = role;
         this.authorities = authorities;
     }
 
@@ -49,6 +54,7 @@ public class UserDetailsImpl implements UserDetails {
                 user.getEmail(),
                 user.getPassword(),
                 user.getEmailVerified(),
+                user.getRole(),
                 authorities
         );
     }
