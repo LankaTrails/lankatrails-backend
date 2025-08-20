@@ -52,6 +52,14 @@ public class BudgetValidator {
         }
     }
 
+    public void validateAgainstTotalBudgetCategory(Double totalBudgetCategoryLimit, Double newTotalBudgetLimit) {
+        if (totalBudgetCategoryLimit > 0 && newTotalBudgetLimit < totalBudgetCategoryLimit) {
+            log.error("New total budget limit {} is less than existing category limit {}",
+                    newTotalBudgetLimit, totalBudgetCategoryLimit);
+            throw new BadRequestException("New total budget limit cannot be less than existing total category limits");
+        }
+    }
+
     public void ensureCategoryNotExists(Trip trip, BudgetCategory category) {
         if (trip.getTripBudgetCategories().stream()
                 .anyMatch(limit -> limit.getBudgetCategory() == category)) {
