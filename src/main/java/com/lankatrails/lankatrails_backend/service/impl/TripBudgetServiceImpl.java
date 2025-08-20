@@ -5,10 +5,15 @@ import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.model.Trip;
 import com.lankatrails.lankatrails_backend.model.TripBudgetCategory;
+import com.lankatrails.lankatrails_backend.model.TripExpense;
+import com.lankatrails.lankatrails_backend.model.enums.BudgetCategory;
+import com.lankatrails.lankatrails_backend.model.enums.TripPrivilege;
 import com.lankatrails.lankatrails_backend.repositories.TripBudgetCategoryRepository;
 import com.lankatrails.lankatrails_backend.repositories.TripRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.TripBudgetService;
+import com.lankatrails.lankatrails_backend.service.utils.BudgetValidator;
+import com.lankatrails.lankatrails_backend.service.utils.TripPrivilegeUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -32,142 +37,112 @@ public class TripBudgetServiceImpl implements TripBudgetService {
     private AuthUtils authUtils;
 
     @Autowired
+    private BudgetValidator budgetValidator;
+
+    @Autowired
     private TripBudgetCategoryRepository tripBudgetCategoryRepository;
 
     @Override
     @Transactional
-    public APIResponse<TripBudgetLimitDto> addTripBudgetLimit(TripBudgetLimitDto tripBudgetLimitDto) {
-        log.info("Adding trip budget limit: {}", tripBudgetLimitDto);
-        Long touristId = authUtils.loggedInUserId();
+    public APIResponse<TripBudgetLimitDto> addTripBudgetLimit(TripBudgetLimitDto dto) {
+        log.info("Adding trip budget limit: {}", dto);
+        Long userId = authUtils.loggedInUserId();
 
-        // Validate trip existence
-        Trip trip = tripRepository.findById(tripBudgetLimitDto.getTripId())
-                .orElseThrow(() -> new IllegalArgumentException("Trip not found with ID: " + tripBudgetLimitDto.getTripId()));
+        Trip trip = tripRepository.findById(dto.getTripId())
+                .orElseThrow(() -> new IllegalArgumentException("Trip not found with ID: " + dto.getTripId()));
 
-        // Check if the tourist exists in trip's tourist list
-        if (trip.getTourists().stream().noneMatch(t -> t.getUserId().equals(touristId))) {
-            log.error("Tourist with ID {} is not part of trip with ID {}", touristId, tripBudgetLimitDto.getTripId());
-            return new APIResponse<>(false, "Tourist not part of the trip", null);
-        }
+        // Validation order
+        budgetValidator.validateLimitAmount(dto.getLimitAmount());
+        budgetValidator.validateUserPrivileges(trip, userId, TripPrivilege.SET_BUDGET_LIMITS);
 
-        // Validate budget limit
-        if (tripBudgetLimitDto.getLimitAmount() <= 0) {
-            throw new BadRequestException("Limit amount must be greater than zero");
-        }
+        // Check spent (derive only if not already stored)
+        Double spentAmount = trip.getTripBudgetCategories().stream()
+                .filter(c -> c.getBudgetCategory() == dto.getBudgetCategory())
+                .map(TripBudgetCategory::getSpentAmount)
+                .findFirst()
+                .orElse(getTotalSpentAmountByCategory(trip, dto.getBudgetCategory()));
 
-        // Validate with spent amount
-//        if (existingLimit.getSpentAmount() > tripBudgetLimitDto.getLimitAmount()) {
-//            log.error("Cannot update limit to a value less than spent amount for limit ID {}", tripBudgetLimitDto.getLimitId());
-//            throw new BadRequestException("Cannot update limit to a value less than spent amount");
-//        }
+        budgetValidator.validateAgainstSpent(spentAmount, dto.getLimitAmount());
 
-        // Check if a limit already exists for the given category
-        if (trip.getTripBudgetCategories().stream()
-                .anyMatch(limit -> limit.getBudgetCategory() == tripBudgetLimitDto.getBudgetCategory())) {
-            log.error("Budget limit for category {} already exists for trip ID {}",
-                      tripBudgetLimitDto.getBudgetCategory(), tripBudgetLimitDto.getTripId());
-            throw new BadRequestException("Budget limit for this category already exists");
-        }
+        // Validate category sum against trip total
+        double newCategoryTotal = getTotalCategoryLimit(trip) + dto.getLimitAmount();
+        budgetValidator.validateAgainstTotalBudget(trip, newCategoryTotal);
 
-        // Map DTO to entity and save
-        TripBudgetCategory tripBudgetCategory = modelMapper.map(tripBudgetLimitDto, TripBudgetCategory.class);
-        tripBudgetCategory.setTrip(trip);
-        TripBudgetCategory savedLimit = tripBudgetCategoryRepository.save(tripBudgetCategory);
+        // Prevent duplicates
+        budgetValidator.ensureCategoryNotExists(trip, dto.getBudgetCategory());
 
-        log.info("Trip budget limit added successfully: {}", savedLimit);
-        return new APIResponse<>(true, "Trip budget limit added successfully", modelMapper.map(savedLimit, TripBudgetLimitDto.class));
+        // Save
+        TripBudgetCategory category = modelMapper.map(dto, TripBudgetCategory.class);
+        category.setTrip(trip);
+        TripBudgetCategory saved = tripBudgetCategoryRepository.save(category);
+
+        return new APIResponse<>(true, "Trip budget limit added successfully",
+                modelMapper.map(saved, TripBudgetLimitDto.class));
     }
 
     @Override
     @Transactional
-    public APIResponse<TripBudgetLimitDto> updateTripBudgetLimit(TripBudgetLimitDto tripBudgetLimitDto) {
-        log.info("Updating trip budget limit: {}", tripBudgetLimitDto);
-        Long touristId = authUtils.loggedInUserId();
+    public APIResponse<TripBudgetLimitDto> updateTripBudgetLimit(TripBudgetLimitDto dto) {
+        log.info("Updating trip budget limit: {}", dto);
+        Long userId = authUtils.loggedInUserId();
 
-        // Validate trip existence
-        Trip trip = tripRepository.findById(tripBudgetLimitDto.getTripId())
-                .orElseThrow(() -> new IllegalArgumentException("Trip not found with ID: " + tripBudgetLimitDto.getTripId()));
+        Trip trip = tripRepository.findById(dto.getTripId())
+                .orElseThrow(() -> new IllegalArgumentException("Trip not found with ID: " + dto.getTripId()));
 
-        // Check if the tourist exists in trip's tourist list
-        if (trip.getTourists().stream().noneMatch(t -> t.getUserId().equals(touristId))) {
-            log.error("Tourist with ID {} is not part of trip with ID {}", touristId, tripBudgetLimitDto.getTripId());
-            return new APIResponse<>(false, "Tourist not part of the trip", null);
+        // Validation order
+        budgetValidator.validateLimitAmount(dto.getLimitAmount());
+        budgetValidator.validateUserPrivileges(trip, userId, TripPrivilege.SET_BUDGET_LIMITS);
+
+        TripBudgetCategory existing = tripBudgetCategoryRepository.findById(dto.getLimitId())
+                .orElseThrow(() -> new IllegalArgumentException("Budget limit not found with ID: " + dto.getLimitId()));
+
+        // Validate that the category matches
+        if (existing.getBudgetCategory() != dto.getBudgetCategory()) {
+            throw new BadRequestException("Cannot update budget limit category - category mismatch");
         }
 
-        // Validate budget limit
-        if (tripBudgetLimitDto.getLimitAmount() <= 0) {
-            throw new BadRequestException("Limit amount must be greater than zero");
-        }
+        // Validate spent vs new limit
+        budgetValidator.validateAgainstSpent(existing.getSpentAmount(), dto.getLimitAmount());
 
-        // Find existing limit
-        TripBudgetCategory existingLimit = tripBudgetCategoryRepository.findById(tripBudgetLimitDto.getLimitId())
-                .orElseThrow(() -> new IllegalArgumentException("Budget limit not found with ID: " + tripBudgetLimitDto.getLimitId()));
+        // Validate category totals
+        double newCategoryTotal = getTotalCategoryLimit(trip) - existing.getLimitAmount() + dto.getLimitAmount();
+        budgetValidator.validateAgainstTotalBudget(trip, newCategoryTotal);
 
-        // Validate with spent amount
-        if (existingLimit.getSpentAmount() > tripBudgetLimitDto.getLimitAmount()) {
-            log.error("Cannot update limit to a value less than spent amount for limit ID {}", tripBudgetLimitDto.getLimitId());
-            throw new BadRequestException("Cannot update limit to a value less than spent amount");
-        }
+        // Update + save
+        existing.setLimitAmount(dto.getLimitAmount());
+        TripBudgetCategory updated = tripBudgetCategoryRepository.save(existing);
 
-        // Validate with total budget limit
-        if (trip.getTotalBudgetLimit() > 0 && tripBudgetLimitDto.getLimitAmount() > trip.getTotalBudgetLimit()) {
-            log.error("Cannot set limit amount greater than total budget limit for trip ID {}", tripBudgetLimitDto.getTripId());
-            throw new BadRequestException("Limit amount cannot exceed total budget limit for the trip");
-        }
-
-        // Validate total budget category limits with total budget limit
-        double totalBudgetCategoryLimit = trip.getTripBudgetCategories().stream()
-                .filter(limit -> !limit.getLimitId().equals(tripBudgetLimitDto.getLimitId()))
-                .mapToDouble(TripBudgetCategory::getLimitAmount)
-                .sum() + tripBudgetLimitDto.getLimitAmount();
-
-        if (totalBudgetCategoryLimit > trip.getTotalBudgetLimit() && trip.getTotalBudgetLimit() > 0) {
-            log.error("Total budget category limits exceed total budget limit for trip ID {}", tripBudgetLimitDto.getTripId());
-            throw new BadRequestException("Total budget category limits cannot exceed total budget limit for the trip");
-        }
-
-        if (totalBudgetCategoryLimit > trip.getTotalSpentAmount() && trip.getTotalSpentAmount() > 0) {
-            log.error("Total budget category limits exceed total budget for trip ID {}", tripBudgetLimitDto.getTripId());
-            throw new BadRequestException("Total budget category limits cannot exceed total budget for the trip");
-        }
-
-
-        // Update fields
-        existingLimit.setBudgetCategory(tripBudgetLimitDto.getBudgetCategory());
-        existingLimit.setLimitAmount(tripBudgetLimitDto.getLimitAmount());
-
-        // Save updated limit
-        TripBudgetCategory updatedLimit = tripBudgetCategoryRepository.save(existingLimit);
-
-        log.info("Trip budget limit updated successfully: {}", updatedLimit);
-        return new APIResponse<>(true, "Trip budget limit updated successfully", modelMapper.map(updatedLimit, TripBudgetLimitDto.class));
+        return new APIResponse<>(true, "Trip budget limit updated successfully",
+                modelMapper.map(updated, TripBudgetLimitDto.class));
     }
 
     @Override
-    @Transactional
     public APIResponse<List<TripBudgetLimitDto>> getTripBudgetLimitsByTripId(Long tripId) {
         log.info("Fetching trip budget limits for trip ID: {}", tripId);
-        Long touristId = authUtils.loggedInUserId();
+        Long userId = authUtils.loggedInUserId();
 
-        // Validate trip existence
         Trip trip = tripRepository.findById(tripId)
                 .orElseThrow(() -> new IllegalArgumentException("Trip not found with ID: " + tripId));
 
-        // Check if the tourist exists in trip's tourist list
-        if (trip.getTourists().stream().noneMatch(t -> t.getUserId().equals(touristId))) {
-            log.error("Tourist with ID {} is not part of trip with ID {}", touristId, tripId);
-            return new APIResponse<>(false, "Tourist not part of the trip", null);
-        }
-
-        // Fetch budget limits for the trip
-        List<TripBudgetCategory> budgetLimits = tripBudgetCategoryRepository.findByTripTripId(tripId);
-
-        // Map to DTOs
-        List<TripBudgetLimitDto> budgetLimitDtos = budgetLimits.stream()
+        List<TripBudgetLimitDto> result = tripBudgetCategoryRepository.findByTripTripId(tripId)
+                .stream()
                 .map(limit -> modelMapper.map(limit, TripBudgetLimitDto.class))
                 .toList();
 
-        log.info("Fetched {} budget limits for trip ID {}", budgetLimitDtos.size(), tripId);
-        return new APIResponse<>(true, "Trip budget limits fetched successfully", budgetLimitDtos);
+        return new APIResponse<>(true, "Trip budget limits fetched successfully", result);
+    }
+
+    private Double getTotalSpentAmountByCategory(Trip trip, BudgetCategory category) {
+        return trip.getTripExpenses().stream()
+                .filter(expense -> expense.getBudgetCategory().equals(category))
+                .mapToDouble(TripExpense::getAmount)
+                .sum();
+    }
+
+    private Double getTotalCategoryLimit(Trip trip) {
+        return trip.getTripBudgetCategories().stream()
+                .mapToDouble(TripBudgetCategory::getLimitAmount)
+                .sum();
     }
 }
+

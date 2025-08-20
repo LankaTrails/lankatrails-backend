@@ -211,40 +211,6 @@ public class TripServiceImpl implements TripService {
 
     @Override
     @Transactional
-    public APIResponse<TripResponseDTO> addTouristToTrip(Long tripId, Long touristId) {
-        log.info("Adding tourist with ID: {} to trip with ID: {}", touristId, tripId);
-        Trip trip = tripRepository.findByTripId(tripId)
-                .orElseThrow(() -> new ResourceNotFoundException("Trip", tripId));
-
-        Tourist tourist = touristRepository.findById(touristId)
-                .orElseThrow(() -> new UserNotFoundException("Tourist not found with id: " + touristId));
-
-        // Check if the tourist is already part of the trip
-        if (trip.getTourists().contains(tourist)) {
-            throw new BadRequestException("Tourist is already part of this trip");
-        }
-
-        // Validate tourist has not overlapping trips
-        List<Trip> overlappingTrips = tripRepository.findOverlappingTripsForTourist(tourist, trip.getStartDate(), trip.getEndDate());
-        if (!overlappingTrips.isEmpty()) {
-            throw new BadRequestException("Tourist has overlapping trips during this period");
-        }
-
-        // Add the tourist to the trip
-        trip.getTourists().add(tourist);
-        Trip updatedTrip = tripRepository.save(trip);
-
-        TripResponseDTO tripResponseDTO = modelMapper.map(updatedTrip, TripResponseDTO.class);
-
-        // Update the chat room for the trip
-        ChatRoomDto chatRoomDto = chatRoomService.setChatRoomForTrip(trip);
-        tripResponseDTO.setChatRoom(chatRoomDto);
-
-        return new APIResponse<>(true, "Tourist added to trip successfully", tripResponseDTO);
-    }
-
-    @Override
-    @Transactional
     public APIResponse<TripResponseDTO> removeTouristFromTrip(Long tripId, Long touristId) {
         log.info("Removing tourist with ID: {} from trip with ID: {}", touristId, tripId);
 
