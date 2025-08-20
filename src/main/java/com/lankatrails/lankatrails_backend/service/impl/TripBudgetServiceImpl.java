@@ -16,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -116,5 +118,33 @@ public class TripBudgetServiceImpl implements TripBudgetService {
 
         log.info("Trip budget limit updated successfully: {}", updatedLimit);
         return new APIResponse<>(true, "Trip budget limit updated successfully", modelMapper.map(updatedLimit, TripBudgetLimitDto.class));
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<List<TripBudgetLimitDto>> getTripBudgetLimitsByTripId(Long tripId) {
+        log.info("Fetching trip budget limits for trip ID: {}", tripId);
+        Long touristId = authUtils.loggedInUserId();
+
+        // Validate trip existence
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new IllegalArgumentException("Trip not found with ID: " + tripId));
+
+        // Check if the tourist exists in trip's tourist list
+        if (trip.getTourists().stream().noneMatch(t -> t.getUserId().equals(touristId))) {
+            log.error("Tourist with ID {} is not part of trip with ID {}", touristId, tripId);
+            return new APIResponse<>(false, "Tourist not part of the trip", null);
+        }
+
+        // Fetch budget limits for the trip
+        List<TripBudgetCategory> budgetLimits = tripBudgetCategoryRepository.findByTripTripId(tripId);
+
+        // Map to DTOs
+        List<TripBudgetLimitDto> budgetLimitDtos = budgetLimits.stream()
+                .map(limit -> modelMapper.map(limit, TripBudgetLimitDto.class))
+                .toList();
+
+        log.info("Fetched {} budget limits for trip ID {}", budgetLimitDtos.size(), tripId);
+        return new APIResponse<>(true, "Trip budget limits fetched successfully", budgetLimitDtos);
     }
 }

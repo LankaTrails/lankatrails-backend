@@ -10,5 +10,6 @@ public class TripBudgetLimitDto {
     private Long limitId;
     private BudgetCategory budgetCategory;
     private Double limitAmount;
+    private Double spentAmount = 0.0;
     private Long tripId;
 }
