@@ -65,8 +65,8 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         // Create a new direct chat room
         ChatRoom chatRoom = new ChatRoom();
         chatRoom.setChatRoomType(ChatRoomType.DIRECT);
-        chatRoom.setParticipants(List.of(user1, user2));
-        chatRoom.setAdmin(null); // Set admin to null for direct chat rooms
+//        chatRoom.setParticipants(List.of(user1, user2));
+//        chatRoom.setAdmin(null); // Set admin to null for direct chat rooms
         chatRoom.setTrip(null); // Set trip to null for direct chat rooms
         chatRoom.setCreatedAt(java.time.LocalDateTime.now());
         chatRoom = chatRoomRepository.save(chatRoom);
@@ -125,14 +125,15 @@ public class ChatRoomServiceImpl implements ChatRoomService {
             ChatRoom NewChatRoom = new ChatRoom();
             NewChatRoom.setChatRoomType(ChatRoomType.GROUP);
             NewChatRoom.setTrip(trip);
-            NewChatRoom.setParticipants(new ArrayList<>(trip.getTourists()));
-            NewChatRoom.setAdmin(trip.getLeadTourist());
+            // Set participants to the as the users in the trip participants
+//            NewChatRoom.setParticipants(new (User) ArrayList<>(trip.getParticipants()));
             NewChatRoom.setCreatedAt(java.time.LocalDateTime.now());
+            NewChatRoom.setParticipants(new ArrayList<>());
             NewChatRoom = chatRoomRepository.save(NewChatRoom);
             return mapToDto(NewChatRoom);
         } else {
             // Update the chat room participants if it exists
-            chatRoom.setParticipants(new ArrayList<>(trip.getTourists()));
+//            chatRoom.setParticipants(new ArrayList<>(trip.getTourists()));
             chatRoom = chatRoomRepository.save(chatRoom);
             return mapToDto(chatRoom);
         }
@@ -151,9 +152,9 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         }
         ChatRoomDto chatRoomDto = modelMapper.map(chatRoom, ChatRoomDto.class);
         chatRoomDto.setParticipantIds(new ArrayList<>());
-        for (User participant : chatRoom.getParticipants()) {
-            chatRoomDto.getParticipantIds().add(participant.getUserId());
-        }
+//        for (User participant : chatRoom.getParticipants()) {
+//            chatRoomDto.getParticipantIds().add(participant.getUserId());
+//        }
         if (chatRoom.getTrip() != null) {
             chatRoomDto.setTripId(chatRoom.getTrip().getTripId());
         }

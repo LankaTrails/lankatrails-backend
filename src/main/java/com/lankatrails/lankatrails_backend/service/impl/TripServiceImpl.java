@@ -12,6 +12,8 @@ import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.UserNotFoundException;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.BudgetCategory;
+import com.lankatrails.lankatrails_backend.model.enums.TripPrivilege;
+import com.lankatrails.lankatrails_backend.model.enums.TripRole;
 import com.lankatrails.lankatrails_backend.model.enums.TripStatus;
 import com.lankatrails.lankatrails_backend.repositories.LocationRepository;
 import com.lankatrails.lankatrails_backend.repositories.TouristRepository;
@@ -19,6 +21,7 @@ import com.lankatrails.lankatrails_backend.repositories.TripRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ChatRoomService;
 import com.lankatrails.lankatrails_backend.service.TripService;
+import com.lankatrails.lankatrails_backend.service.utils.TripPrivilegeUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -27,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -53,6 +57,9 @@ public class TripServiceImpl implements TripService {
 
     @Autowired
     private LocationRepository locationRepository;
+
+    @Autowired
+    private TripPrivilegeUtils tripPrivilegeUtils;
 
     @Override
     @Transactional
@@ -91,14 +98,22 @@ public class TripServiceImpl implements TripService {
         trip.setTripStatus(TripStatus.PLANNING);
 
         // Initialize collections
-        trip.setTourists(new HashSet<>());
+        trip.setParticipants(new HashSet<>());
         trip.setLocations(new ArrayList<>());
         trip.setTripItems(new ArrayList<>());
         trip.setTripExpenses(new ArrayList<>());
         trip.setTripBudgetCategoryLimits(initializeCategoryLimits(tripRequestDTO, trip));
 
-        trip.setLeadTourist(leadTourist);
-        trip.getTourists().add(leadTourist);
+        // Set lead tourist as admin participant
+        TripParticipant leadParticipant = TripParticipant.builder()
+                .tourist(leadTourist)
+                .tripRole(TripRole.ADMIN)
+                .joinedAt(LocalDateTime.now())
+                .trip(trip)
+                .build();
+
+        leadParticipant.setPrivileges(tripPrivilegeUtils.getDefaultPrivileges(TripRole.ADMIN));
+        trip.getParticipants().add(leadParticipant);
 
         // Set locations for the trip
         List<Location> locations = setLocationsForTrip(tripRequestDTO.getLocations(), tripRequestDTO.getStartLocation());
@@ -149,7 +164,7 @@ public class TripServiceImpl implements TripService {
             throw new IllegalStateException("Only tourists can fetch their trips");
         }
 
-        List<Trip> trips = tripRepository.findByTouristsContaining(tourist);
+        List<Trip> trips = tripRepository.findByParticipants_Tourist(tourist);
         if (trips.isEmpty()) {
             return new APIResponse<>(false, "No trips found for the user", new ArrayList<>());
         }
@@ -190,65 +205,34 @@ public class TripServiceImpl implements TripService {
 
     @Override
     @Transactional
-    public APIResponse<TripResponseDTO> addTouristToTrip(Long tripId, Long touristId) {
-        log.info("Adding tourist with ID: {} to trip with ID: {}", touristId, tripId);
-        Trip trip = tripRepository.findByTripId(tripId)
-                .orElseThrow(() -> new ResourceNotFoundException("Trip", tripId));
-
-        Tourist tourist = touristRepository.findById(touristId)
-                .orElseThrow(() -> new UserNotFoundException("Tourist not found with id: " + touristId));
-
-        // Check if the tourist is already part of the trip
-        if (trip.getTourists().contains(tourist)) {
-            throw new BadRequestException("Tourist is already part of this trip");
-        }
-
-        // Validate tourist has not overlapping trips
-        List<Trip> overlappingTrips = tripRepository.findOverlappingTripsForTourist(tourist, trip.getStartDate(), trip.getEndDate());
-        if (!overlappingTrips.isEmpty()) {
-            throw new BadRequestException("Tourist has overlapping trips during this period");
-        }
-
-        // Add the tourist to the trip
-        trip.getTourists().add(tourist);
-        Trip updatedTrip = tripRepository.save(trip);
-
-        TripResponseDTO tripResponseDTO = modelMapper.map(updatedTrip, TripResponseDTO.class);
-
-        // Update the chat room for the trip
-        ChatRoomDto chatRoomDto = chatRoomService.setChatRoomForTrip(trip);
-        tripResponseDTO.setChatRoom(chatRoomDto);
-
-        return new APIResponse<>(true, "Tourist added to trip successfully", tripResponseDTO);
-    }
-
-    @Override
-    @Transactional
     public APIResponse<TripResponseDTO> removeTouristFromTrip(Long tripId, Long touristId) {
         log.info("Removing tourist with ID: {} from trip with ID: {}", touristId, tripId);
 
         Trip trip = tripRepository.findByTripId(tripId)
                 .orElseThrow(() -> new ResourceNotFoundException("Trip", tripId));
 
-        if (!trip.getLeadTourist().getUserId().equals(authUtils.loggedInUserId())) {
-            throw new BadRequestException("Only the lead tourist can remove tourists from the trip");
-        }
+        //Get the logged-in user Trip Role
+        TripParticipant loggedInParticipant = trip.getParticipants().stream()
+                .filter(participant -> participant.getTourist().getUserId().equals(authUtils.loggedInUserId()))
+                .findFirst()
+                .orElseThrow(() -> new UserNotFoundException("Logged-in user is not a participant of this trip"));
 
-        // Validate tourist lead tourist
-        if (trip.getLeadTourist().getUserId().equals(touristId)) {
-            throw new BadRequestException("Cannot remove the lead tourist from the trip");
+        // Validate participant has permission to remove tourist
+        if (!tripPrivilegeUtils.hasPrivilege(loggedInParticipant.getTripRole(), TripPrivilege.REMOVE_MEMBERS)) {
+            throw new BadRequestException("Only admins can remove tourists from the trip");
         }
 
         Tourist tourist = touristRepository.findById(touristId)
                 .orElseThrow(() -> new UserNotFoundException("Tourist not found with id: " + touristId));
 
         // Check if the tourist is part of the trip
-        if (!trip.getTourists().contains(tourist)) {
-            throw new BadRequestException("Tourist is not part of this trip");
-        }
+        TripParticipant participantToRemove = trip.getParticipants().stream()
+                .filter(participant -> participant.getTourist().getUserId().equals(touristId))
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException("Tourist is not part of this trip"));
 
         // Remove the tourist from the trip
-        trip.getTourists().remove(tourist);
+        trip.getParticipants().remove(participantToRemove);
         Trip updatedTrip = tripRepository.save(trip);
 
         TripResponseDTO tripResponseDTO = modelMapper.map(updatedTrip, TripResponseDTO.class);
@@ -269,7 +253,7 @@ public class TripServiceImpl implements TripService {
             throw new IllegalStateException("Only tourists can fetch their trip period");
         }
 
-        List<Trip> trips = tripRepository.findByTouristsContaining(tourist);
+        List<Trip> trips = tripRepository.findByParticipants_Tourist(tourist);
         if (trips.isEmpty()) {
             return new APIResponse<>(false, "No trips found for the user", null);
         }

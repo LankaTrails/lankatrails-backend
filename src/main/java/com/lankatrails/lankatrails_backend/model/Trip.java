@@ -61,18 +61,11 @@ public class Trip {
     @Column(name = "total_distance")
     private Double totalDistance = 0.0;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lead_tourist_id", referencedColumnName = "user_id")
-    private Tourist leadTourist;
-
     @OneToOne(mappedBy = "trip", fetch = FetchType.LAZY)
     private ChatRoom chatRoom;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "trip_tourists",
-            joinColumns = @JoinColumn(name = "trip_id"),
-            inverseJoinColumns = @JoinColumn(name = "tourist_id"))
-    private Set<Tourist> tourists = new HashSet<>();
+    @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private Set<TripParticipant> participants = new HashSet<>();
 
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("startTime ASC")

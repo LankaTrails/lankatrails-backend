@@ -39,8 +39,8 @@ public class Tourist extends User {
         super.setStatus(UserStatus.ACTIVE);
     }
 
-    @ManyToMany(mappedBy = "tourists", fetch = FetchType.LAZY)
-    private Set<Trip> trips;
+    @OneToMany(mappedBy = "tourist", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<TripParticipant> tripParticipants;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "tourist_favourite_services",
@@ -56,30 +56,5 @@ public class Tourist extends User {
 
     @OneToMany(mappedBy = "tourist")
     private List<Booking> bookings = new ArrayList<>();
-
-    public @Size(max = 20) String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(@Size(max = 20) String firstName) {
-        this.firstName = firstName;
-    }
-
-    public @Size(max = 50) String getCountry() {
-        return country;
-    }
-
-    public void setCountry(@Size(max = 50) String country) {
-        this.country = country;
-    }
-
-    public @Size(max = 20) String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(@Size(max = 20) String lastName) {
-        this.lastName = lastName;
-    }
-
 
 }
