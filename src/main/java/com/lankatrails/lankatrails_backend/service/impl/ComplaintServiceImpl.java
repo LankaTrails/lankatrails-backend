@@ -3,6 +3,7 @@ package com.lankatrails.lankatrails_backend.service.impl;
 import com.lankatrails.lankatrails_backend.dtos.request.ComplaintDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.ComplaintImgDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.ComplaintInfoDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.ComplaintViewDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ComplaintInfoResponse;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
@@ -110,5 +111,36 @@ public class ComplaintServiceImpl implements ComplaintService {
                     .build();
         }
 
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<ComplaintViewDTO> viewOneComplaint(Long id) {
+        Complaint complaint= complaintRepository.findById(id)
+                .orElseThrow(()->new ResourceNotFoundException("Complaint",id));
+        Service service = serviceRepository.findById(complaint.getService().getServiceId())
+                .orElseThrow(()-> new ResourceNotFoundException("Service",complaint.getService().getServiceId()));
+
+        Tourist tourist = touristRepository.findByUserId(complaint.getTourist().getUserId())
+                .orElseThrow(()-> new ResourceNotFoundException("Tourist",complaint.getTourist().getUserId()));
+
+        List<Complaint> noOfComplaints = complaintRepository.findByService_ServiceId(service.getServiceId());
+
+        ComplaintViewDTO complaintViewDTO = new ComplaintViewDTO();
+
+        complaintViewDTO.setTouristEmail(tourist.getEmail());
+        complaintViewDTO.setDescription(complaint.getDescription());
+        complaintViewDTO.setBusinessType(service.getProvider().getBusinessType());
+        complaintViewDTO.setUserStatus(tourist.getStatus());
+        complaintViewDTO.setServiceName(service.getServiceName());
+        complaintViewDTO.setTotalComplaints(noOfComplaints.size());
+        complaintViewDTO.setCategory(service.getCategory());
+
+
+        return APIResponse.<ComplaintViewDTO>builder()
+                .success(true)
+                .message("View complaint Details")
+                .data(complaintViewDTO)
+                .build();
     }
 }

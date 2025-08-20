@@ -1,20 +1,15 @@
 package com.lankatrails.lankatrails_backend.controller;
 
 import com.lankatrails.lankatrails_backend.dtos.request.ComplaintDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.ComplaintViewDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ComplaintInfoResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.ComplaintResponseDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.ComplaintViewResponse;
 import com.lankatrails.lankatrails_backend.service.ComplaintService;
-import io.vavr.API;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api")
@@ -34,6 +29,13 @@ public class ComplaintController {
     @GetMapping("/admin/complaints")
     public ResponseEntity<APIResponse<ComplaintInfoResponse>> getUnresolvedComplaints(){
         APIResponse<ComplaintInfoResponse> response = complaintService.getAllComplaints();
+        return new ResponseEntity<>(response,HttpStatus.OK);
+    }
+
+    //view one complaint
+    @GetMapping("/admin/complaints/{complaintId}")
+    public ResponseEntity<APIResponse<ComplaintViewDTO>> viewOneComplaint(@PathVariable Long complaintId){
+        APIResponse<ComplaintViewDTO> response = complaintService.viewOneComplaint(complaintId);
         return new ResponseEntity<>(response,HttpStatus.OK);
     }
 
