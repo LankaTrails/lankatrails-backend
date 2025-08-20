@@ -4,10 +4,8 @@ import com.lankatrails.lankatrails_backend.dtos.request.TripBudgetLimitDto;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.model.Trip;
-import com.lankatrails.lankatrails_backend.model.TripBudgetCategoryLimit;
-import com.lankatrails.lankatrails_backend.repositories.TouristRepository;
-import com.lankatrails.lankatrails_backend.repositories.TripBudgetCategoryLimitRepository;
-import com.lankatrails.lankatrails_backend.repositories.TripExpenseRepository;
+import com.lankatrails.lankatrails_backend.model.TripBudgetCategory;
+import com.lankatrails.lankatrails_backend.repositories.TripBudgetCategoryRepository;
 import com.lankatrails.lankatrails_backend.repositories.TripRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.TripBudgetService;
@@ -32,7 +30,7 @@ public class TripBudgetServiceImpl implements TripBudgetService {
     private AuthUtils authUtils;
 
     @Autowired
-    private TripBudgetCategoryLimitRepository tripBudgetCategoryLimitRepository;
+    private TripBudgetCategoryRepository tripBudgetCategoryRepository;
 
     @Override
     @Transactional
@@ -55,8 +53,14 @@ public class TripBudgetServiceImpl implements TripBudgetService {
             throw new BadRequestException("Limit amount must be greater than zero");
         }
 
+        // Validate with spent amount
+//        if (existingLimit.getSpentAmount() > tripBudgetLimitDto.getLimitAmount()) {
+//            log.error("Cannot update limit to a value less than spent amount for limit ID {}", tripBudgetLimitDto.getLimitId());
+//            throw new BadRequestException("Cannot update limit to a value less than spent amount");
+//        }
+
         // Check if a limit already exists for the given category
-        if (trip.getTripBudgetCategoryLimits().stream()
+        if (trip.getTripBudgetCategories().stream()
                 .anyMatch(limit -> limit.getBudgetCategory() == tripBudgetLimitDto.getBudgetCategory())) {
             log.error("Budget limit for category {} already exists for trip ID {}",
                       tripBudgetLimitDto.getBudgetCategory(), tripBudgetLimitDto.getTripId());
@@ -64,9 +68,9 @@ public class TripBudgetServiceImpl implements TripBudgetService {
         }
 
         // Map DTO to entity and save
-        TripBudgetCategoryLimit tripBudgetCategoryLimit = modelMapper.map(tripBudgetLimitDto, TripBudgetCategoryLimit.class);
-        tripBudgetCategoryLimit.setTrip(trip);
-        TripBudgetCategoryLimit savedLimit = tripBudgetCategoryLimitRepository.save(tripBudgetCategoryLimit);
+        TripBudgetCategory tripBudgetCategory = modelMapper.map(tripBudgetLimitDto, TripBudgetCategory.class);
+        tripBudgetCategory.setTrip(trip);
+        TripBudgetCategory savedLimit = tripBudgetCategoryRepository.save(tripBudgetCategory);
 
         log.info("Trip budget limit added successfully: {}", savedLimit);
         return new APIResponse<>(true, "Trip budget limit added successfully", modelMapper.map(savedLimit, TripBudgetLimitDto.class));
@@ -94,15 +98,21 @@ public class TripBudgetServiceImpl implements TripBudgetService {
         }
 
         // Find existing limit
-        TripBudgetCategoryLimit existingLimit = tripBudgetCategoryLimitRepository.findById(tripBudgetLimitDto.getLimitId())
+        TripBudgetCategory existingLimit = tripBudgetCategoryRepository.findById(tripBudgetLimitDto.getLimitId())
                 .orElseThrow(() -> new IllegalArgumentException("Budget limit not found with ID: " + tripBudgetLimitDto.getLimitId()));
+
+        // Validate with spent amount
+        if (existingLimit.getSpentAmount() > tripBudgetLimitDto.getLimitAmount()) {
+            log.error("Cannot update limit to a value less than spent amount for limit ID {}", tripBudgetLimitDto.getLimitId());
+            throw new BadRequestException("Cannot update limit to a value less than spent amount");
+        }
 
         // Update fields
         existingLimit.setBudgetCategory(tripBudgetLimitDto.getBudgetCategory());
         existingLimit.setLimitAmount(tripBudgetLimitDto.getLimitAmount());
 
         // Save updated limit
-        TripBudgetCategoryLimit updatedLimit = tripBudgetCategoryLimitRepository.save(existingLimit);
+        TripBudgetCategory updatedLimit = tripBudgetCategoryRepository.save(existingLimit);
 
         log.info("Trip budget limit updated successfully: {}", updatedLimit);
         return new APIResponse<>(true, "Trip budget limit updated successfully", modelMapper.map(updatedLimit, TripBudgetLimitDto.class));

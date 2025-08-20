@@ -102,7 +102,7 @@ public class TripServiceImpl implements TripService {
         trip.setTripItems(new ArrayList<>());
         trip.setTripExpenses(new ArrayList<>());
 //        trip.setTripBudgetCategoryLimits(initializeCategoryLimits(tripRequestDTO, trip));
-        trip.setTripBudgetCategoryLimits(new HashSet<>());
+        trip.setTripBudgetCategories(new HashSet<>());
         trip.setLeadTourist(leadTourist);
         trip.getTourists().add(leadTourist);
 
@@ -356,31 +356,31 @@ public class TripServiceImpl implements TripService {
         return new APIResponse<>(true, "Expenses fetched successfully", responseDTOs);
     }
 
-    private Set<TripBudgetCategoryLimit> initializeCategoryLimits(TripRequestDTO tripRequestDTO, Trip trip) {
-        Set<TripBudgetCategoryLimit> categoryLimits = new HashSet<>();
+    private Set<TripBudgetCategory> initializeCategoryLimits(TripRequestDTO tripRequestDTO, Trip trip) {
+        Set<TripBudgetCategory> categoryLimits = new HashSet<>();
 
         if (tripRequestDTO.getAccommodationLimit() != null) {
-            categoryLimits.add(new TripBudgetCategoryLimit(
+            categoryLimits.add(new TripBudgetCategory(
                     BudgetCategory.ACCOMMODATION, tripRequestDTO.getAccommodationLimit(), trip));
         }
         if (tripRequestDTO.getFoodLimit() != null) {
-            categoryLimits.add(new TripBudgetCategoryLimit(
+            categoryLimits.add(new TripBudgetCategory(
                     BudgetCategory.FOOD, tripRequestDTO.getFoodLimit(), trip));
         }
         if (tripRequestDTO.getTransportLimit() != null) {
-            categoryLimits.add(new TripBudgetCategoryLimit(
+            categoryLimits.add(new TripBudgetCategory(
                     BudgetCategory.TRANSPORT, tripRequestDTO.getTransportLimit(), trip));
         }
         if (tripRequestDTO.getActivityLimit() != null) {
-            categoryLimits.add(new TripBudgetCategoryLimit(
+            categoryLimits.add(new TripBudgetCategory(
                     BudgetCategory.ACTIVITY, tripRequestDTO.getActivityLimit(), trip));
         }
         if (tripRequestDTO.getMiscellaneousLimit() != null) {
-            categoryLimits.add(new TripBudgetCategoryLimit(
+            categoryLimits.add(new TripBudgetCategory(
                     BudgetCategory.MISCELLANEOUS, tripRequestDTO.getMiscellaneousLimit(), trip));
         }
         if (tripRequestDTO.getShoppingLimit() != null) {
-            categoryLimits.add(new TripBudgetCategoryLimit(
+            categoryLimits.add(new TripBudgetCategory(
                     BudgetCategory.SHOPPING, tripRequestDTO.getShoppingLimit(), trip));
         }
 
