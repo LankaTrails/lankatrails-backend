@@ -118,8 +118,8 @@ public class TripServiceImpl implements TripService {
         if (trip.getNumberOfChildren() == null) {
             trip.setNumberOfChildren(0);
         }
-        if (trip.getTotalBudget() == null) {
-            trip.setTotalBudget(0.0);
+        if (trip.getTotalSpentAmount() == null) {
+            trip.setTotalSpentAmount(0.0);
         }
 
         // Save the trip

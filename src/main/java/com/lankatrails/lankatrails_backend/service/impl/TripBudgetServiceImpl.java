@@ -109,6 +109,29 @@ public class TripBudgetServiceImpl implements TripBudgetService {
             throw new BadRequestException("Cannot update limit to a value less than spent amount");
         }
 
+        // Validate with total budget limit
+        if (trip.getTotalBudgetLimit() > 0 && tripBudgetLimitDto.getLimitAmount() > trip.getTotalBudgetLimit()) {
+            log.error("Cannot set limit amount greater than total budget limit for trip ID {}", tripBudgetLimitDto.getTripId());
+            throw new BadRequestException("Limit amount cannot exceed total budget limit for the trip");
+        }
+
+        // Validate total budget category limits with total budget limit
+        double totalBudgetCategoryLimit = trip.getTripBudgetCategories().stream()
+                .filter(limit -> !limit.getLimitId().equals(tripBudgetLimitDto.getLimitId()))
+                .mapToDouble(TripBudgetCategory::getLimitAmount)
+                .sum() + tripBudgetLimitDto.getLimitAmount();
+
+        if (totalBudgetCategoryLimit > trip.getTotalBudgetLimit() && trip.getTotalBudgetLimit() > 0) {
+            log.error("Total budget category limits exceed total budget limit for trip ID {}", tripBudgetLimitDto.getTripId());
+            throw new BadRequestException("Total budget category limits cannot exceed total budget limit for the trip");
+        }
+
+        if (totalBudgetCategoryLimit > trip.getTotalSpentAmount() && trip.getTotalSpentAmount() > 0) {
+            log.error("Total budget category limits exceed total budget for trip ID {}", tripBudgetLimitDto.getTripId());
+            throw new BadRequestException("Total budget category limits cannot exceed total budget for the trip");
+        }
+
+
         // Update fields
         existingLimit.setBudgetCategory(tripBudgetLimitDto.getBudgetCategory());
         existingLimit.setLimitAmount(tripBudgetLimitDto.getLimitAmount());

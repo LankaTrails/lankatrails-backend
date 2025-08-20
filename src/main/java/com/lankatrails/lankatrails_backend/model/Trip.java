@@ -53,7 +53,7 @@ public class Trip {
     private TripStatus tripStatus;
 
     @Column(name = "total_budget")
-    private Double totalBudget = 0.0;
+    private Double totalSpentAmount = 0.0;
 
     @Column(name = "total_budget_limit")
     private Double totalBudgetLimit = 0.0;
