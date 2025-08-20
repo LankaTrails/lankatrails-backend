@@ -62,7 +62,7 @@ public class Trip {
     private Double totalDistance = 0.0;
 
     @OneToOne(mappedBy = "trip", fetch = FetchType.LAZY)
-    private ChatRoom chatRoom;
+    private GroupChatRoom chatRoom;
 
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private Set<TripParticipant> participants = new HashSet<>();
