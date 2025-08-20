@@ -12,12 +12,15 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TripRepository extends JpaRepository<Trip, Long> {
-    List<Trip> findByTouristsContaining(Tourist tourist);
+//    List<Trip> findByTouristsContaining(Tourist tourist);
+
+    List<Trip> findByParticipants_Tourist(Tourist tourist);
 
     Optional<Trip> findByTripId(Long tripId);
 
     @Query("SELECT t FROM Trip t " +
-            "WHERE (:tourist MEMBER OF t.tourists) " +
+            "JOIN t.participants p " +
+            "WHERE p.tourist = :tourist " +
             "AND t.startDate <= :endDate " +
             "AND t.endDate >= :startDate")
     List<Trip> findOverlappingTripsForTourist(
@@ -25,4 +28,5 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
     );
+
 }
