@@ -1,11 +1,14 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.*;
 
-import com.lankatrails.lankatrails_backend.model.Trip;
+import com.lankatrails.lankatrails_backend.dtos.DirectChatRoomDto;
+import com.lankatrails.lankatrails_backend.dtos.GroupChatRoomDto;
+import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.ChatRoomType;
+import com.lankatrails.lankatrails_backend.model.enums.UserRole;
+import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,11 +19,6 @@ import com.lankatrails.lankatrails_backend.dtos.ChatRoomDto;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.exception.UserNotFoundException;
-import com.lankatrails.lankatrails_backend.model.ChatRoom;
-import com.lankatrails.lankatrails_backend.model.User;
-import com.lankatrails.lankatrails_backend.repositories.ChatRoomRepository;
-import com.lankatrails.lankatrails_backend.repositories.TripRepository;
-import com.lankatrails.lankatrails_backend.repositories.UserRepository;
 import com.lankatrails.lankatrails_backend.service.ChatRoomService;
 
 @Service
@@ -29,7 +27,19 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     ChatRoomRepository chatRoomRepository;
 
     @Autowired
+    DirectChatRoomRepository directChatRoomRepository;
+
+    @Autowired
+    GroupChatRoomRepository groupChatRoomRepository;
+
+    @Autowired
     UserRepository userRepository;
+
+    @Autowired
+    TouristRepository touristRepository;
+
+    @Autowired
+    ProviderRepository providerRepository;
 
     @Autowired
     TripRepository tripRepository;
@@ -42,63 +52,66 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
     @Override
     @Transactional
-    public APIResponse<ChatRoomDto> getDirectChatRoom(Long userId) {
+    public APIResponse<DirectChatRoomDto> getDirectChatRoom(Long providerId) {
         // Validate users exist and get users
-        User user1 = userRepository.findById(authUtils.loggedInUserId())
-                .orElseThrow(() -> new UserNotFoundException("User with ID " + authUtils.loggedInUserId() + " does not exist"));
+        Tourist tourist = touristRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new UserNotFoundException("Tourist with ID " + authUtils.loggedInUserId() + " does not exist"));
 
-        User user2 = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User with ID " + userId + " does not exist"));
+        Provider provider = providerRepository.findById(providerId)
+                .orElseThrow(() -> new UserNotFoundException("User with ID " + providerId + " does not exist"));
 
         // Check if a direct chat room already exists
-        Optional<ChatRoom> existingChatRoom = chatRoomRepository.findDirectRoomBetweenUsers(
-                user1.getUserId(), user2.getUserId(), ChatRoomType.DIRECT);
+        Optional<DirectChatRoom> existingChatRoom = directChatRoomRepository.findByProvider_UserIdAndTourist_UserId(providerId, tourist.getUserId());
 
         if (existingChatRoom.isPresent()) {
-            return APIResponse.<ChatRoomDto>builder()
+            return APIResponse.<DirectChatRoomDto>builder()
                     .success(true)
                     .message("Direct chat room already exists")
-                    .data(mapToDto(existingChatRoom.get()))
+                    .data(modelMapper.map(existingChatRoom.get(), DirectChatRoomDto.class))
                     .build();
         }
 
         // Create a new direct chat room
-        ChatRoom chatRoom = new ChatRoom();
-        chatRoom.setChatRoomType(ChatRoomType.DIRECT);
-        chatRoom.setParticipants(List.of(user1, user2));
-        chatRoom.setAdmin(null); // Set admin to null for direct chat rooms
-        chatRoom.setTrip(null); // Set trip to null for direct chat rooms
-        chatRoom.setCreatedAt(java.time.LocalDateTime.now());
-        chatRoom = chatRoomRepository.save(chatRoom);
+        DirectChatRoom newChatRoom = new DirectChatRoom();
+        newChatRoom.setChatRoomType(ChatRoomType.DIRECT);
+        newChatRoom.setProvider(provider);
+        newChatRoom.setTourist(tourist);
+        newChatRoom.setCreatedAt(LocalDateTime.now());
+        newChatRoom = directChatRoomRepository.save(newChatRoom);
 
-        return APIResponse.<ChatRoomDto>builder()
+        DirectChatRoomDto chatRoomDto = modelMapper.map(newChatRoom, DirectChatRoomDto.class);
+
+        // Return the response
+        return APIResponse.<DirectChatRoomDto>builder()
                 .success(true)
                 .message("Direct chat room created successfully")
-                .data(mapToDto(chatRoom))
+                .data(chatRoomDto)
                 .build();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public APIResponse<List<ChatRoomDto>> getMyChatRooms() {
+    public APIResponse<List<DirectChatRoomDto>> getMyDirectChatRooms() {
         Long userId = authUtils.loggedInUserId();
-        List<ChatRoom> chatRooms = chatRoomRepository.findByParticipants_UserId(userId);
+        UserRole userRole = authUtils.loggedInUserRole();
 
-        if (chatRooms.isEmpty()) {
-            throw new BadRequestException("No chat rooms found for user with ID " + userId);
+        Set<DirectChatRoom> chatRooms = new HashSet<>();
+
+        if (userRole == UserRole.ROLE_TOURIST) {
+            chatRooms = directChatRoomRepository.findByTourist_UserId(userId);
+        } else if (userRole == UserRole.ROLE_PROVIDER) {
+            chatRooms = directChatRoomRepository.findByProvider_UserId(userId);
+        } else {
+            throw new BadRequestException("User role is not valid for direct chat rooms");
         }
 
-        List<ChatRoomDto> chatRoomDtos = new ArrayList<>();
-        for (ChatRoom chatRoom : chatRooms) {
-            chatRoomDtos.add(mapToDto(chatRoom));
-        }
-
-        return APIResponse.<List<ChatRoomDto>>builder()
+        return APIResponse.<List<DirectChatRoomDto>>builder()
                 .success(true)
                 .message("Chat rooms retrieved successfully")
-                .data(chatRoomDtos)
+                .data(chatRooms.stream()
+                        .map(chatRoom -> modelMapper.map(chatRoom, DirectChatRoomDto.class))
+                        .toList())
                 .build();
-
     }
 
     @Override
@@ -110,53 +123,46 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         return APIResponse.<ChatRoomDto>builder()
                 .success(true)
                 .message("Chat room retrieved successfully")
-                .data(mapToDto(chatRoom))
+                .data(modelMapper.map(chatRoom, ChatRoomDto.class))
                 .build();
     }
 
     @Override
-    public ChatRoomDto setChatRoomForTrip(Trip trip) {
+    public GroupChatRoomDto setChatRoomForTrip(Trip trip) {
         // Get the chat room for the trip else set null
-        ChatRoom chatRoom = chatRoomRepository.findByTrip_TripId(trip.getTripId())
-                .orElse(null);
+        GroupChatRoom chatRoom = groupChatRoomRepository.findByTrip_TripId(trip.getTripId());
 
         if (chatRoom == null) {
-            // Create a new chat room if it doesn't exist
-            ChatRoom NewChatRoom = new ChatRoom();
-            NewChatRoom.setChatRoomType(ChatRoomType.GROUP);
-            NewChatRoom.setTrip(trip);
-            NewChatRoom.setParticipants(new ArrayList<>(trip.getTourists()));
-            NewChatRoom.setAdmin(trip.getLeadTourist());
-            NewChatRoom.setCreatedAt(java.time.LocalDateTime.now());
-            NewChatRoom = chatRoomRepository.save(NewChatRoom);
-            return mapToDto(NewChatRoom);
+            // Create a new chat room if it does not exist
+            chatRoom = new GroupChatRoom();
+            chatRoom.setChatRoomType(ChatRoomType.GROUP);
+            chatRoom.setTrip(trip);
+            chatRoom.setCreatedAt(LocalDateTime.now());
+            // Set the participants to the tourists of the trip
+            chatRoom.setParticipants(new ArrayList<>(trip.getParticipants()));
+            chatRoom = groupChatRoomRepository.save(chatRoom);
+            return modelMapper.map(chatRoom, GroupChatRoomDto.class);
         } else {
             // Update the chat room participants if it exists
-            chatRoom.setParticipants(new ArrayList<>(trip.getTourists()));
-            chatRoom = chatRoomRepository.save(chatRoom);
-            return mapToDto(chatRoom);
+            chatRoom.setParticipants(new ArrayList<>(trip.getParticipants()));
+            chatRoom = groupChatRoomRepository.save(chatRoom);
+            return modelMapper.map(chatRoom, GroupChatRoomDto.class);
         }
     }
 
     @Override
     public Boolean isUserInRoom(Long userId, Long chatRoomId) {
-        return chatRoomRepository.existsByRoomIdAndParticipants_UserId(chatRoomId, userId);
-    }
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(() -> new BadRequestException("Chat room with ID " + chatRoomId + " does not exist"));
 
-    @Transactional(readOnly = true)
-    @Override
-    public ChatRoomDto mapToDto(ChatRoom chatRoom) {
-        if (chatRoom == null) {
-            return null;
+        if (chatRoom instanceof DirectChatRoom directChatRoom) {
+            return directChatRoom.getProvider().getUserId().equals(userId) ||
+                   directChatRoom.getTourist().getUserId().equals(userId);
+        } else if (chatRoom instanceof GroupChatRoom groupChatRoom) {
+            return groupChatRoom.getParticipants().stream()
+                    .anyMatch(participant -> participant.getTourist().getUserId().equals(userId));
+        } else {
+            throw new BadRequestException("Invalid chat room type");
         }
-        ChatRoomDto chatRoomDto = modelMapper.map(chatRoom, ChatRoomDto.class);
-        chatRoomDto.setParticipantIds(new ArrayList<>());
-        for (User participant : chatRoom.getParticipants()) {
-            chatRoomDto.getParticipantIds().add(participant.getUserId());
-        }
-        if (chatRoom.getTrip() != null) {
-            chatRoomDto.setTripId(chatRoom.getTrip().getTripId());
-        }
-        return chatRoomDto;
     }
 }
