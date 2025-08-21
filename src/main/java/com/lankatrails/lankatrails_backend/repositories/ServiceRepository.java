@@ -7,9 +7,11 @@ import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@Repository
 public interface ServiceRepository extends JpaRepository<Service, Long> {
 
     // 1. Nearby services by distance (unchanged)

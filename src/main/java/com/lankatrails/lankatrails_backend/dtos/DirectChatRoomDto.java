@@ -10,4 +10,6 @@ import lombok.*;
 public class DirectChatRoomDto extends ChatRoomDto {
     private Long providerId;
     private Long touristId;
+    private ProviderDto provider;
+    private TouristDto tourist;
 }
