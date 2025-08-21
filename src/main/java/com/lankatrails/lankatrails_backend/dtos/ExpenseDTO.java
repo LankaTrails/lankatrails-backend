@@ -1,9 +1,11 @@
-package com.lankatrails.lankatrails_backend.dtos.request;
+package com.lankatrails.lankatrails_backend.dtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -12,7 +14,10 @@ import lombok.Setter;
 public class ExpenseDTO {
     private Long expenseId;
     private String expenseName;
-    private Double amount;
     private Long tripId;
     private String budgetCategory;
+    private List<ExpenseShareDto> shares;
+    private String expenseDateTime;
+    private TripParticipantDto createdByParticipant;
+    private Double totalExpenseAmount;
 }

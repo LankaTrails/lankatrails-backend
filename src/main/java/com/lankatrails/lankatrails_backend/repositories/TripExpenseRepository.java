@@ -11,12 +11,12 @@ import java.util.List;
 @Repository
 public interface TripExpenseRepository extends JpaRepository<TripExpense, Long> {
     
-    @Query("SELECT te FROM TripExpense te WHERE te.trip.tripId = :tripId")
-    List<TripExpense> findByTripId(@Param("tripId") Long tripId);
-    
-    @Query("SELECT te FROM TripExpense te WHERE te.trip.tripId = :tripId AND te.budgetCategory = :category")
-    List<TripExpense> findByTripIdAndCategory(@Param("tripId") Long tripId, @Param("category") String category);
-    
-    @Query("SELECT te FROM TripExpense te WHERE te.paidBy.userId = :userId")
-    List<TripExpense> findByPaidByUserId(@Param("userId") Long userId);
+//    @Query("SELECT te FROM TripExpense te WHERE te.trip.tripId = :tripId")
+//    List<TripExpense> findByTripId(@Param("tripId") Long tripId);
+//
+//    @Query("SELECT te FROM TripExpense te WHERE te.trip.tripId = :tripId AND te.budgetCategory = :category")
+//    List<TripExpense> findByTripIdAndCategory(@Param("tripId") Long tripId, @Param("category") String category);
+//
+//    @Query("SELECT te FROM TripExpense te WHERE te.paidBy.userId = :userId")
+//    List<TripExpense> findByPaidByUserId(@Param("userId") Long userId);
 }

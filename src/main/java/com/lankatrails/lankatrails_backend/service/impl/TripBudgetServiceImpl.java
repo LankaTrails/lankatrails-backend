@@ -197,7 +197,7 @@ public class TripBudgetServiceImpl implements TripBudgetService {
     private Double getTotalSpentAmountByCategory(Trip trip, BudgetCategory category) {
         return trip.getTripExpenses().stream()
                 .filter(expense -> expense.getBudgetCategory().equals(category))
-                .mapToDouble(TripExpense::getAmount)
+                .mapToDouble(TripExpense::getTotalExpenseAmount)
                 .sum();
     }
 

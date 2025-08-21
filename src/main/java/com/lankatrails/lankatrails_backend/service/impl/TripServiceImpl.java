@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.ChatRoomDto;
+import com.lankatrails.lankatrails_backend.dtos.ExpenseShareDto;
 import com.lankatrails.lankatrails_backend.dtos.TripPeriodDto;
 import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
@@ -8,7 +9,7 @@ import com.lankatrails.lankatrails_backend.dtos.request.TripRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TripResponseDTO;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
-import com.lankatrails.lankatrails_backend.dtos.request.ExpenseDTO;
+import com.lankatrails.lankatrails_backend.dtos.ExpenseDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.ExpenseResponseDTO;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.UserNotFoundException;
@@ -17,10 +18,7 @@ import com.lankatrails.lankatrails_backend.model.enums.BudgetCategory;
 import com.lankatrails.lankatrails_backend.model.enums.TripPrivilege;
 import com.lankatrails.lankatrails_backend.model.enums.TripRole;
 import com.lankatrails.lankatrails_backend.model.enums.TripStatus;
-import com.lankatrails.lankatrails_backend.repositories.LocationRepository;
-import com.lankatrails.lankatrails_backend.repositories.TouristRepository;
-import com.lankatrails.lankatrails_backend.repositories.TripExpenseRepository;
-import com.lankatrails.lankatrails_backend.repositories.TripRepository;
+import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ChatRoomService;
 import com.lankatrails.lankatrails_backend.service.TripService;
@@ -51,6 +49,9 @@ public class TripServiceImpl implements TripService {
 
     @Autowired
     private TripExpenseRepository tripExpenseRepository;
+
+    @Autowired
+    private TripExpenseShareRepository tripExpenseShareRepository;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -273,43 +274,98 @@ public class TripServiceImpl implements TripService {
 
     @Override
     @Transactional
-    public APIResponse<ExpenseResponseDTO> createExpense(ExpenseDTO expenseDTO) {
+    public APIResponse<String> createExpense(ExpenseDTO expenseDTO) {
         log.info("Creating expense: {}", expenseDTO);
 
         // Validate trip exists
         Trip trip = tripRepository.findByTripId(expenseDTO.getTripId())
                 .orElseThrow(() -> new BadRequestException("Trip not found for the given id"));
 
-        // Get current user
-        User currentUser = touristRepository.findById(authUtils.loggedInUserId())
-                .orElseThrow(() -> new UserNotFoundException("Tourist not found with id: " + authUtils.loggedInUserId()));
+        // Validate logged-in user is a participant of the trip
+        TripParticipant loggedInParticipant = trip.getParticipants().stream()
+                .filter(participant -> participant.getTourist().getUserId().equals(authUtils.loggedInUserId()))
+                .findFirst()
+                .orElseThrow(() -> new UserNotFoundException("Logged-in user is not a participant of this trip"));
 
-        if (!(currentUser instanceof Tourist tourist)) {
-            throw new IllegalStateException("Only tourists can create expenses");
+        // Validate participant has permission to create expenses
+        if (!tripPrivilegeUtils.hasPrivilege(loggedInParticipant.getTripRole(), TripPrivilege.ADD_EXPENSES)) {
+            throw new BadRequestException("Only participants with CREATE_EXPENSES privilege can create expenses");
         }
 
-        // Create expense entity
-        TripExpense expense = TripExpense.builder()
-                .expenseName(expenseDTO.getExpenseName())
-                .amount(expenseDTO.getAmount())
-                .budgetCategory(BudgetCategory.valueOf(expenseDTO.getBudgetCategory().toUpperCase()))
-                .expenseDateTime(java.time.LocalDateTime.now())
-                .paidBy(tourist)
-                .trip(trip)
-                .build();
+        // Validate expense data
+        if (expenseDTO.getExpenseName() == null || expenseDTO.getExpenseName().isEmpty()) {
+            throw new BadRequestException("Expense name cannot be empty");
+        }
 
-        // Save expense
-        TripExpense savedExpense = tripExpenseRepository.save(expense);
+        // Validate budget category
+        TripBudgetCategory existingCategory = trip.getTripBudgetCategories().stream()
+                .filter(category -> category.getBudgetCategory().name().equalsIgnoreCase(expenseDTO.getBudgetCategory()))
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException("Invalid budget category"));
 
-        // Convert to response DTO
-        ExpenseResponseDTO responseDTO = new ExpenseResponseDTO();
-        responseDTO.setExpenseId(savedExpense.getExpenseId());
-        responseDTO.setExpenseName(savedExpense.getExpenseName());
-        responseDTO.setAmount(savedExpense.getAmount());
-        responseDTO.setBudgetCategory(savedExpense.getBudgetCategory().name());
-        responseDTO.setTripId(savedExpense.getTrip().getTripId());
+        Double totalExpenseAmount = expenseDTO.getShares().stream()
+                .mapToDouble(ExpenseShareDto::getAmount)
+                .sum();
 
-        return new APIResponse<>(true, "Expense created successfully", responseDTO);
+        // Validate total expense amount
+        if (totalExpenseAmount <= 0) {
+            throw new BadRequestException("Total expense amount must be greater than zero");
+        }
+
+        if (!totalExpenseAmount.equals(expenseDTO.getTotalExpenseAmount())) {
+            throw new BadRequestException("Total expense amount does not match the sum of shares");
+        }
+
+        // Validate expense does not exceed category limit
+        if (existingCategory.getLimitAmount() < existingCategory.getSpentAmount() + totalExpenseAmount) {
+            throw new BadRequestException("Expense exceeds the budget limit for category: " + existingCategory.getBudgetCategory());
+        }
+
+        if (trip.getTotalBudgetLimit() < trip.getTotalSpentAmount() + totalExpenseAmount) {
+            throw new BadRequestException("Expense exceeds the total budget limit for the trip");
+        }
+
+        // Create new expense entity
+        TripExpense tripExpense = new TripExpense();
+        tripExpense.setExpenseName(expenseDTO.getExpenseName());
+        tripExpense.setBudgetCategory(BudgetCategory.valueOf(expenseDTO.getBudgetCategory()));
+        tripExpense.setExpenseDateTime(LocalDateTime.now());
+        tripExpense.setTrip(trip);
+        tripExpense.setCreatedByParticipant(loggedInParticipant);
+//        tripExpense.setShares(expenseShares);
+        tripExpense.setTotalExpenseAmount(totalExpenseAmount);
+
+        // Update category spent amount
+        existingCategory.setSpentAmount(existingCategory.getSpentAmount() + totalExpenseAmount);
+        trip.getTripBudgetCategories().add(existingCategory);
+
+        // Update trip total spent amount
+        trip.setTotalSpentAmount(trip.getTotalSpentAmount() + totalExpenseAmount);
+        TripExpense savedExpense =  tripExpenseRepository.save(tripExpense);
+
+        // Create ExpenseShare entities
+        for (ExpenseShareDto shareDto : expenseDTO.getShares()) {
+            TripParticipant participant = trip.getParticipants().stream()
+                    .filter(p -> p.getTourist().getUserId().equals(shareDto.getParticipant().getParticipantId()))
+                    .findFirst()
+                    .orElseThrow(() -> new BadRequestException("Participant not found for ID: " + shareDto.getParticipant().getParticipantId()));
+
+            TripExpenseShare share = new TripExpenseShare();
+            share.setAmount(shareDto.getAmount());
+            share.setTripExpense(savedExpense);
+            share.setTripParticipant(participant);
+            tripExpenseShareRepository.save(share);
+        }
+
+        // Save the trip with updated budget categories
+        Trip updatedTrip = tripRepository.save(trip);
+
+        // Update the chat room for the trip
+        ChatRoomDto chatRoomDto = chatRoomService.setChatRoomForTrip(updatedTrip);
+        TripResponseDTO tripResponseDTO = modelMapper.map(updatedTrip, TripResponseDTO.class);
+        tripResponseDTO.setChatRoom(chatRoomDto);
+        log.info("Expense created successfully for trip ID: {}", trip.getTripId());
+        return new APIResponse<>(true, "Expense created successfully", "Expense created successfully for trip ID: " + trip.getTripId());
     }
 
     @Override
@@ -323,19 +379,19 @@ public class TripServiceImpl implements TripService {
 
 
         // Get expenses for the trip
-        List<TripExpense> expenses = tripExpenseRepository.findByTripId(tripId);
+//        List<TripExpense> expenses = tripExpenseRepository.findByTripId(tripId);
 
         // Convert to response DTOs
         List<ExpenseResponseDTO> responseDTOs = new ArrayList<>();
-        for (TripExpense expense : expenses) {
-            ExpenseResponseDTO responseDTO = new ExpenseResponseDTO();
-            responseDTO.setExpenseId(expense.getExpenseId());
-            responseDTO.setExpenseName(expense.getExpenseName());
-            responseDTO.setAmount(expense.getAmount());
-            responseDTO.setBudgetCategory(expense.getBudgetCategory().name());
-            responseDTO.setTripId(expense.getTrip().getTripId());
-            responseDTOs.add(responseDTO);
-        }
+//        for (TripExpense expense : expenses) {
+//            ExpenseResponseDTO responseDTO = new ExpenseResponseDTO();
+//            responseDTO.setExpenseId(expense.getExpenseId());
+//            responseDTO.setExpenseName(expense.getExpenseName());
+//            responseDTO.setAmount(expense.getAmount());
+//            responseDTO.setBudgetCategory(expense.getBudgetCategory().name());
+//            responseDTO.setTripId(expense.getTrip().getTripId());
+//            responseDTOs.add(responseDTO);
+//        }
 
         return new APIResponse<>(true, "Expenses fetched successfully", responseDTOs);
     }

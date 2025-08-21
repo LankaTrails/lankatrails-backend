@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "trip_expenses")
@@ -22,9 +23,6 @@ public class TripExpense {
     @Column(name = "expense_name", nullable = false)
     private String expenseName;
 
-    @Column(name = "amount", nullable = false)
-    private Double amount;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "category", nullable = false, columnDefinition = "VARCHAR(20)")
     private BudgetCategory budgetCategory;
@@ -33,11 +31,17 @@ public class TripExpense {
     private LocalDateTime expenseDateTime;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "paid_by_id", nullable = false)
-    private Tourist paidBy;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trip_id", nullable = false)
     private Trip trip;
+
+    @Column(name = "total_expense_amount", nullable = false)
+    private Double totalExpenseAmount;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_participant_id", nullable = false)
+    private TripParticipant createdByParticipant;
+
+    @OneToMany(mappedBy = "tripExpense", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<TripExpenseShare> shares;
 
 }

@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.controller;
 
+import com.lankatrails.lankatrails_backend.dtos.ExpenseDTO;
 import com.lankatrails.lankatrails_backend.dtos.TripPeriodDto;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripRequestDTO;
@@ -87,6 +88,15 @@ public class TripController {
         APIResponse<TripResponseDTO> response = tripService.removeTouristFromTrip(tripId, touristId);
         log.info("Tourist removed from trip successfully: {}", response.getData());
         return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
+    }
+
+    @PostMapping("/expense/create")
+    public ResponseEntity<APIResponse<String>> createExpense(@Valid @RequestBody ExpenseDTO expenseDTO) {
+        log.info("Creating expense: {}", expenseDTO);
+        APIResponse<String> response = tripService.createExpense(expenseDTO);
+        log.info("Expense created successfully: {}", response.getMessage());
+        return ResponseEntity.status(HttpStatus.CREATED)
                 .body(response);
     }
 
