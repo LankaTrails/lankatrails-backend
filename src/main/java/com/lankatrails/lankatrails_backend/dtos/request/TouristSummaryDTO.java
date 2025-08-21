@@ -10,5 +10,5 @@ public class TouristSummaryDTO {
     private Long id;           // tourist_id
     private String fullName;   // firstName + lastName
     private String email;      // inherited from User
-    private String profilePicture;
+
 }

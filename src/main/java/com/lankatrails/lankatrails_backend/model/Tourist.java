@@ -86,4 +86,6 @@ public class Tourist extends User {
     }
 
 
+    public void setId(Long id) {
+    }
 }

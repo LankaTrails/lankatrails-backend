@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Setter
 public class RateAndReviewDTO {
 
-    private Long id;               // review_id
+//    private Long id;               // review_id
     private LocalDateTime createdDate;
     private Long rate;
     private String review;
