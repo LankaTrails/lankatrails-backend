@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface TripBudgetService {
     APIResponse<TripBudgetCategoryDto> addTripBudgetLimit(TripBudgetCategoryDto tripBudgetCategoryDto);
-    APIResponse<TripBudgetCategoryDto> updateTripBudgetLimit(TripBudgetCategoryDto tripBudgetCategoryDto);
+//    APIResponse<TripBudgetCategoryDto> updateTripBudgetLimit(TripBudgetCategoryDto tripBudgetCategoryDto);
     APIResponse<List<TripBudgetCategoryDto>> getTripBudgetLimitsByTripId(Long tripId);
     APIResponse<TripBudgetDto> getTripBudgetDetails(Long tripId);
     APIResponse<TripBudgetDto> updateTripTotalBudget(TripBudgetDto tripBudgetDto);

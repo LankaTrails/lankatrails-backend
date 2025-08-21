@@ -28,14 +28,14 @@ public class TripBudgetController {
                 .body(response);
     }
 
-    @PutMapping("/category-limit")
-    public ResponseEntity<APIResponse<TripBudgetCategoryDto>> updateTripBudgetLimit(@RequestBody TripBudgetCategoryDto tripBudgetCategoryDto) {
-        log.info("Received request to update trip budget limit: {}", tripBudgetCategoryDto);
-        APIResponse<TripBudgetCategoryDto> response = tripBudgetService.updateTripBudgetLimit(tripBudgetCategoryDto);
-        log.info("Trip budget limit updated successfully: {}", response.getData());
-        return ResponseEntity.status(response.isSuccess() ? HttpStatus.OK : HttpStatus.BAD_REQUEST)
-                .body(response);
-    }
+//    @PutMapping("/category-limit")
+//    public ResponseEntity<APIResponse<TripBudgetCategoryDto>> updateTripBudgetLimit(@RequestBody TripBudgetCategoryDto tripBudgetCategoryDto) {
+//        log.info("Received request to update trip budget limit: {}", tripBudgetCategoryDto);
+//        APIResponse<TripBudgetCategoryDto> response = tripBudgetService.updateTripBudgetLimit(tripBudgetCategoryDto);
+//        log.info("Trip budget limit updated successfully: {}", response.getData());
+//        return ResponseEntity.status(response.isSuccess() ? HttpStatus.OK : HttpStatus.BAD_REQUEST)
+//                .body(response);
+//    }
 
     @GetMapping("/category-limit/{tripId}")
     public ResponseEntity<APIResponse<List<TripBudgetCategoryDto>>> getTripBudgetLimitsByTripId(@PathVariable Long tripId) {
