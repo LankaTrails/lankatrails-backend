@@ -90,14 +90,5 @@ public class TripController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
     }
-
-    @PostMapping("/expense/create")
-    public ResponseEntity<APIResponse<String>> createExpense(@Valid @RequestBody ExpenseDTO expenseDTO) {
-        log.info("Creating expense: {}", expenseDTO);
-        APIResponse<String> response = tripService.createExpense(expenseDTO);
-        log.info("Expense created successfully: {}", response.getMessage());
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(response);
-    }
-
+    
 }

@@ -23,7 +23,4 @@ public interface TripService {
 
     APIResponse<List<TripPeriodDto>> getMyTripPeriod();
 
-    APIResponse<String> createExpense(ExpenseDTO expenseDTO);
-
-    APIResponse<List<ExpenseResponseDTO>> getExpensesByTripId(Long tripId);
 }
