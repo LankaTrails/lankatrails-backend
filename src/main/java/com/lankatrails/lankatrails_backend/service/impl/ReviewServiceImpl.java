@@ -13,6 +13,7 @@ import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
 import com.lankatrails.lankatrails_backend.repositories.TouristRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ReviewService;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,66 +81,25 @@ public class ReviewServiceImpl implements ReviewService {
         }
     }
 
-    private List<String> validateReviewRequest(RateAndReviewDTO reviewRequest) {
-        List<String> errors = new ArrayList<>();
 
-        if (reviewRequest.getRate() == null) {
-            errors.add("Rating is required");
-        } else if (reviewRequest.getRate() < 1 || reviewRequest.getRate() > 5) {
-            errors.add("Rating must be between 1 and 5");
+    @Override
+    public APIResponse<List<RateAndReviewDTO>> getReviewsByServiceId(Long serviceId) {
+        // Implementation to get reviews by service ID
+        Service service = serviceRepository.findById(serviceId)
+                .orElseThrow(() -> new BadRequestException("Service Not Found with id: " + serviceId));
+        List<RateAndReview> reviews = reviewRepository.findByService_ServiceId(serviceId);
+
+
+        List<RateAndReviewDTO> reviewDTOS = new ArrayList<>();
+        for (RateAndReview review : reviews) {
+            reviewDTOS.add(modelMapper.map(review, RateAndReviewDTO.class));
         }
-
-        if (reviewRequest.getReview() != null && reviewRequest.getReview().length() > 1000) {
-            errors.add("Review cannot exceed 1000 characters");
-        }
-
-        return errors;
+        return APIResponse.<List<RateAndReviewDTO>>builder()
+                .success(true)
+                .message("Reviews retrieved successfully")
+                .data(reviewDTOS)
+                .build();
     }
-
-//    private RateAndReview convertToEntity(RateAndReviewDTO dto) {
-//        Tourist tourist = new Tourist();
-//        tourist.setId(dto.getTourist().getId());
-//        tourist.setFirstName(dto.getTourist().getFirstName());
-//        tourist.setLastName(dto.getTourist().getLastName());
-//
-//        return RateAndReview.builder()
-//                .rate(dto.getRate())
-//                .review(dto.getReview())
-//                .serviceId(dto.getServiceId())
-//                .tourist(tourist)
-//                .createdDate(LocalDateTime.now())
-//                .build();
-//    }
-//
-//    private RateAndReviewDTO convertToDto(RateAndReview entity) {
-//        TouristSummaryDTO touristDto = new TouristSummaryDTO();
-//        touristDto.setId(entity.getTourist().getId());
-//        touristDto.setFirstName(entity.getTourist().getFirstName());
-//        touristDto.setLastName(entity.getTourist().getLastName());
-//
-//        return new RateAndReviewDTO();
-//        // Or use setters if you don't have a builder for RateAndReviewDTO
-//        RateAndReviewDTO dto = new RateAndReviewDTO();
-//        dto.setId(entity.getId());
-//        dto.setRate(entity.getRate());
-//        dto.setReview(entity.getReview());
-//        dto.setServiceId(entity.getServiceId());
-//        dto.setTourist(touristDto);
-//        dto.setCreatedDate(entity.getCreatedDate());
-//
-//        return dto;
-//    }
-//
-//    @Override
-//    public APIResponse<List<RateAndReviewDTO>> getReviewsByServiceId(Long serviceId) {
-//        // Implementation to get reviews by service ID
-//        List<RateAndReviewDTO> reviews = List.of(); // Replace with actual data
-//        return APIResponse.<List<RateAndReviewDTO>>builder()
-//                .success(true)
-//                .message("Reviews retrieved successfully")
-//                .data(reviews)
-//                .build();
-//    }
 //
 //    // Implement other methods similarly...
 }

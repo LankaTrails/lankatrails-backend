@@ -8,8 +8,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class RateAndReviewDTO {
-
-//    private Long id;               // review_id
+    private Long reviewId;
     private LocalDateTime createdDate;
     private Long rate;
     private String review;

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/tourist/reviews")
+@RequestMapping("/api/tourist")
 public class ReviewController {
 
     @Autowired
@@ -22,9 +22,8 @@ public class ReviewController {
     private AuthUtils authUtils;
 
     // Create a new review
-    @PostMapping("/{serviceId}")
+    @PostMapping("/reviews")
     public ResponseEntity<APIResponse<RateAndReviewDTO>> createReview(
-            @PathVariable Long serviceId,
             @RequestBody RateAndReviewDTO reviewRequest) {
         // Set the tourist ID from the authenticated user
         Long touristId = authUtils.loggedInUserId();
@@ -34,13 +33,13 @@ public class ReviewController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    // Get all reviews for a specific service
-//    @GetMapping("/service/{serviceId}")
-//    public ResponseEntity<APIResponse<List<RateAndReviewDTO>>> getReviewsByService(
-//            @PathVariable Long serviceId) {
-//        APIResponse<List<RateAndReviewDTO>> response = reviewService.getReviewsByServiceId(serviceId);
-//        return new ResponseEntity<>(response, HttpStatus.OK);
-//    }
+//     Get all reviews for a specific service
+    @GetMapping("/reviews/{serviceId}")
+    public ResponseEntity<APIResponse<List<RateAndReviewDTO>>> getReviewsByService(
+            @PathVariable Long serviceId) {
+        APIResponse<List<RateAndReviewDTO>> response = reviewService.getReviewsByServiceId(serviceId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 //
 //    // Get a specific review by ID
 //    @GetMapping("/{reviewId}")

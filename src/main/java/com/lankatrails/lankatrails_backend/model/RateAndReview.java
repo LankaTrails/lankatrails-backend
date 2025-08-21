@@ -16,7 +16,7 @@ public class RateAndReview {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "review_id")
-    private Long id;
+    private Long reviewId;
 
     @Column(name = "created_date")
     private LocalDateTime createdDate;
