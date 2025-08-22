@@ -1,21 +1,14 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.ComplaintDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.ComplaintImgDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.ComplaintInfoDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.ComplaintViewDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ComplaintInfoResponse;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.model.Complaint;
-import com.lankatrails.lankatrails_backend.model.ComplaintImage;
-import com.lankatrails.lankatrails_backend.model.Service;
-import com.lankatrails.lankatrails_backend.model.Tourist;
+import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.enums.ComplaintResult;
 import com.lankatrails.lankatrails_backend.model.enums.ComplaintStatus;
-import com.lankatrails.lankatrails_backend.repositories.ComplaintImgRepository;
-import com.lankatrails.lankatrails_backend.repositories.ComplaintRepository;
-import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
-import com.lankatrails.lankatrails_backend.repositories.TouristRepository;
+import com.lankatrails.lankatrails_backend.model.enums.ComplaintType;
+import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ComplaintService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +30,18 @@ public class ComplaintServiceImpl implements ComplaintService {
 
     @Autowired
     ComplaintImgRepository complaintImgRepository;
+
+    @Autowired
+    BookingRepository bookingRepository;
+
+    @Autowired
+    ComplaintResolveRepository complaintResolveRepository;
+
+    @Autowired
+    ComplaintRejectRepository complaintRejectRepository;
+
+    @Autowired
+    WarningRepository warningRepository;
 
     @Autowired
     AuthUtils authUtils;
@@ -84,14 +89,15 @@ public class ComplaintServiceImpl implements ComplaintService {
                 Service service = serviceRepository.findById(complaint.getService().getServiceId())
                         .orElseThrow(()->new ResourceNotFoundException("Service",complaint.getService().getServiceId()));
 
-                Tourist tourist = touristRepository.findByUserId(authUtils.loggedInUserId())
-                        .orElseThrow(()->new ResourceNotFoundException("Tourist", authUtils.loggedInUserId()));
+                Tourist tourist = touristRepository.findByUserId(complaint.getTourist().getUserId())
+                        .orElseThrow(()->new ResourceNotFoundException("Tourist", complaint.getTourist().getUserId()));
                 ComplaintInfoDTO complaintInfoDTO = new ComplaintInfoDTO();
                 complaintInfoDTO.setBusinessName(service.getServiceName());
                 complaintInfoDTO.setComplaintStatus(complaint.getComplaintStatus());
                 complaintInfoDTO.setTouristEmail(tourist.getEmail());
                 complaintInfoDTO.setBusinessType(service.getProvider().getBusinessType());
-
+                complaintInfoDTO.setComplaintId(complaint.getComplaintId());
+                complaintInfoDTO.setUserStatus(tourist.getStatus());
                 //add to responseList
                 responseList.add(complaintInfoDTO);
             }
@@ -124,6 +130,8 @@ public class ComplaintServiceImpl implements ComplaintService {
         Tourist tourist = touristRepository.findByUserId(complaint.getTourist().getUserId())
                 .orElseThrow(()-> new ResourceNotFoundException("Tourist",complaint.getTourist().getUserId()));
 
+        List<Booking> bookings = bookingRepository.findByService_ServiceIdAndTourist_UserId(service.getServiceId(),tourist.getUserId());
+
         List<Complaint> noOfComplaints = complaintRepository.findByService_ServiceId(service.getServiceId());
 
         ComplaintViewDTO complaintViewDTO = new ComplaintViewDTO();
@@ -135,12 +143,61 @@ public class ComplaintServiceImpl implements ComplaintService {
         complaintViewDTO.setServiceName(service.getServiceName());
         complaintViewDTO.setTotalComplaints(noOfComplaints.size());
         complaintViewDTO.setCategory(service.getCategory());
-
+        complaintViewDTO.setBookings(bookings);
 
         return APIResponse.<ComplaintViewDTO>builder()
                 .success(true)
                 .message("View complaint Details")
                 .data(complaintViewDTO)
                 .build();
+    }
+
+    @Override
+    public APIResponse<String> handleComplaint(ComplaintHandleRequestDTO complaintHandleRequestDTO) {
+        Service service = serviceRepository.findById(complaintHandleRequestDTO.getServiceId())
+                .orElseThrow(()->new ResourceNotFoundException("Service", complaintHandleRequestDTO.getServiceId()));
+        Tourist tourist = touristRepository.findByUserId(complaintHandleRequestDTO.getUserId())
+                .orElseThrow(()-> new ResourceNotFoundException("Tourist", complaintHandleRequestDTO.getUserId()));
+        Complaint complaint = complaintRepository.findById(complaintHandleRequestDTO.getComplaintId())
+                .orElseThrow(()->new ResourceNotFoundException("Complaint", complaintHandleRequestDTO.getComplaintId()));
+
+        complaint.setComplaintStatus(ComplaintStatus.RESOLVED);
+
+        if (complaintHandleRequestDTO.getComplaintType()== ComplaintType.PROVIDER_FAULT && complaintHandleRequestDTO.getWarningStatus()){
+            //increase the no of warnings if it is a provider's fault
+            service.setWarnings(service.getWarnings() + 1);
+            //save the warning
+            Warning warning = new Warning();
+            warning.setWarning(complaintHandleRequestDTO.getWarningReason());
+            warning.setService(service);
+            warningRepository.save(warning);
+        }
+
+        if(complaintHandleRequestDTO.getComplaintResult() == ComplaintResult.REFUND_FROM_PROVIDER){
+            //get the resolved criteria set
+            ComplaintResolve complaintResolve = complaintResolveRepository.findById(complaintHandleRequestDTO.getResolveId())
+                    .orElseThrow(()->new ResourceNotFoundException("Complaint Resolve", complaintHandleRequestDTO.getServiceId()));
+            //Set the resolved category
+            complaint.setComplaintResolve(complaintResolve);
+            //refund the provider's money
+        }else if (complaintHandleRequestDTO.getComplaintResult() == ComplaintResult.REFUND_FROM_COMPANY){
+            //get the resolved criteria set
+            ComplaintResolve complaintResolve = complaintResolveRepository.findById(complaintHandleRequestDTO.getResolveId())
+                    .orElseThrow(()->new ResourceNotFoundException("Complaint Resolve", complaintHandleRequestDTO.getServiceId()));
+            //Set the resolved category
+            complaint.setComplaintResolve(complaintResolve);
+            //refund the entire amount from the company
+        }else if (complaintHandleRequestDTO.getComplaintResult() == ComplaintResult.REJECT){
+            //get the rejected criteria set
+            ComplaintReject complaintReject = complaintRejectRepository.findById(complaintHandleRequestDTO.getRejectId())
+                    .orElseThrow(()->new ResourceNotFoundException("Complaint Resolve", complaintHandleRequestDTO.getServiceId()));
+            //Set why rejected
+            complaint.setComplaintReject(complaintReject);
+            //No need of refund
+
+        }
+        complaintRepository.save(complaint);
+
+        return null;
     }
 }

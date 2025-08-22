@@ -33,4 +33,12 @@ public class Complaint {
     @OneToMany(mappedBy = "complaint")
     private List<ComplaintImage> complaintImages;
 
+    @ManyToOne
+    @JoinColumn(name = "resolve_id")
+    private ComplaintResolve complaintResolve;
+
+    @ManyToOne
+    @JoinColumn(name = "reject_id")
+    private ComplaintReject complaintReject;
+
 }

@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.controller;
 
 import com.lankatrails.lankatrails_backend.dtos.request.ComplaintDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.ComplaintHandleRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.ComplaintViewDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ComplaintInfoResponse;
@@ -36,6 +37,13 @@ public class ComplaintController {
     @GetMapping("/admin/complaints/{complaintId}")
     public ResponseEntity<APIResponse<ComplaintViewDTO>> viewOneComplaint(@PathVariable Long complaintId){
         APIResponse<ComplaintViewDTO> response = complaintService.viewOneComplaint(complaintId);
+        return new ResponseEntity<>(response,HttpStatus.OK);
+    }
+
+    //handle the complaint
+    @PutMapping("/admin/complaints/")
+    public ResponseEntity<APIResponse<String>> handleComplaint(@RequestBody ComplaintHandleRequestDTO complaintHandleRequestDTO){
+        APIResponse<String> response = complaintService.handleComplaint(complaintHandleRequestDTO);
         return new ResponseEntity<>(response,HttpStatus.OK);
     }
 

@@ -18,4 +18,5 @@ public class ComplaintInfoDTO {
     private String touristEmail;
     private UserStatus userStatus;
     private ComplaintStatus complaintStatus;
+    private Long complaintId;
 }

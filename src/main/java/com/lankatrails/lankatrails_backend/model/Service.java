@@ -24,6 +24,7 @@ public class Service {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
+
     private Long serviceId;
 
     private String serviceName;
@@ -35,6 +36,8 @@ public class Service {
     private Double price;
 
     private Long duration;
+
+    private Integer warnings;
 
     @Enumerated(EnumType.STRING)
     private PriceType priceType;
@@ -86,7 +89,11 @@ public class Service {
     @OneToMany(mappedBy = "service")
     private List<Booking> serviceBookings = new ArrayList<>();
 
+    @OneToMany(mappedBy = "service")
+    private List<Warning> warning;
 //    @OneToMany(mappedBy = "service")
 //    private List<ChatRoom> chatRooms = new ArrayList<>();
+
+
 
 }
