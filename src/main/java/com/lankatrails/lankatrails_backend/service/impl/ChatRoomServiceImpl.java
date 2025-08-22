@@ -130,6 +130,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     }
 
     @Override
+    @Transactional
     public GroupChatRoomDto setChatRoomForTrip(Trip trip) {
         // Get the chat room for the trip else set null
         GroupChatRoom chatRoom = groupChatRoomRepository.findByTrip_TripId(trip.getTripId());
@@ -177,6 +178,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Boolean isUserInRoom(Long userId, Long chatRoomId) {
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(() -> new BadRequestException("Chat room with ID " + chatRoomId + " does not exist"));

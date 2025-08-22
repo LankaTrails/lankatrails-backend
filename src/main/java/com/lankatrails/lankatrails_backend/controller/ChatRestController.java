@@ -30,14 +30,14 @@ public class ChatRestController {
     @GetMapping("/rooms/{roomId}/messages")
     public ResponseEntity<APIResponse<List<ChatMessageDto>>> getRoomMessages( @PathVariable Long roomId) {
         APIResponse<List<ChatMessageDto>> response = chatService.getMessagesForRoom(roomId);
-        return ResponseEntity.status(HttpStatus.FOUND)
+        return ResponseEntity.status(HttpStatus.OK)
                              .body(response);
     }
 
     @GetMapping("/users/{user1Id}/{user2Id}/messages")
     public ResponseEntity<APIResponse<List<ChatMessageDto>>> getMessagesBetweenUsers(@PathVariable Long user1Id, @PathVariable Long user2Id) {
         APIResponse<List<ChatMessageDto>> response = chatService.getMessagesBetweenUsers(user1Id, user2Id);
-        return ResponseEntity.status(HttpStatus.FOUND)
+        return ResponseEntity.status(HttpStatus.OK)
                              .body(response);
     }
 

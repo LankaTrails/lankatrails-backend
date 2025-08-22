@@ -25,7 +25,7 @@ public class ChatRoomController {
         log.info("Creating direct chat room with user ID: {}", userId);
         APIResponse<DirectChatRoomDto> response = chatRoomService.getDirectChatRoom(userId);
         log.info("Chat room created successfully: {}", response.getData());
-        return ResponseEntity.status(HttpStatus.FOUND)
+        return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
     }
 
@@ -52,7 +52,7 @@ public class ChatRoomController {
         log.info("Fetching group chat room for trip ID: {}", tripId);
         APIResponse<GroupChatRoomDto> response = chatRoomService.getGroupChatRoomByTripId(tripId);
         log.info("Fetched group chat room: {}", response.getData());
-        return ResponseEntity.status(HttpStatus.FOUND)
+        return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
     }
 }
