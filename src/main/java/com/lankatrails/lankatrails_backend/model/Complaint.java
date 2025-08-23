@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -21,6 +23,14 @@ public class Complaint {
 
     @Enumerated(EnumType.STRING)
     private ComplaintStatus complaintStatus;
+
+    private LocalDateTime dateTime;
+
+    private String investigationStartedDate;
+
+    @ManyToOne
+    @JoinColumn(name = "booking_id")
+    private Booking booking;
 
     @ManyToOne
     @JoinColumn(name = "service_id")

@@ -10,6 +10,7 @@ import lombok.Setter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 @Entity
 @Getter
@@ -44,4 +45,7 @@ public class Booking {
 
     @Enumerated(EnumType.STRING)
     private BookingStatus bookingStatus;
+
+    @OneToMany(mappedBy = "booking")
+    List<Complaint> complaints;
 }

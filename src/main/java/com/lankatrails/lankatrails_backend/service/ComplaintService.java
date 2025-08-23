@@ -12,4 +12,5 @@ public interface ComplaintService {
     APIResponse<ComplaintInfoResponse> getAllComplaints();
     APIResponse<ComplaintViewDTO> viewOneComplaint(Long id);
     APIResponse<String> handleComplaint(ComplaintHandleRequestDTO complaintHandleRequestDTO);
+    APIResponse<String> updateProgress(Long id,ComplaintViewDTO complaintViewDTO);
 }

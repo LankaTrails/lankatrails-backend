@@ -10,6 +10,7 @@ import com.lankatrails.lankatrails_backend.service.ComplaintService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,7 +24,6 @@ public class ComplaintController {
     public ResponseEntity<APIResponse<String>> makeComplaint(ComplaintDTO complaintDTO){
         APIResponse<String> response = complaintService.addNewComplaint(complaintDTO);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
-
     }
 
     //load all the complaints in the admin panel
@@ -46,5 +46,13 @@ public class ComplaintController {
         APIResponse<String> response = complaintService.handleComplaint(complaintHandleRequestDTO);
         return new ResponseEntity<>(response,HttpStatus.OK);
     }
+
+    //Change to "In Progress" and add the investigation started date
+    @PutMapping("/admin/complaints/{complaintId}")
+    public ResponseEntity<APIResponse<String>> updateComplaintStatus(@PathVariable Long complaintId, @RequestBody ComplaintViewDTO complaintViewDTO){
+        APIResponse<String> response = complaintService.updateProgress(complaintId,complaintViewDTO);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
 
 }

@@ -17,5 +17,6 @@ public class ComplaintDTO {
     private String description;
     private ComplaintStatus complaintStatus;
     private Long serviceId;
+    private Long BookingId;
     private List<ComplaintImgDTO> complaintImgs;
 }

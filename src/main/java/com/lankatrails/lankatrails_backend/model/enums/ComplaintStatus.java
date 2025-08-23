@@ -2,6 +2,7 @@ package com.lankatrails.lankatrails_backend.model.enums;
 
 public enum ComplaintStatus {
     RESOLVED,
-    PENDING
+    PENDING,
+    IN_PROGRESS
 
 }

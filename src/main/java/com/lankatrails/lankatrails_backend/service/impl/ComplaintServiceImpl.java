@@ -14,6 +14,7 @@ import com.lankatrails.lankatrails_backend.service.ComplaintService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,6 +61,7 @@ public class ComplaintServiceImpl implements ComplaintService {
         complaint.setComplaintStatus(ComplaintStatus.PENDING);
         complaint.setService(service);
         complaint.setTourist(tourist);
+        complaint.setDateTime(LocalDateTime.now());
         //save the complaint
         Complaint savedComplaint = complaintRepository.save(complaint);
         //prepare the complaint images
@@ -82,7 +84,7 @@ public class ComplaintServiceImpl implements ComplaintService {
     @Override
     @Transactional
     public APIResponse<ComplaintInfoResponse> getAllComplaints() {
-        List<Complaint> complaints = complaintRepository.findByComplaintStatus(ComplaintStatus.PENDING);
+        List<Complaint> complaints = complaintRepository.findByComplaintStatusOrComplaintStatus(ComplaintStatus.PENDING,ComplaintStatus.IN_PROGRESS);
         if (!complaints.isEmpty()){
             List<ComplaintInfoDTO> responseList = new ArrayList<>();
             for (Complaint complaint : complaints){
@@ -132,9 +134,18 @@ public class ComplaintServiceImpl implements ComplaintService {
 
         List<Booking> bookings = bookingRepository.findByService_ServiceIdAndTourist_UserId(service.getServiceId(),tourist.getUserId());
 
+        Booking booking = bookingRepository.findById(complaint.getBooking().getBookingId())
+                .orElseThrow(()-> new ResourceNotFoundException("Booking",complaint.getBooking().getBookingId()));
+
         List<Complaint> noOfComplaints = complaintRepository.findByService_ServiceId(service.getServiceId());
 
         ComplaintViewDTO complaintViewDTO = new ComplaintViewDTO();
+
+        CategoryRequestDTO categoryRequestDTO = new CategoryRequestDTO();
+        categoryRequestDTO.setCategoryName(service.getCategory().getCategoryName());
+
+//        BookingRequestDTO bookingRequestDTO = new BookingRequestDTO();
+
 
         complaintViewDTO.setTouristEmail(tourist.getEmail());
         complaintViewDTO.setDescription(complaint.getDescription());
@@ -142,8 +153,11 @@ public class ComplaintServiceImpl implements ComplaintService {
         complaintViewDTO.setUserStatus(tourist.getStatus());
         complaintViewDTO.setServiceName(service.getServiceName());
         complaintViewDTO.setTotalComplaints(noOfComplaints.size());
-        complaintViewDTO.setCategory(service.getCategory());
-        complaintViewDTO.setBookings(bookings);
+        complaintViewDTO.setCategory(categoryRequestDTO);
+        complaintViewDTO.setComplaintId(complaint.getComplaintId());
+        complaintViewDTO.setComplaintDateTime(complaint.getDateTime());
+        complaintViewDTO.setBookingId(complaint.getBooking().getBookingId());
+//        complaintViewDTO.setBookings(bookings);
 
         return APIResponse.<ComplaintViewDTO>builder()
                 .success(true)
@@ -199,5 +213,20 @@ public class ComplaintServiceImpl implements ComplaintService {
         complaintRepository.save(complaint);
 
         return null;
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<String> updateProgress(Long id, ComplaintViewDTO complaintViewDTO) {
+        Complaint complaint = complaintRepository.findById(id)
+                .orElseThrow(()-> new ResourceNotFoundException("Complaint",id));
+        complaint.setComplaintStatus(ComplaintStatus.IN_PROGRESS);
+        complaint.setInvestigationStartedDate(complaintViewDTO.getInvestigationStartedDate());
+        complaintRepository.save(complaint);
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Successfully Updated")
+                .data("")
+                .build();
     }
 }

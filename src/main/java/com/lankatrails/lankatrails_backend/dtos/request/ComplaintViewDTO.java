@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -23,7 +24,12 @@ public class ComplaintViewDTO {
     private UserStatus userStatus;
     private String serviceName;
     private Integer totalComplaints;
-    private Category category;
-    private List<Booking> bookings;
+    private CategoryRequestDTO category;
+    private List<BookingRequestDTO> bookings;
+    private Long complaintId;
+    private Long bookingId;
+    private LocalDateTime complaintDateTime;
+    private BookingRequestDTO booking;
+    private String investigationStartedDate;
 
 }
