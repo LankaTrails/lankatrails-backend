@@ -7,6 +7,7 @@ import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ComplaintInfoResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ComplaintViewResponse;
 import com.lankatrails.lankatrails_backend.service.ComplaintService;
+import io.vavr.API;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -52,6 +53,13 @@ public class ComplaintController {
     public ResponseEntity<APIResponse<String>> updateComplaintStatus(@PathVariable Long complaintId, @RequestBody ComplaintViewDTO complaintViewDTO){
         APIResponse<String> response = complaintService.updateProgress(complaintId,complaintViewDTO);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    //Update the Complaint Result
+    @PutMapping("/admin/complaint-result/{complaintId}")
+    public ResponseEntity<APIResponse<String>> updateComplaintResult(@PathVariable Long complaintId, @RequestBody ComplaintViewDTO complaintViewDTO){
+        APIResponse<String> response = complaintService.updateComplaintResult(complaintId,complaintViewDTO);
+        return  new ResponseEntity<>(response,HttpStatus.OK);
     }
 
 

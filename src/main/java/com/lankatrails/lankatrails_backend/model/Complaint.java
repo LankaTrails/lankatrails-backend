@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.model;
 
+import com.lankatrails.lankatrails_backend.model.enums.ComplaintResult;
 import com.lankatrails.lankatrails_backend.model.enums.ComplaintStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -23,6 +24,9 @@ public class Complaint {
 
     @Enumerated(EnumType.STRING)
     private ComplaintStatus complaintStatus;
+
+    @Enumerated(EnumType.STRING)
+    private ComplaintResult complaintResult;
 
     private LocalDateTime dateTime;
 

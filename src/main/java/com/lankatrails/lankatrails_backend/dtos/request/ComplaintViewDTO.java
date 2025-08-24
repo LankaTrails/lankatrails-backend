@@ -4,6 +4,7 @@ import com.lankatrails.lankatrails_backend.dtos.response.ApproveLicenseResponse;
 import com.lankatrails.lankatrails_backend.model.Booking;
 import com.lankatrails.lankatrails_backend.model.Category;
 import com.lankatrails.lankatrails_backend.model.enums.BusinessType;
+import com.lankatrails.lankatrails_backend.model.enums.ComplaintResult;
 import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -31,5 +32,6 @@ public class ComplaintViewDTO {
     private LocalDateTime complaintDateTime;
     private BookingRequestDTO booking;
     private String investigationStartedDate;
+    private String complaintResult;
 
 }

@@ -229,4 +229,19 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .data("")
                 .build();
     }
+
+    @Override
+    public APIResponse<String> updateComplaintResult(Long id, ComplaintViewDTO complaintViewDTO) {
+       Complaint complaint =  complaintRepository.findById(id)
+                .orElseThrow(()->new ResourceNotFoundException("Complaint",id));
+
+
+//       complaint.setComplaintResult(complaintViewDTO.);
+       complaintRepository.save(complaint);
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Successfully Updated the Complaint Result")
+                .data("")
+                .build();
+    }
 }
