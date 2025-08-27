@@ -24,7 +24,6 @@ import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
-import com.lankatrails.lankatrails_backend.factory.CreateServiceFactory;
 import com.lankatrails.lankatrails_backend.model.ActivityCategory;
 import com.lankatrails.lankatrails_backend.model.ActivityService;
 import com.lankatrails.lankatrails_backend.model.Category;
@@ -44,22 +43,6 @@ import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ActivityServiceService;
 import com.lankatrails.lankatrails_backend.service.ImageService;
 import com.lankatrails.lankatrails_backend.service.ServicesForAll;
-import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
-
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 public class ActivityServiceServiceImpl implements ActivityServiceService {
@@ -88,9 +71,6 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     private ActivityCategoryRepository activityCategoryRepository;
 
     @Autowired
-    private CreateServiceFactory serviceFactory;
-
-    @Autowired
     private ImageService imageService;
 
     @Autowired
@@ -100,13 +80,10 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     private PolicyImpl policyImpl;
 
     @Autowired
-    private serviceImpl serviceImpl;
+    private ServicesForAll serviceImpl;
 
     @Autowired
     private AuthUtils authUtils;
-
-    @Autowired
-    private FileUploadService fileUploadService;
 
     @Autowired
     private ServicesForAll servicesForAll;

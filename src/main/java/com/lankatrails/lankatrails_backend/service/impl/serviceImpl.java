@@ -76,7 +76,8 @@ public class serviceImpl implements ServicesForAll {
                 }).collect(Collectors.toSet());
     }
 
-    public void setAvailabilitySlots(List<AvailabilitySlotDTO> availabilitySlots, ActivityService activityService){
+    @Override
+    public void setAvailabilitySlots(List<AvailabilitySlotDTO> availabilitySlots, Service service) {
         log.debug("Availability Slots{}", availabilitySlots.toString());
         for (AvailabilitySlotDTO availabilitySlot : availabilitySlots){
                 if(!availabilitySlot.getOpenTime().isEmpty() && !availabilitySlot.getCloseTime().isEmpty()){
@@ -84,7 +85,7 @@ public class serviceImpl implements ServicesForAll {
                     slot.setCloseTime(availabilitySlot.getCloseTime());
                     slot.setOpenTime(availabilitySlot.getOpenTime());
                     slot.setDayOfWeek(availabilitySlot.getDayOfWeek());
-                    slot.setService(activityService);
+                    slot.setService(service);
                     availabilitySlotRepository.save(slot);
                 }
 

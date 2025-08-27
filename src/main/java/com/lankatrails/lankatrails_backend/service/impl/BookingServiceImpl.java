@@ -1,35 +1,47 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.BookingRequestDTO;
-import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.BookingResponseDTO;
-import com.lankatrails.lankatrails_backend.exception.APIException;
-import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
-import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.model.*;
-import com.lankatrails.lankatrails_backend.model.enums.BookingStatus;
-import com.lankatrails.lankatrails_backend.model.enums.BookingType;
-import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
-import com.lankatrails.lankatrails_backend.repositories.*;
-import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
-import com.lankatrails.lankatrails_backend.service.BookingService;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.lankatrails.lankatrails_backend.model.enums.BookingType.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
-@Service
+import com.lankatrails.lankatrails_backend.dtos.request.BookingRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.BookingResponseDTO;
+import com.lankatrails.lankatrails_backend.exception.APIException;
+import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
+import com.lankatrails.lankatrails_backend.exception.BadRequestException;
+import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
+import com.lankatrails.lankatrails_backend.model.Accommodation;
+import com.lankatrails.lankatrails_backend.model.AvailabilitySlot;
+import com.lankatrails.lankatrails_backend.model.Booking;
+import com.lankatrails.lankatrails_backend.model.Service;
+import com.lankatrails.lankatrails_backend.model.Tourist;
+import com.lankatrails.lankatrails_backend.model.TouristGuide;
+import com.lankatrails.lankatrails_backend.model.enums.BookingStatus;
+import com.lankatrails.lankatrails_backend.model.enums.BookingType;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
+import com.lankatrails.lankatrails_backend.repositories.AccommodationRepository;
+import com.lankatrails.lankatrails_backend.repositories.AvailabilitySlotRepository;
+import com.lankatrails.lankatrails_backend.repositories.BookingRepository;
+import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
+import com.lankatrails.lankatrails_backend.repositories.TouristGuideRepository;
+import com.lankatrails.lankatrails_backend.repositories.TouristRepository;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
+import com.lankatrails.lankatrails_backend.service.BookingService;
+
+import lombok.extern.slf4j.Slf4j;
+
+@org.springframework.stereotype.Service
 @Slf4j
 public class BookingServiceImpl implements BookingService {
     @Autowired
@@ -40,9 +52,6 @@ public class BookingServiceImpl implements BookingService {
 
     @Autowired
     ServiceRepository serviceRepository;
-
-    @Autowired
-    FoodBeverageRepository foodBeverageRepository;
 
     @Autowired
     AccommodationRepository accommodationRepository;
@@ -58,275 +67,291 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    //checking the availability of the time slot based on the booking type of the service
     public APIResponse<String> checkTimeSlotAvailability(BookingRequestDTO bookingRequestDTO, Long id) {
-        List<AvailabilitySlot> availabilitySlotList = availabilitySlotRepository.findByService_ServiceId(id);
-        if (availabilitySlotList.isEmpty()){
-            throw new BadCredentialsException("Invalid Availability Slots","No Availability Slots Defined");
+        // Validate basic input
+        APIResponse<String> inputValidation = validateBookingInput(bookingRequestDTO);
+        if (!inputValidation.isSuccess()) {
+            return inputValidation;
         }
 
-        //Parse requested time slot
-        // Convert DTO times to match database format
-        LocalTime requestedStartTime = LocalTime.parse(bookingRequestDTO.getFromTime() + ":00");
-        LocalTime requestedEndTime = LocalTime.parse(bookingRequestDTO.getToTime() + ":00");
+        // Get service once and reuse (fix duplicate service fetching)
+        Service service = serviceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Service", id));
+
+        // Get availability slots
+        List<AvailabilitySlot> availabilitySlotList = availabilitySlotRepository.findByService_ServiceId(id);
+        if (availabilitySlotList.isEmpty()) {
+            return createErrorResponse("No availability slots defined for this service");
+        }
+
+        // Validate dates and times
+        APIResponse<String> dateTimeValidation = validateDateTimeConstraints(bookingRequestDTO, availabilitySlotList);
+        if (!dateTimeValidation.isSuccess()) {
+            return dateTimeValidation;
+        }
+
+        // Validate booking type specific constraints using the already-fetched service
+        return validateBookingTypeConstraints(bookingRequestDTO, service, id);
+    }
+
+    @Transactional(readOnly = true)
+    private APIResponse<String> validateBookingInput(BookingRequestDTO bookingRequestDTO) {
+        // Check for null values
+        if (bookingRequestDTO.getFromTime() == null || bookingRequestDTO.getToTime() == null || 
+            bookingRequestDTO.getAdultCount() == null || bookingRequestDTO.getChildCount() == null) {
+            return createErrorResponse("Required booking fields are missing");
+        }
+
+        if (bookingRequestDTO.getFromDate() == null || bookingRequestDTO.getToDate() == null) {
+            return createErrorResponse("From date and to date are required");
+        }
+
+        // Check for negative values
+        if (bookingRequestDTO.getAdultCount() < 0 || bookingRequestDTO.getChildCount() < 0) {
+            return createErrorResponse("Guest counts cannot be negative");
+        }
+
+        // Check for at least one guest
+        int totalGuests = bookingRequestDTO.getAdultCount() + bookingRequestDTO.getChildCount();
+        if (totalGuests <= 0) {
+            return createErrorResponse("At least one guest (adult or child) is required");
+        }
+
+        // Time validation - ensure start time is before end time
+        if (!bookingRequestDTO.getFromTime().isBefore(bookingRequestDTO.getToTime())) {
+            return createErrorResponse("Start time must be before end time");
+        }
+
+        return createSuccessResponse("Input validation passed");
+    }
+
+    @Transactional(readOnly = true)
+    private APIResponse<String> validateDateTimeConstraints(BookingRequestDTO bookingRequestDTO, List<AvailabilitySlot> availabilitySlotList) {
+        LocalDate currentDate = LocalDate.now();
+        LocalTime requestedStartTime = bookingRequestDTO.getFromTime();
+        LocalTime requestedEndTime = bookingRequestDTO.getToTime();
         DayOfWeek requestedStartDay = bookingRequestDTO.getFromDate().getDayOfWeek();
         DayOfWeek requestedEndDay = bookingRequestDTO.getToDate().getDayOfWeek();
 
-        //check whether the start date is before the current date
-        LocalDate currentDate = LocalDate.now();
-        if(bookingRequestDTO.getFromDate().isBefore(currentDate)){
-            return APIResponse.<String>builder()
-                    .success(false)
-                    .message("Start date is invalid")
-                    .data("")
-                    .build();
+        // Validate dates are not in the past
+        if (bookingRequestDTO.getFromDate().isBefore(currentDate)) {
+            return createErrorResponse("Start date cannot be in the past");
         }
-        //check whether the start date is before the current date
-        if(bookingRequestDTO.getToDate().isBefore(currentDate) || bookingRequestDTO.getToDate().isBefore(bookingRequestDTO.getFromDate())){
-            return APIResponse.<String>builder()
-                    .success(false)
-                    .message("Invalid End Date")
-                    .data("")
-                    .build();
+        if (bookingRequestDTO.getToDate().isBefore(currentDate) || 
+            bookingRequestDTO.getToDate().isBefore(bookingRequestDTO.getFromDate())) {
+            return createErrorResponse("Invalid end date");
         }
 
-        //Find matching start day slot
-        Optional<AvailabilitySlot> startDaySlot = availabilitySlotList.stream()
-                .filter(slot -> slot.getDayOfWeek().equalsIgnoreCase(requestedStartDay.toString()))
-                .findFirst();
+        // Create map for optimized availability slot lookup
+        Map<DayOfWeek, AvailabilitySlot> availabilityMap = availabilitySlotList.stream()
+                .collect(Collectors.toMap(
+                    slot -> DayOfWeek.valueOf(slot.getDayOfWeek().toUpperCase()),
+                    Function.identity(),
+                    (existing, replacement) -> existing // Keep first occurrence in case of duplicates
+                ));
 
-        //Find matching end day slot
-        Optional<AvailabilitySlot> endDaySlot = availabilitySlotList.stream()
-                .filter(slot -> slot.getDayOfWeek().equalsIgnoreCase(requestedEndDay.toString()))
-                .findFirst();
+        // Find matching availability slots using map lookup
+        AvailabilitySlot startDaySlot = availabilityMap.get(requestedStartDay);
+        AvailabilitySlot endDaySlot = availabilityMap.get(requestedEndDay);
 
-        if(startDaySlot.isEmpty() && endDaySlot.isEmpty()){
-            return APIResponse.<String>builder()
-                    .success(false)
-                    .message("Service not Available on "+requestedStartDay+" and "+requestedEndDay)
-                    .data("")
-                    .build();
-        }else if(endDaySlot.isEmpty()){
-            return APIResponse.<String>builder()
-                    .success(false)
-                    .message("Service not Available on "+requestedEndDay)
-                    .data("")
-                    .build();
-        }else if(startDaySlot.isEmpty()){
-            return APIResponse.<String>builder()
-                    .success(false)
-                    .message("Service not Available on "+requestedStartDay)
-                    .data("")
-                    .build();
+        if (startDaySlot == null && endDaySlot == null) {
+            return createErrorResponse("Service not available on " + requestedStartDay + " and " + requestedEndDay);
+        } else if (endDaySlot == null) {
+            return createErrorResponse("Service not available on " + requestedEndDay);
+        } else if (startDaySlot == null) {
+            return createErrorResponse("Service not available on " + requestedStartDay);
         }
 
-        //Parse service's open/close times
-        AvailabilitySlot startTimeSlot = startDaySlot.get();
-        AvailabilitySlot endTimeSlot = endDaySlot.get();
+        // Validate time constraints with null safety
+        try {
+            LocalTime serviceOpenTime = LocalTime.parse(startDaySlot.getOpenTime());
+            LocalTime serviceCloseTime = LocalTime.parse(endDaySlot.getCloseTime());
 
-        LocalTime serviceOpenTime = LocalTime.parse(startTimeSlot.getOpenTime());
-        LocalTime serviceCloseTime = LocalTime.parse(endTimeSlot.getCloseTime());
-
-        //Perform time validation
-        if(requestedStartTime.isBefore(serviceOpenTime)){
-            return APIResponse.<String>builder()
-                    .success(false)
-                    .message("Requested time is before opening time "+serviceOpenTime)
-                    .data("")
-                    .build();
-        }
-        if (requestedEndTime.isAfter(serviceCloseTime)){
-            return APIResponse.<String>builder()
-                    .success(false)
-                    .message("Requested time is after closing time "+serviceOpenTime)
-                    .data("")
-                    .build();
-        }
-        if (requestedStartTime.isAfter(requestedEndTime)){
-            return APIResponse.<String>builder()
-                    .success(false)
-                    .message("Start time cannot be after end time")
-                    .data("")
-                    .build();
-
-        }
-
-            //Find the service
-            com.lankatrails.lankatrails_backend.model.Service service = serviceRepository.findById(id)
-                .orElseThrow(()-> new ResourceNotFoundException("Service",id));
-
-            //check whether a booking is added on the same time slot in the trip
-            List<Booking> sameSlot_touristBookings = bookingRepository.findByStartTimeAndEndTimeAndFromDateAndToDateAndTourist_UserIdAndBookingStatus(
-                    requestedStartTime,
-                    requestedEndTime,
-                    bookingRequestDTO.getFromDate(),
-                    bookingRequestDTO.getToDate(),
-                    authUtils.loggedInUserId(),
-                    BookingStatus.BOOKED
-            );
-            BookingType bookingType = service.getBookingType();
-            if (sameSlot_touristBookings.isEmpty()){
-                    //check whether there are conflicting items in the trip when adding into bookings
-                    List<Booking> overlapBookings = bookingRepository.findOverlappingBookings(
-                            authUtils.loggedInUserId(),
-                            bookingRequestDTO.getFromDate(),
-                            bookingRequestDTO.getToDate(),
-                            requestedStartTime,
-                            requestedEndTime,
-                            BookingStatus.BOOKED
-                    );
-                    //if no conflicting items are available for the booking
-                    //validate for the availability of the quantities if available
-                    //Get the total head count of the new booking received
-                    Integer totalHeads = bookingRequestDTO.getChildCount() + bookingRequestDTO.getAdultCount();
-                    if (overlapBookings.isEmpty()){
-                        //start checking with the service
-                        //trying to place the booking for multiple days
-                        log.info("Booking Type"+bookingType);
-                        if (bookingType == MULTI_DAY){
-                            //Find whether the service will get overlapping bookings because of the new booking
-                            List<Booking> conflictingBookings=bookingRepository.findExactConflictingBookings(
-                                    id,
-                                    bookingRequestDTO.getFromDate(),
-                                    requestedStartTime,
-                                    bookingRequestDTO.getToDate(),
-                                    requestedEndTime,
-                                    BookingStatus.BOOKED
-                            );
-
-                            //accommodation, food-beverage can have many tourists at once
-                            //therefore should check whether the newly received booking exceeds the maximum head count possible in the given range
-                            if (!conflictingBookings.isEmpty()){
-                                //get the total head count of existing bookings and the newly received booking
-                                for (Booking conflictBooking : conflictingBookings){
-                                    totalHeads = totalHeads +conflictBooking.getAdults()+conflictBooking.getChildren();
-                                }
-
-                                //for accommodation
-                                if (service.getCategory().getCategoryName() == ServiceCategory.ACCOMMODATION){
-                                    Accommodation accommodation= accommodationRepository.findByServiceId(id).orElseThrow(()->new ResourceNotFoundException("Accommodation",id));
-                                    //exceeds the no of maximum possible guests
-                                    if (accommodation.getMaxGuests() <= totalHeads){
-                                        return APIResponse.<String>builder()
-                                                .success(false)
-                                                .message("Amount of maximum guests, exceeded")
-                                                .data("")
-                                                .build();
-                                    }
-
-                                }else if (service.getCategory().getCategoryName() == ServiceCategory.ACTIVITY ||
-                                        service.getCategory().getCategoryName() == ServiceCategory.TRANSPORT ||
-                                        service.getCategory().getCategoryName() == ServiceCategory.TOUR_GUIDE){
-                                    //for activity provider, transport, tour-guide needs to check only whether there is a booking on the newly received dates
-                                    return APIResponse.<String>builder()
-                                            .success(false)
-                                            .message("Already Booked")
-                                            .data("")
-                                            .build();
-                                }
-
-
-                            }else{
-                                if (service.getCategory().getCategoryName() == ServiceCategory.ACCOMMODATION) {
-                                    Accommodation accommodation = accommodationRepository.findByServiceId(id).orElseThrow(() -> new ResourceNotFoundException("Accommodation", id));
-                                    //exceeds the no of maximum possible guests
-                                    if (accommodation.getMaxGuests() <= totalHeads) {
-                                        return APIResponse.<String>builder()
-                                                .success(false)
-                                                .message("Amount of maximum guests, exceeded")
-                                                .data("")
-                                                .build();
-                                    }else{
-                                        return APIResponse.<String>builder()
-                                                .success(true)
-                                                .message("Available for Multi-Day accommodation Booking")
-                                                .data("")
-                                                .build();
-                                    }
-                                }else{
-                                    return APIResponse.<String>builder()
-                                            .success(true)
-                                            .message("Available for Multi-DayBookings")
-                                            .data("")
-                                            .build();
-                                }
-                            }
-                        }
-                        //trying to place the booking for a day
-                        if (bookingType == ONE_DAY){
-                            Optional<Booking> oneDayConflict =bookingRepository.findByFromDateAndService_ServiceIdAndBookingStatus(bookingRequestDTO.getFromDate(),id,BookingStatus.BOOKED);
-                            if (oneDayConflict.isEmpty()){
-                                if (service.getCategory().getCategoryName() == ServiceCategory.ACCOMMODATION) {
-                                    Accommodation accommodation = accommodationRepository.findByServiceId(id).orElseThrow(() -> new ResourceNotFoundException("Accommodation", id));
-                                    if (accommodation.getMaxGuests() <= totalHeads) {
-                                        return APIResponse.<String>builder()
-                                                .success(false)
-                                                .message("Amount of maximum guests, exceeded")
-                                                .data("")
-                                                .build();
-                                    }else{
-                                        return APIResponse.<String>builder()
-                                                .success(true)
-                                                .message("Available for One-Day Bookings")
-                                                .data("")
-                                                .build();
-                                    }
-                                }else{
-                                    return APIResponse.<String>builder()
-                                            .success(true)
-                                            .message("Available for One-Day Bookings")
-                                            .data("")
-                                            .build();
-                                }
-                            }else{
-                                return APIResponse.<String>builder()
-                                        .success(false)
-                                        .message("Already Booked for One-Day bookings")
-                                        .data("")
-                                        .build();
-                            }
-                        }
-                        //trying to place the booking for time_slots
-                        if (bookingType == TIME_SLOTS){
-                                List<Booking> timeSlotBookings=bookingRepository.findByStartTimeAndEndTimeAndFromDateAndToDateAndService_ServiceIdAndBookingStatus(
-                                        requestedStartTime,
-                                        requestedEndTime,
-                                        bookingRequestDTO.getFromDate(),
-                                        bookingRequestDTO.getToDate(),
-                                        id,
-                                        BookingStatus.BOOKED
-                                );
-                                if (timeSlotBookings.isEmpty()){
-                                    return APIResponse.<String>builder()
-                                            .success(true)
-                                            .message("Available for Time-Slot Bookings")
-                                            .data("")
-                                            .build();
-                                }else{
-                                    return APIResponse.<String>builder()
-                                            .success(false)
-                                            .message("Already Booked for Time-Slots bookings")
-                                            .data("")
-                                            .build();
-                                }
-                        }
-                    }else{
-                        return APIResponse.<String>builder()
-                                .success(false)
-                                .message("Conflicts with the existing bookings in the trip")
-                                .data("")
-                                .build();
-                    }
-
-            }else{
-                return APIResponse.<String>builder()
-                        .success(false)
-                        .message("Item already in the time slot ")
-                        .data("")
-                        .build();
+            if (requestedStartTime.isBefore(serviceOpenTime)) {
+                return createErrorResponse("Requested time is before opening time " + serviceOpenTime);
             }
+            if (requestedEndTime.isAfter(serviceCloseTime)) {
+                return createErrorResponse("Requested time is after closing time " + serviceCloseTime);
+            }
+            if (requestedStartTime.isAfter(requestedEndTime)) {
+                return createErrorResponse("Start time cannot be after end time");
+            }
+        } catch (Exception e) {
+            return createErrorResponse("Invalid time format in availability slots");
+        }
 
-        return null;
+        return createSuccessResponse("Date and time validation passed");
+    }
+
+    @Transactional(readOnly = true)
+    private APIResponse<String> validateBookingTypeConstraints(BookingRequestDTO bookingRequestDTO, Service service, Long serviceId) {
+        // Check for tourist's existing bookings in the same slot
+        if (hasTouristExistingBooking(bookingRequestDTO)) {
+            return createErrorResponse("Item already in the time slot");
+        }
+
+        // Check for overlapping bookings in tourist's trip
+        if (hasTouristOverlappingBookings(bookingRequestDTO)) {
+            return createErrorResponse("Conflicts with the existing bookings in the trip");
+        }
+
+        BookingType bookingType = service.getBookingType();
+        log.info("Booking Type: {}", bookingType);
+
+        // Validate booking type specific constraints
+        if (bookingType == BookingType.TIME_SLOTS) {
+            return validateTimeSlotBooking(bookingRequestDTO, serviceId);
+        } else if (bookingType == BookingType.ONE_DAY) {
+            return validateOneDayBooking(bookingRequestDTO, service, serviceId);
+        } else if (bookingType == BookingType.MULTI_DAY) {
+            return validateMultiDayBooking(bookingRequestDTO, service, serviceId);
+        } else {
+            return createErrorResponse("Invalid or unsupported booking type: " + bookingType);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    private boolean hasTouristExistingBooking(BookingRequestDTO bookingRequestDTO) {
+        List<Booking> sameSlotTouristBookings = bookingRepository.findByStartTimeAndEndTimeAndFromDateAndToDateAndTourist_UserIdAndBookingStatus(
+                bookingRequestDTO.getFromTime(),
+                bookingRequestDTO.getToTime(),
+                bookingRequestDTO.getFromDate(),
+                bookingRequestDTO.getToDate(),
+                authUtils.loggedInUserId(),
+                BookingStatus.BOOKED
+        );
+        return !sameSlotTouristBookings.isEmpty();
+    }
+
+    @Transactional(readOnly = true)
+    private boolean hasTouristOverlappingBookings(BookingRequestDTO bookingRequestDTO) {
+        List<Booking> overlapBookings = bookingRepository.findOverlappingBookings(
+                authUtils.loggedInUserId(),
+                bookingRequestDTO.getFromDate(),
+                bookingRequestDTO.getToDate(),
+                bookingRequestDTO.getFromTime(),
+                bookingRequestDTO.getToTime(),
+                BookingStatus.BOOKED
+        );
+        return !overlapBookings.isEmpty();
+    }
+
+    @Transactional(readOnly = true)
+    private APIResponse<String> validateTimeSlotBooking(BookingRequestDTO bookingRequestDTO, Long serviceId) {
+        // TIME_SLOTS booking must be for the same day
+        if (!bookingRequestDTO.getFromDate().equals(bookingRequestDTO.getToDate())) {
+            return createErrorResponse("Time slot bookings must be for the same day. From date and to date must be identical.");
+        }
+
+        // Check if the specific time slot is already booked
+        List<Booking> timeSlotBookings = bookingRepository.findByStartTimeAndEndTimeAndFromDateAndToDateAndService_ServiceIdAndBookingStatus(
+                bookingRequestDTO.getFromTime(),
+                bookingRequestDTO.getToTime(),
+                bookingRequestDTO.getFromDate(),
+                bookingRequestDTO.getToDate(),
+                serviceId,
+                BookingStatus.BOOKED
+        );
+
+        if (timeSlotBookings.isEmpty()) {
+            return createSuccessResponse("Available for Time-Slot Bookings");
+        } else {
+            return createErrorResponse("Already booked for this time slot");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    private APIResponse<String> validateOneDayBooking(BookingRequestDTO bookingRequestDTO, Service service, Long serviceId) {
+        // ONE_DAY booking must be for the same day
+        if (!bookingRequestDTO.getFromDate().equals(bookingRequestDTO.getToDate())) {
+            return createErrorResponse("One day bookings must be for the same day. From date and to date must be identical.");
+        }
+
+        Optional<Booking> oneDayConflict = bookingRepository.findByFromDateAndService_ServiceIdAndBookingStatus(
+                bookingRequestDTO.getFromDate(), serviceId, BookingStatus.BOOKED);
+
+        if (oneDayConflict.isEmpty()) {
+            return validateServiceCapacity(bookingRequestDTO, service, serviceId, "One-Day");
+        } else {
+            return createErrorResponse("Already booked for one-day bookings");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    private APIResponse<String> validateMultiDayBooking(BookingRequestDTO bookingRequestDTO, Service service, Long serviceId) {
+        List<Booking> conflictingBookings = bookingRepository.findExactConflictingBookings(
+                serviceId,
+                bookingRequestDTO.getFromDate(),
+                bookingRequestDTO.getFromTime(),
+                bookingRequestDTO.getToDate(),
+                bookingRequestDTO.getToTime(),
+                BookingStatus.BOOKED
+        );
+
+        int totalHeads = bookingRequestDTO.getChildCount() + bookingRequestDTO.getAdultCount();
+
+        if (!conflictingBookings.isEmpty()) {
+            // Calculate total heads including existing bookings
+            for (Booking conflictBooking : conflictingBookings) {
+                totalHeads += conflictBooking.getAdults() + conflictBooking.getChildren();
+            }
+            return checkServiceCategoryCapacity(service, serviceId, totalHeads);
+        } else {
+            return validateServiceCapacity(bookingRequestDTO, service, serviceId, "Multi-Day");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    private APIResponse<String> validateServiceCapacity(BookingRequestDTO bookingRequestDTO, Service service, Long serviceId, String bookingTypeDesc) {
+        Integer totalHeads = bookingRequestDTO.getChildCount() + bookingRequestDTO.getAdultCount();
+
+        if (service.getCategory() != null && ServiceCategory.ACCOMMODATION.equals(service.getCategory().getCategoryName())) {
+            Accommodation accommodation = accommodationRepository.findByServiceId(serviceId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Accommodation", serviceId));
+            if (accommodation.getMaxGuests() < totalHeads) {
+                return createErrorResponse("Amount of maximum guests exceeded");
+            } else {
+                return createSuccessResponse("Available for " + bookingTypeDesc + " accommodation booking");
+            }
+        }
+        return createSuccessResponse("Available for " + bookingTypeDesc + " bookings");
+    }
+
+    @Transactional(readOnly = true)
+    private APIResponse<String> checkServiceCategoryCapacity(Service service, Long serviceId, Integer totalHeads) {
+        switch (service.getCategory().getCategoryName()) {
+            case ACCOMMODATION:
+                Accommodation accommodation = accommodationRepository.findByServiceId(serviceId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Accommodation", serviceId));
+                if (accommodation.getMaxGuests() < totalHeads) {
+                    return createErrorResponse("Amount of maximum guests exceeded");
+                }
+                break;
+            case FOOD_BEVERAGE:
+            case ACTIVITY:
+            case TRANSPORT:
+            case TOUR_GUIDE:
+                return createErrorResponse("Already booked");
+            default:
+                return createErrorResponse("Unsupported service category");
+        }
+        return createSuccessResponse("Available for booking");
+    }
+
+    private APIResponse<String> createErrorResponse(String message) {
+        return APIResponse.<String>builder()
+                .success(false)
+                .message(message)
+                .data("")
+                .build();
+    }
+
+    private APIResponse<String> createSuccessResponse(String message) {
+        return APIResponse.<String>builder()
+                .success(true)
+                .message(message)
+                .data("")
+                .build();
     }
 
     @Override
@@ -336,8 +361,7 @@ public class BookingServiceImpl implements BookingService {
         APIResponse<String> availabilityResponse=checkTimeSlotAvailability(bookingRequestDTO,id);
         if (availabilityResponse.isSuccess()){
             Booking prepareBooking = new Booking();
-            com.lankatrails.lankatrails_backend.model.Service service = serviceRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Service",id));
-            ServiceCategory category = service.getCategory().getCategoryName();
+            Service service = serviceRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Service",id));
 
             Tourist tourist = touristRepository.findByUserId(authUtils.loggedInUserId()).orElseThrow(
                     ()->new ResourceNotFoundException("Tourist", authUtils.loggedInUserId())
@@ -370,6 +394,8 @@ public class BookingServiceImpl implements BookingService {
     }
 
     //find the bookings a service has on a particular day
+    @Override
+    @Transactional(readOnly = true)
     public APIResponse<BookingResponseDTO> getBookingsOnTheDay(BookingRequestDTO bookingRequestDTO,Long id){
         List<Booking> bookings = bookingRepository.findBookingsOnADay(bookingRequestDTO.getFromDate(),id,BookingStatus.BOOKED);
         List<BookingRequestDTO> prepareResponse = new ArrayList<>();
@@ -410,7 +436,7 @@ public class BookingServiceImpl implements BookingService {
         //Get the day of the week which the current day belongs
         List<AvailabilitySlot> availabilitySlotList = availabilitySlotRepository.findByService_ServiceId(id);
         if (availabilitySlotList.isEmpty()){
-            throw new BadCredentialsException("Invalid Availability Slots","No Availability Slots Defined");
+            throw new BadRequestException("No Availability Slots Defined");
         }
         DayOfWeek requestedStartDay = currentDate.getDayOfWeek();
         DayOfWeek requestedEndDay = currentDate.getDayOfWeek();
@@ -429,9 +455,6 @@ public class BookingServiceImpl implements BookingService {
 
         //Get the duration one guiding
         Long duration = touristGuide.getDuration();
-        Duration totalAvailableDuration = Duration.between(serviceOpenTime,serviceCloseTime);
-        //no. of slots
-//        Long availableSlots = totalAvailableDuration.dividedBy(duration);
 
         APIResponse<List<String>> timeSlotsResponse = generateTimeSlots(serviceOpenTime,serviceCloseTime,duration);
 
@@ -439,6 +462,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     //generating all the time slots based on the open time, close time and duration of one slot
     public APIResponse<List<String>> generateTimeSlots(LocalTime openTime, LocalTime closeTime, Long hoursPerSlot) {
         log.info("hours per slot" +hoursPerSlot);
@@ -483,19 +507,20 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public APIResponse<List<String>> getAllFreeTimeSlots(BookingRequestDTO bookingRequestDTO, Long id) {
         //check the availability
         APIResponse<String> availabilityCheck = checkTimeSlotAvailability(bookingRequestDTO,id);
         //if available, load all the free slots on the particular day it is selected
         if (availabilityCheck.isSuccess()){
             //Find the service
-            com.lankatrails.lankatrails_backend.model.Service service = serviceRepository.findById(id)
+            Service service = serviceRepository.findById(id)
                     .orElseThrow(()-> new ResourceNotFoundException("Service",id));
             BookingType bookingType = service.getBookingType();
 
             //load the available free slots
             List<String> slots = new ArrayList<>();
-            if(bookingType == TIME_SLOTS ){
+            if(bookingType == BookingType.TIME_SLOTS ){
                 //load the free time slots that are not booked on the particular date
                 //get all the time slots
                 APIResponse<List<String>> allTimeSlots = getServiceTimeSlots(id);
@@ -507,8 +532,8 @@ public class BookingServiceImpl implements BookingService {
                 List<BookingRequestDTO> bookingResponseList = bookingResponseDTO.getContent();
                 for (BookingRequestDTO bookingRequest : bookingResponseList){
                     slots.add(String.format("%02d:%02d - %02d:%02d",
-                            bookingRequest.getToTime().getHour(),bookingRequest.getToTime().getMinute(),
-                            bookingRequest.getFromTime().getHour(), bookingRequest.getFromTime().getMinute()
+                            bookingRequest.getFromTime().getHour(), bookingRequest.getFromTime().getMinute(),
+                            bookingRequest.getToTime().getHour(), bookingRequest.getToTime().getMinute()
                             ));
                 }
                 //remove the bookings received time slots
@@ -550,8 +575,10 @@ public class BookingServiceImpl implements BookingService {
     }
 
     //generate the timeslots available for a day
+    @Override
+    @Transactional(readOnly = true)
     public APIResponse<List<String>> getServiceTimeSlots (Long id){
-        com.lankatrails.lankatrails_backend.model.Service service = serviceRepository.findById(id)
+        Service service = serviceRepository.findById(id)
                 .orElseThrow(()-> new ResourceNotFoundException("Service",id));
         //Get the current date
         LocalDate currentDate = LocalDate.now();

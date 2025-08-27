@@ -6,6 +6,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.lankatrails.lankatrails_backend.dtos.request.*;
+import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,11 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.lankatrails.lankatrails_backend.dtos.request.AccommodationServiceRequestDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.ImageRequestDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.AccommodationResponse;
 import com.lankatrails.lankatrails_backend.exception.APIException;
@@ -117,6 +114,15 @@ public class AccommodationServiceImpl implements  AccommodationService {
 
             // Upload and associate images
             imageService.uploadImagesForService(images, lastServiceAdded);
+
+            // Set the availability slots
+            List<AvailabilitySlotDTO> availabilitySlots = services.getAvailabilitySlots();
+            for(AvailabilitySlotDTO availabilitySlotDTO : availabilitySlots){
+                if(availabilitySlotDTO.getCloseTime().isEmpty() || availabilitySlotDTO.getOpenTime().isEmpty()){
+                    throw new BadCredentialsException("Invalid Availability Slots","All Week Days should have the schedule");
+                }
+            }
+            servicesForAll.setAvailabilitySlots(availabilitySlots,lastServiceAdded);
 
         } else {
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());
