@@ -40,4 +40,7 @@ public class TripItem {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trip_id", nullable = false)
     private Trip trip;
+
+    @OneToOne(mappedBy = "tripItem", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
+    private Booking booking;
 }

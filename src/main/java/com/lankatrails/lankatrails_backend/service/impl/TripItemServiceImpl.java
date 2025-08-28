@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.exception.IllegalParamsException;
@@ -12,12 +13,14 @@ import com.lankatrails.lankatrails_backend.repositories.PlaceRepository;
 import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
 import com.lankatrails.lankatrails_backend.repositories.TripItemRepository;
 import com.lankatrails.lankatrails_backend.repositories.TripRepository;
+import com.lankatrails.lankatrails_backend.service.BookingService;
 import com.lankatrails.lankatrails_backend.service.TripItemService;
-import com.lankatrails.lankatrails_backend.service.utils.TripItemMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.time.LocalDateTime;
 
 @Slf4j
 @org.springframework.stereotype.Service
@@ -39,10 +42,10 @@ public class TripItemServiceImpl implements TripItemService {
     private ServiceRepository serviceRepository;
 
     @Autowired
-    private TripItemMapper tripItemMapper;
+    private BookingService bookingService;
 
     @Override
-    public APIResponse<TripItemDTO> addTripItem(Long tripId, TripItemDTO tripItemDTO) {
+    public APIResponse<String> addTripItem(Long tripId, TripItemDTO tripItemDTO) {
         log.info("Adding trip item to trip with ID: {}", tripId);
 
         Trip trip = tripRepository.findById(tripId)
@@ -50,6 +53,17 @@ public class TripItemServiceImpl implements TripItemService {
 
         TripItem tripItem = modelMapper.map(tripItemDTO, TripItem.class);
         tripItem.setTrip(trip);
+
+        // Check for trip date constraints
+        if (tripItem.getStartTime().toLocalDate().isBefore(trip.getStartDate()) ||
+                tripItem.getEndTime().toLocalDate().isAfter(trip.getEndDate())) {
+            return createErrorResponse("Trip item dates must be within the trip date range");
+        }
+
+        // Check for overlapping trip items
+        if (hasOverlappingTripItems(tripId, tripItemDTO.getStartTime(), tripItemDTO.getEndTime())) {
+            return createErrorResponse("Trip item time overlaps with existing trip items");
+        }
 
         switch (tripItemDTO.getType()) {
             case PLACE -> {
@@ -76,19 +90,63 @@ public class TripItemServiceImpl implements TripItemService {
                 // Fetch the service by ID
                 Service service = serviceRepository.findById(tripItemDTO.getService().getServiceId())
                         .orElseThrow(() -> new IllegalParamsException("Service not found with ID: " + tripItemDTO.getService().getServiceId()));
+
+                AvailabilityDto availabilityDto =  AvailabilityDto.builder()
+                        .startDateTime(tripItemDTO.getStartTime())
+                        .endDateTime(tripItemDTO.getEndTime())
+                        .adultCount(trip.getNumberOfAdults())
+                        .childCount(trip.getNumberOfChildren())
+                        .serviceId(service.getServiceId())
+                        .tripId(tripId)
+                        .build();
+
+                // Check availability
+                APIResponse<String> availabilityResponse = bookingService.checkAvailability(availabilityDto);
+                if (!availabilityResponse.isSuccess()) {
+                    return availabilityResponse;
+                }
                 tripItem.setService(service);
             }
 
             default -> throw new IllegalParamsException("Invalid trip item type: " + tripItemDTO.getType());
         }
 
-        TripItem savedTripItem = tripItemRepository.save(tripItem);
-        TripItemDTO savedDTO = modelMapper.map(savedTripItem, TripItemDTO.class);
+        // Save the trip item
+        tripItemRepository.save(tripItem);
 
-        return APIResponse.<TripItemDTO>builder()
+        return createSuccessResponse("Trip item added successfully");
+    }
+
+    @Override
+    public Boolean hasOverlappingTripItems(Long tripId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        log.info("Checking for overlapping trip items in trip with ID: {}", tripId);
+
+        if (startDateTime.isAfter(endDateTime) || startDateTime.isEqual(endDateTime)) {
+            throw new IllegalParamsException("Start date-time must be before end date-time");
+        }
+
+        boolean hasOverlap = tripItemRepository.existsOverlappingTripItemsForTripId(
+                tripId, endDateTime, startDateTime);
+
+        String message = hasOverlap ? "Overlapping trip items found" : "No overlapping trip items";
+
+        log.info(message);
+        return hasOverlap;
+    }
+
+    private APIResponse<String> createErrorResponse(String message) {
+        return APIResponse.<String>builder()
+                .success(false)
+                .message(message)
+                .data("")
+                .build();
+    }
+
+    private APIResponse<String> createSuccessResponse(String message) {
+        return APIResponse.<String>builder()
                 .success(true)
-                .message("Trip item added successfully")
-                .data(savedDTO)
+                .message(message)
+                .data("")
                 .build();
     }
 }

@@ -80,7 +80,7 @@ public class serviceImpl implements ServicesForAll {
     public void setAvailabilitySlots(List<AvailabilitySlotDTO> availabilitySlots, Service service) {
         log.debug("Availability Slots{}", availabilitySlots.toString());
         for (AvailabilitySlotDTO availabilitySlot : availabilitySlots){
-                if(!availabilitySlot.getOpenTime().isEmpty() && !availabilitySlot.getCloseTime().isEmpty()){
+                if(availabilitySlot.getOpenTime() != null && availabilitySlot.getCloseTime() != null){
                     AvailabilitySlot slot = new AvailabilitySlot();
                     slot.setCloseTime(availabilitySlot.getCloseTime());
                     slot.setOpenTime(availabilitySlot.getOpenTime());

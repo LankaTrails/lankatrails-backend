@@ -130,7 +130,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
             // Set the availability slots
             List<AvailabilitySlotDTO> availabilitySlots = services.getAvailabilitySlots();
             for(AvailabilitySlotDTO availabilitySlotDTO : availabilitySlots){
-                if(availabilitySlotDTO.getCloseTime().isEmpty() || availabilitySlotDTO.getOpenTime().isEmpty()){
+                if(availabilitySlotDTO.getCloseTime() == null || availabilitySlotDTO.getOpenTime() == null){
                     throw new BadCredentialsException("Invalid Availability Slots","All Week Days should have the schedule");
                 }
             }

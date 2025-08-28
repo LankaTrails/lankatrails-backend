@@ -15,7 +15,7 @@ import java.time.LocalTime;
 public class AvailabilitySlotDTO {
 //    private Long slotId;
     private String dayOfWeek;
-    private String openTime;
-    private String closeTime;
+    private LocalTime openTime;
+    private LocalTime closeTime;
 //    private Service service;
 }
