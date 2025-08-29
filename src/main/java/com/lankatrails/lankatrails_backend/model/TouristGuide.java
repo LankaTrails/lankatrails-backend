@@ -23,7 +23,4 @@ public class TouristGuide extends Service {
     @JoinColumn(name = "tour_guide_category_id")
     private TourGuideCategory tourGuideCategory;
 
-    @Column(name = "max_guests")
-    private Integer maxGuests;
-
 }

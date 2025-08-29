@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -115,7 +116,7 @@ public class AccommodationServiceImpl implements  AccommodationService {
             imageService.uploadImagesForService(images, lastServiceAdded);
 
             // Set the availability slots
-            List<AvailableTimeDTO> availabilitySlots = services.getAvailabilitySlots();
+            List<AvailableTimeDTO> availabilitySlots = services.getAvailableTimeDTOS();
             for(AvailableTimeDTO availableTimeDTO : availabilitySlots){
                 if(availableTimeDTO.getCloseTime() == null || availableTimeDTO.getOpenTime() == null){
                     throw new BadCredentialsException("Invalid Availability Slots","All Week Days should have the schedule");
@@ -149,7 +150,7 @@ public class AccommodationServiceImpl implements  AccommodationService {
 
         for (Accommodation accommodation :accommodationServicePage){
             AccommodationServiceRequestDTO accommodationServiceRequest = new AccommodationServiceRequestDTO();
-            if (accommodation.getStatus()){
+            if (accommodation.getStatus() == ServiceStatus.ACTIVE){
                 accommodationServiceRequest.setServiceId(accommodation.getServiceId());
                 accommodationServiceRequest.setServiceName(accommodation.getServiceName());
                 accommodationServiceRequest.setStatus(accommodation.getStatus());
@@ -223,10 +224,8 @@ public class AccommodationServiceImpl implements  AccommodationService {
         prepareResponse.setServiceName(accommodation.getServiceName());
         prepareResponse.setStatus(accommodation.getStatus());
         prepareResponse.setAccommodationType(accommodation.getAccommodationCategory().getCategoryName());
-        prepareResponse.setMaxGuests(accommodation.getMaxGuests());
-        prepareResponse.setNumberOfRooms(accommodation.getNumberOfRooms());
-        prepareResponse.setPrice(accommodation.getPrice());
-        prepareResponse.setPriceType(accommodation.getPriceType());
+        prepareResponse.setPriceConfig(modelMapper.map(accommodation.getPriceConfiguration(), PriceConfigDTO.class));
+        prepareResponse.setBookingConfig(modelMapper.map(accommodation.getBookingConfiguration(), BookingConfigDTO.class));
         prepareResponse.setFreeWifi(accommodation.getFreeWifi());
         prepareResponse.setParkingAvailable(accommodation.getParkingAvailable());
         prepareResponse.setBreakfastIncluded(accommodation.getBreakfastIncluded());
@@ -241,8 +240,6 @@ public class AccommodationServiceImpl implements  AccommodationService {
                 .map(location -> modelMapper.map(location, LocationDTO.class))
                 .collect(Collectors.toSet()));
         prepareResponse.setContactNo(accommodation.getContactNo());
-        prepareResponse.setNumberOfRooms(accommodation.getNumberOfRooms());
-        prepareResponse.setPrice(accommodation.getPrice());
         prepareResponse.setServiceId(Id);
         prepareResponse.setTabsSection(tabs);
         prepareResponse.setPolicySection(policies);
@@ -302,11 +299,8 @@ public class AccommodationServiceImpl implements  AccommodationService {
         // Update the accommodation details
         accommodation.setServiceName(accommodationService.getServiceName());
         accommodation.setContactNo(accommodationService.getContactNo());
-//        accommodation.setStatus(accommodationService.getStatus());
-        accommodation.setMaxGuests(accommodationService.getMaxGuests());
-        accommodation.setNumberOfRooms(accommodationService.getNumberOfRooms());
-        accommodation.setPrice(accommodationService.getPrice());
-        accommodation.setPriceType(accommodationService.getPriceType());
+        accommodation.setPriceConfiguration(modelMapper.map(accommodationService.getPriceConfig(), com.lankatrails.lankatrails_backend.model.PriceConfiguration.class));
+        accommodation.setBookingConfiguration(modelMapper.map(accommodationService.getBookingConfig(), com.lankatrails.lankatrails_backend.model.BookingConfiguration.class));
         accommodation.setAccommodationCategory(accommodationCategory);
         accommodation.setFreeWifi(accommodationService.getFreeWifi());
         accommodation.setParkingAvailable(accommodationService.getParkingAvailable());
@@ -355,7 +349,7 @@ public class AccommodationServiceImpl implements  AccommodationService {
         Accommodation accommodation = accommodationRepository.findById(Id)
                 .orElseThrow(() -> new ResourceNotFoundException("Accommodation Service", Id));
 
-        accommodation.setStatus(false); // Set status to false instead of deleting
+        accommodation.setStatus(ServiceStatus.INACTIVE); // Set status to false instead of deleting
         accommodationRepository.save(accommodation);
 
         return APIResponse.<String>builder()

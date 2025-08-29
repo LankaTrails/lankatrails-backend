@@ -8,6 +8,7 @@ import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
@@ -89,7 +90,7 @@ public class TouristGuideImpl implements TouristGuideService {
 
         for (TouristGuide guide : guidesContent){
             TouristGuideRequestDTO tourGuideRequest = new TouristGuideRequestDTO();
-            if (guide.getStatus()){
+            if (guide.getStatus() == ServiceStatus.ACTIVE){
                 tourGuideRequest.setServiceId(guide.getServiceId());
                 tourGuideRequest.setServiceName(guide.getServiceName());
                 tourGuideRequest.setStatus(guide.getStatus());
@@ -255,9 +256,9 @@ public class TouristGuideImpl implements TouristGuideService {
         //prepare the response
         TouristGuideRequestDTO prepareResponse=new TouristGuideRequestDTO();
         prepareResponse.setServiceId(id);
-        prepareResponse.setPrice(touristGuide.getPrice());
+        prepareResponse.setPriceConfig(modelMapper.map(touristGuide.getPriceConfiguration(),PriceConfigDTO.class));
+        prepareResponse.setBookingConfig(modelMapper.map(touristGuide.getBookingConfiguration(),BookingConfigDTO.class));
         prepareResponse.setImages(imgDTOs);
-        prepareResponse.setPriceType(touristGuide.getPriceType());
         prepareResponse.setTourGuideType(touristGuide.getTourGuideCategory().getCategoryName());
         prepareResponse.setServiceName(touristGuide.getServiceName());
         prepareResponse.setContactNo(touristGuide.getContactNo());
@@ -292,8 +293,8 @@ public class TouristGuideImpl implements TouristGuideService {
         touristGuide.setServiceName(requestDTO.getServiceName());
         touristGuide.setContactNo(requestDTO.getContactNo());
         touristGuide.setStatus(requestDTO.getStatus());
-        touristGuide.setPrice(requestDTO.getPrice());
-        touristGuide.setPriceType(requestDTO.getPriceType());
+        touristGuide.setPriceConfiguration(modelMapper.map(requestDTO.getPriceConfig(), PriceConfiguration.class));
+        touristGuide.setBookingConfiguration(modelMapper.map(requestDTO.getBookingConfig(), BookingConfiguration.class));
         
         // Update locations
         if (requestDTO.getLocations() != null && !requestDTO.getLocations().isEmpty()) {
@@ -425,8 +426,8 @@ public class TouristGuideImpl implements TouristGuideService {
         // Update the tourist guide details
         touristGuide.setServiceName(requestDTO.getServiceName());
         touristGuide.setContactNo(requestDTO.getContactNo());
-        touristGuide.setPrice(requestDTO.getPrice());
-        touristGuide.setPriceType(requestDTO.getPriceType());
+        touristGuide.setPriceConfiguration(modelMapper.map(requestDTO.getPriceConfig(), PriceConfiguration.class));
+        touristGuide.setBookingConfiguration(modelMapper.map(requestDTO.getBookingConfig(), BookingConfiguration.class));
         touristGuide.setTourGuideCategory(tourGuideCategory);
 
         // handle languages
@@ -481,7 +482,7 @@ public class TouristGuideImpl implements TouristGuideService {
         TouristGuide touristGuide = touristGuideRepository.findById(Id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tourist Guide", Id));
 
-        touristGuide.setStatus(false);
+        touristGuide.setStatus(ServiceStatus.INACTIVE);
         touristGuideRepository.save(touristGuide);
         return APIResponse.<String>builder()
                 .success(true)

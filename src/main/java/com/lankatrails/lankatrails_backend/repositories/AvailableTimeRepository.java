@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface AvailabilitySlotRepository extends JpaRepository<AvailableTime,Long> {
+public interface AvailableTimeRepository extends JpaRepository<AvailableTime,Long> {
     List<AvailableTime> findByService_ServiceId(Long Id);
 }

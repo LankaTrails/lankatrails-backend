@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.dtos.response;
 
 import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,5 +21,5 @@ public class ProviderDetailsDTO {
     private String businessDescription;
     private LocationDTO location;
     private ServiceCategory category;
-    private List<ServiceSearchDTO> services;
+    private List<ServiceDTO> services;
 }

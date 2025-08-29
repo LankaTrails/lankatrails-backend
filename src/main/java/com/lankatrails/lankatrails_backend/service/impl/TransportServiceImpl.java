@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -106,7 +107,7 @@ public class TransportServiceImpl implements TransportService {
 
         for (Transport transport : transportPage){
             TransportRequestDTO transportRequestDTO = new TransportRequestDTO();
-            if (transport.getStatus()){
+            if (transport.getStatus() == ServiceStatus.ACTIVE){
                 transportRequestDTO.setServiceId(transport.getServiceId());
                 transportRequestDTO.setServiceName(transport.getServiceName());
                 transportRequestDTO.setStatus(transport.getStatus());
@@ -177,8 +178,6 @@ public class TransportServiceImpl implements TransportService {
 
         TransportRequestDTO prepareResponse = new TransportRequestDTO();
         prepareResponse.setServiceName(transport.getServiceName());
-        prepareResponse.setVehicleCapacity(transport.getVehicleCapacity());
-        prepareResponse.setVehicleQty(transport.getVehicleQty());
         prepareResponse.setVehicleCategory(transport.getVehicleCategory().getCategoryName());
         prepareResponse.setDriverIncluded(transport.getDriverIncluded());
         prepareResponse.setAirConditioned(transport.getAirConditioned());
@@ -190,8 +189,8 @@ public class TransportServiceImpl implements TransportService {
                 .map(location -> modelMapper.map(location, LocationDTO.class))
                 .collect(Collectors.toSet()));
         prepareResponse.setPolicySection(policies);
-        prepareResponse.setPrice(transport.getPrice());
-        prepareResponse.setPriceType(transport.getPriceType());
+        prepareResponse.setPriceConfig(modelMapper.map(transport.getPriceConfiguration(),PriceConfigDTO.class));
+        prepareResponse.setBookingConfig(modelMapper.map(transport.getBookingConfiguration(),BookingConfigDTO.class));
         prepareResponse.setServiceId(Id);
         prepareResponse.setTabsSection(tabs);
 
@@ -218,8 +217,8 @@ public class TransportServiceImpl implements TransportService {
         updatedObj.setServiceName(transportRequestDTO.getServiceName());
         updatedObj.setContactNo(transportRequestDTO.getContactNo());
         updatedObj.setStatus(transportRequestDTO.getStatus());
-        updatedObj.setPrice(transportRequestDTO.getPrice());
-        updatedObj.setPriceType(transportRequestDTO.getPriceType());
+        updatedObj.setPriceConfiguration(modelMapper.map(transportRequestDTO.getPriceConfig(),com.lankatrails.lankatrails_backend.model.PriceConfiguration.class));
+        updatedObj.setBookingConfiguration(modelMapper.map(transportRequestDTO.getBookingConfig(),com.lankatrails.lankatrails_backend.model.BookingConfiguration.class));
         
         // Update locations
         if (transportRequestDTO.getLocations() != null && !transportRequestDTO.getLocations().isEmpty()) {
@@ -294,7 +293,7 @@ public class TransportServiceImpl implements TransportService {
             imageService.uploadImagesForService(images,lastTransportAdded);
 
             // Set the availability slots
-            List<AvailableTimeDTO> availabilitySlots = transportRequestDTO.getAvailabilitySlots();
+            List<AvailableTimeDTO> availabilitySlots = transportRequestDTO.getAvailableTimeDTOS();
             for(AvailableTimeDTO availableTimeDTO : availabilitySlots){
                 if(availableTimeDTO.getCloseTime() == null || availableTimeDTO.getOpenTime() == null){
                     throw new BadCredentialsException("Invalid Availability Slots","All Week Days should have the schedule");
@@ -317,7 +316,7 @@ public class TransportServiceImpl implements TransportService {
     public APIResponse<String> deleteTransport(Long Id) {
         Transport transport=transportRepository.findById(Id)
                 .orElseThrow(()->new ResourceNotFoundException("Transport Service",Id));
-        transport.setStatus(false);
+        transport.setStatus(ServiceStatus.INACTIVE);
         transportRepository.save(transport);
         return APIResponse.<String>builder()
                 .success(true)
@@ -374,17 +373,14 @@ public class TransportServiceImpl implements TransportService {
         // Update basic service properties
         transport.setServiceName(transportRequestDTO.getServiceName());
         transport.setContactNo(transportRequestDTO.getContactNo());
-        transport.setVehicleCapacity(transportRequestDTO.getVehicleCapacity());
-        transport.setVehicleQty(transportRequestDTO.getVehicleQty());
         transport.setVehicleCategory(vehicleCategory);
         transport.setDriverIncluded(transportRequestDTO.getDriverIncluded());
         transport.setAirConditioned(transportRequestDTO.getAirConditioned());
         transport.setTransmissionType(transportRequestDTO.getTransmissionType());
         transport.setFuelType(transportRequestDTO.getFuelType());
         transport.setContactNo(transportRequestDTO.getContactNo());
-//        transport.setStatus(transportRequestDTO.getStatus());
-        transport.setPrice(transportRequestDTO.getPrice());
-        transport.setPriceType(transportRequestDTO.getPriceType());
+        transport.setPriceConfiguration(modelMapper.map(transportRequestDTO.getPriceConfig(),com.lankatrails.lankatrails_backend.model.PriceConfiguration.class));
+        transport.setBookingConfiguration(modelMapper.map(transportRequestDTO.getBookingConfig(),com.lankatrails.lankatrails_backend.model.BookingConfiguration.class));
         transport.setLocations(servicesForAll.setServiceLocation(transportRequestDTO));
 
         // Update the transport object in the database

@@ -1,14 +1,14 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.AvailableTimeDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.ServiceRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.AvailableTime;
+import com.lankatrails.lankatrails_backend.model.BreakTime;
 import com.lankatrails.lankatrails_backend.model.Location;
 import com.lankatrails.lankatrails_backend.model.Service;
-import com.lankatrails.lankatrails_backend.repositories.AvailabilitySlotRepository;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
+import com.lankatrails.lankatrails_backend.repositories.AvailableTimeRepository;
+import com.lankatrails.lankatrails_backend.repositories.BreakTimeRepository;
 import com.lankatrails.lankatrails_backend.repositories.LocationRepository;
 import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
 import com.lankatrails.lankatrails_backend.service.ServicesForAll;
@@ -34,7 +34,10 @@ public class serviceImpl implements ServicesForAll {
     LocationRepository locationRepository;
 
     @Autowired
-    AvailabilitySlotRepository availabilitySlotRepository;
+    AvailableTimeRepository availableTimeRepository;
+
+    @Autowired
+    BreakTimeRepository breakTimeRepository;
 
     @Autowired
     ModelMapper modelMapper;
@@ -42,7 +45,7 @@ public class serviceImpl implements ServicesForAll {
     public Boolean removeService(Long id){
         Service service=serviceRepository.findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("Service",id));
-        service.setStatus(false);
+        service.setStatus(ServiceStatus.INACTIVE);
         return true;
 
     }
@@ -76,16 +79,30 @@ public class serviceImpl implements ServicesForAll {
     }
 
     @Override
-    public void setAvailableTime(List<AvailableTimeDTO> availabilitySlots, Service service) {
-        log.debug("Availability Slots{}", availabilitySlots.toString());
-        for (AvailableTimeDTO availabilitySlot : availabilitySlots){
-                if(availabilitySlot.getOpenTime() != null && availabilitySlot.getCloseTime() != null){
-                    AvailableTime slot = new AvailableTime();
-                    slot.setCloseTime(availabilitySlot.getCloseTime());
-                    slot.setOpenTime(availabilitySlot.getOpenTime());
-                    slot.setDayOfWeek(availabilitySlot.getDayOfWeek());
-                    slot.setService(service);
-                    availabilitySlotRepository.save(slot);
+    public void setAvailableTime(List<AvailableTimeDTO> availableTimeDTOS, Service service) {
+        log.debug("Availability Slots{}", availableTimeDTOS.toString());
+        for (AvailableTimeDTO availableTime : availableTimeDTOS){
+                if(availableTime.getOpenTime() != null && availableTime.getCloseTime() != null){
+                    AvailableTime time = new AvailableTime();
+                    time.setCloseTime(availableTime.getCloseTime());
+                    time.setOpenTime(availableTime.getOpenTime());
+                    time.setDayOfWeek(availableTime.getDayOfWeek());
+                    time.setIs24Hours(availableTime.getIs24Hours());
+                    time.setIsClosed(availableTime.getIsClosed());
+                    time.setService(service);
+                    availableTimeRepository.save(time);
+
+                    if(availableTime.getBreakTimes() != null){
+                        for (BreakTimeDTO breakTimeDTO : availableTime.getBreakTimes()){
+                            if(breakTimeDTO.getBreakStart() != null && breakTimeDTO.getBreakEnd() != null){
+                                BreakTime breakTime = new BreakTime();
+                                breakTime.setBreakStart(breakTimeDTO.getBreakStart());
+                                breakTime.setBreakEnd(breakTimeDTO.getBreakEnd());
+                                breakTime.setAvailableTime(time);
+                                breakTimeRepository.save(breakTime);
+                            }
+                        }
+                    }
                 }
 
 
@@ -104,8 +121,7 @@ public class serviceImpl implements ServicesForAll {
                         service.getLocations().stream()
                                 .map(location -> modelMapper.map(location, LocationDTO.class))
                                 .collect(Collectors.toSet()),
-                        service.getPrice(),
-                        service.getPriceType(),
+                        service.getPriceConfiguration().getPriceWithType(),
                         service.getImages().getFirst().getImageUrl()
                 ));
     }
@@ -123,8 +139,7 @@ public class serviceImpl implements ServicesForAll {
                                 service.getLocations().stream()
                                         .map(location -> modelMapper.map(location, LocationDTO.class))
                                         .collect(Collectors.toSet()),
-                                service.getPrice(),
-                                service.getPriceType(),
+                                service.getPriceConfiguration().getPriceWithType(),
                                 service.getImages().isEmpty() ? null : service.getImages().getFirst().getImageUrl()
                         )
                 ));

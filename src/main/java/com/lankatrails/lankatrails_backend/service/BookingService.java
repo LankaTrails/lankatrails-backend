@@ -13,7 +13,7 @@ public interface BookingService {
     APIResponse<String> addNewBooking(Long tripItemId);
     APIResponse<BookingResponseDTO> getBookingsOnTheDay(AvailabilityDto availabilityDto, Long id);
     APIResponse<List<String>> getTourGuideDaySlots(Long id);
-    APIResponse<List<String>> generateTimeSlots( LocalTime openTime, LocalTime closeTime, Long slotDuration);
+    APIResponse<List<String>> generateTimeSlots( LocalTime openTime, LocalTime closeTime, Integer slotDuration);
     APIResponse<List<String>> getAllFreeTimeSlots(AvailabilityDto availabilityDto, Long id);
     APIResponse<List<String>> getServiceTimeSlots (Long id);
 }

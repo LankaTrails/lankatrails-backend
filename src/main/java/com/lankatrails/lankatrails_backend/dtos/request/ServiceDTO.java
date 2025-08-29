@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
+import com.lankatrails.lankatrails_backend.dtos.PriceDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.ProviderProfileDto;
 import com.lankatrails.lankatrails_backend.model.Image;
 import com.lankatrails.lankatrails_backend.model.Location;
@@ -22,8 +23,7 @@ public class ServiceDTO {
     private String serviceName;
     private ServiceCategory Category;
     private Set<LocationDTO> locations;
-    private Double price;
-    private PriceType priceType;
+    private List<PriceDTO> prices;
     private String mainImageUrl;
 
 //    private List<AvailabilitySlotDTO> availabilitySlots;

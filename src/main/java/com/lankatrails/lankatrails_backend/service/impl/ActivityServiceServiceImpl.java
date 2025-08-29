@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -91,7 +92,6 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     @Override
     @Transactional
     public APIResponse<String> addService(ActivityServiceRequest services, List<MultipartFile> images) {
-        System.out.println("hello"+services.getAvailabilitySlots());
         Category category = categoryRepository.findByCategoryName(ServiceCategory.ACTIVITY)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", 4L));
 
@@ -128,7 +128,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
             imageService.uploadImagesForService(images, lastServiceAdded);
 
             // Set the availability slots
-            List<AvailableTimeDTO> availabilitySlots = services.getAvailabilitySlots();
+            List<AvailableTimeDTO> availabilitySlots = services.getAvailableTimeDTOS();
             for(AvailableTimeDTO availableTimeDTO : availabilitySlots){
                 if(availableTimeDTO.getCloseTime() == null || availableTimeDTO.getOpenTime() == null){
                     throw new BadCredentialsException("Invalid Availability Slots","All Week Days should have the schedule");
@@ -164,7 +164,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
         for (ActivityService activity :activityServicePage){
             ActivityServiceRequest activityServiceRequest = new ActivityServiceRequest();
-            if (activity.getStatus()){
+            if (activity.getStatus() == ServiceStatus.ACTIVE){
                 activityServiceRequest.setServiceId(activity.getServiceId());
                 activityServiceRequest.setServiceName(activity.getServiceName());
                 activityServiceRequest.setStatus(activity.getStatus());
@@ -236,11 +236,11 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         prepareResponse.setActivityType(activityService.getActivityCategory().getCategoryName());
         prepareResponse.setActivityDetails(activityService.getActivityDetails());
         prepareResponse.setSafetyInstructions(activityService.getSafetyInstructions());
-        prepareResponse.setPrice(activityService.getPrice());
-        prepareResponse.setPriceType(activityService.getPriceType());
         prepareResponse.setLocations(activityService.getLocations().stream()
                 .map(location -> modelMapper.map(location, LocationDTO.class))
                 .collect(Collectors.toSet()));
+        prepareResponse.setPriceConfig(modelMapper.map(activityService.getPriceConfiguration(), PriceConfigDTO.class));
+        prepareResponse.setBookingConfig(modelMapper.map(activityService.getBookingConfiguration(), BookingConfigDTO.class));
         prepareResponse.setContactNo(activityService.getContactNo());
         prepareResponse.setServiceId(Id);
         prepareResponse.setTabsSection(tabs);
@@ -258,7 +258,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
   public APIResponse<ActivityServiceRequest> removeActivityService(Long Id){
         ActivityService activity=activityServiceRepository.findById(Id)
                 .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
-        activity.setStatus(false);
+        activity.setStatus(ServiceStatus.INACTIVE);
         ActivityService activityService=activityServiceRepository.save(activity);
 
         ActivityServiceRequest activityServiceResponse=new ActivityServiceRequest();
@@ -360,13 +360,11 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
     }
 
-
-
     @Override
   @Transactional
   public APIResponse<String> updateWithId(Long Id,ActivityServiceRequest activityService){
 
-      ActivityService activity=activityServiceRepository.findById(Id)
+      ActivityService activity= activityServiceRepository.findById(Id)
               .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
 
 
@@ -376,8 +374,8 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
       activity.setStatus(activityService.getStatus());
       activity.setActivityDetails(activityService.getActivityDetails());
       activity.setSafetyInstructions(activityService.getSafetyInstructions());
-      activity.setPrice(activityService.getPrice());
-      activity.setPriceType(activityService.getPriceType());
+      activity.setPriceConfiguration(modelMapper.map(activityService.getPriceConfig(),com.lankatrails.lankatrails_backend.model.PriceConfiguration.class));
+      activity.setBookingConfiguration(modelMapper.map(activityService.getBookingConfig(),com.lankatrails.lankatrails_backend.model.BookingConfiguration.class));
       
       // Update locations
       if (activityService.getLocations() != null && !activityService.getLocations().isEmpty()) {
@@ -515,8 +513,8 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 //        activity.setStatus(activityService.getStatus());
         activity.setActivityDetails(activityService.getActivityDetails());
         activity.setSafetyInstructions(activityService.getSafetyInstructions());
-        activity.setPrice(activityService.getPrice());
-        activity.setPriceType(activityService.getPriceType());
+        activity.setPriceConfiguration(modelMapper.map(activityService.getPriceConfig(), com.lankatrails.lankatrails_backend.model.PriceConfiguration.class));
+        activity.setBookingConfiguration(modelMapper.map(activityService.getBookingConfig(), com.lankatrails.lankatrails_backend.model.BookingConfiguration.class));
         activity.setActivityCategory(activityCategory);
 
         // Update locations
@@ -556,7 +554,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         ActivityService activity = activityServiceRepository.findById(Id)
                 .orElseThrow(() -> new ResourceNotFoundException("Activity Service", Id));
 
-        activity.setStatus(false);
+        activity.setStatus(ServiceStatus.INACTIVE);
         activityServiceRepository.save(activity);
 
         return APIResponse.<String>builder()

@@ -1,12 +1,14 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
 import com.lankatrails.lankatrails_backend.model.enums.PriceType;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 import java.util.List;
 import java.util.Set;
@@ -15,16 +17,12 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@SuperBuilder
 public abstract class ServiceRequest {
     private Long serviceId;
 
     @NotBlank(message = "Service name is blank")
     private String serviceName;
-
-//    @NotBlank(message = "Location is not pinned")
-    private Set<LocationDTO> locations;
-
-    private Set<Long> locationIds;
 
     @NotBlank(message = "Contact number is blank")@Pattern(
             regexp = "^(\\+94|0)(7[0-9]{8}|[1-9][0-9]{8})$",
@@ -32,31 +30,26 @@ public abstract class ServiceRequest {
     )
     private String contactNo;
 
-    private Boolean status;
-
-    private Double price;
-
-//    @NotBlank(message = "Price type is required")
-    private PriceType priceType;
+    private ServiceStatus status;
 
     private List<TabSectionRequest> tabsSection;
 
-//    @NotBlank(message = "Cancellation Policy is required")
     private List<PolicySectionRequest> policySection;
 
-//    private List<PolicySectionRequest> providerPolicies;
+    private Set<LocationDTO> locations;
 
-
-//    @Valid
-//    @NotEmpty(message = "Should be at least one image")
     private List<ImageRequestDTO> images;
 
-    private List<AvailableTimeDTO> availabilitySlots;
+    private List<AvailableTimeDTO> availableTimeDTOS;
 
     private List<ImageRequestDTO> deletedImages;
 
     private List<TabSectionRequest> deletedTabs;
 
     private List<PolicySectionRequest> deletedPolicies;
+
+    private PriceConfigDTO priceConfig;
+
+    private BookingConfigDTO bookingConfig;
 
 }

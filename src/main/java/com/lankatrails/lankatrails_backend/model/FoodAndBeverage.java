@@ -1,9 +1,6 @@
 package com.lankatrails.lankatrails_backend.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -14,15 +11,24 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class FoodAndBeverage extends Service{
-    private String openTime;
-    private String closeTime;
+
+    @Column(name = "vegetarian_options")
     private Boolean vegetarianOptions;
+
+    @Column(name = "halal_certified")
     private Boolean halalCertified;
+
+    @Column(name = "alcohol_served")
     private Boolean alcoholServed;
+
+    @Column(name = "outdoor_seating")
     private Boolean outdoorSeating;
+
+    @Column(name = "live_music")
     private Boolean liveMusic;
+
+    @Column(name = "cuisine_type")
     private String cuisineType;
-    private Integer maxGuests;
 
     @ManyToOne
     @JoinColumn(name = "foodAndBeverageCategory_id")

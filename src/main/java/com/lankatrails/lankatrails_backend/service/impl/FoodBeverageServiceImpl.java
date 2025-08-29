@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -126,7 +127,7 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
             imageService.uploadImagesForService(images, lastServiceAdded);
 
             // Set the availability slots
-            List<AvailableTimeDTO> availabilitySlots = foodBeverageRequest.getAvailabilitySlots();
+            List<AvailableTimeDTO> availabilitySlots = foodBeverageRequest.getAvailableTimeDTOS();
             for(AvailableTimeDTO availableTimeDTO : availabilitySlots){
                 if(availableTimeDTO.getCloseTime() == null || availableTimeDTO.getOpenTime() == null){
                     throw new BadCredentialsException("Invalid Availability Slots","All Week Days should have the schedule");
@@ -160,7 +161,7 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
 
         for (FoodAndBeverage foodAndBeverage :foodBeveragePage){
             FoodBeverageRequest foodBeverageServiceRequest = new FoodBeverageRequest();
-            if (foodAndBeverage.getStatus()){
+            if (foodAndBeverage.getStatus() == ServiceStatus.ACTIVE){
                 foodBeverageServiceRequest.setServiceId(foodAndBeverage.getServiceId());
                 foodBeverageServiceRequest.setServiceName(foodAndBeverage.getServiceName());
                 foodBeverageServiceRequest.setStatus(foodAndBeverage.getStatus());
@@ -244,8 +245,8 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         prepareResponse.setTabsSection(tabs);
         prepareResponse.setPolicySection(policies);
         prepareResponse.setImages(imgDTOs);
-        prepareResponse.setPrice(foodAndBeverage.getPrice());
-        prepareResponse.setPriceType(foodAndBeverage.getPriceType());
+        prepareResponse.setPriceConfig(modelMapper.map(foodAndBeverage.getPriceConfiguration(), PriceConfigDTO.class));
+        prepareResponse.setBookingConfig(modelMapper.map(foodAndBeverage.getBookingConfiguration(), BookingConfigDTO.class));
         prepareResponse.setServiceId(Id);
 
         return  APIResponse.<FoodBeverageRequest>builder()
@@ -312,8 +313,8 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         foodAndBeverageService.setLiveMusic(foodBeverageRequest.getLiveMusic());
         foodAndBeverageService.setCuisineType(foodBeverageRequest.getCuisineType());
         foodAndBeverageService.setContactNo(foodBeverageRequest.getContactNo());
-        foodAndBeverageService.setPrice(foodBeverageRequest.getPrice());
-        foodAndBeverageService.setPriceType(foodBeverageRequest.getPriceType());
+        foodAndBeverageService.setPriceConfiguration(modelMapper.map(foodBeverageRequest.getPriceConfig(), com.lankatrails.lankatrails_backend.model.PriceConfiguration.class));
+        foodAndBeverageService.setBookingConfiguration(modelMapper.map(foodBeverageRequest.getBookingConfig(), com.lankatrails.lankatrails_backend.model.BookingConfiguration.class));
         foodAndBeverageService.setFoodAndBeverageCategory(foodAndBeverageCategory);
 
         // Update the locations
@@ -354,7 +355,7 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         FoodAndBeverage foodAndBeverage = foodBeverageRepository.findById(Id)
                 .orElseThrow(() -> new ResourceNotFoundException("Food and Beverage", Id));
 
-        foodAndBeverage.setStatus(false);
+        foodAndBeverage.setStatus(ServiceStatus.INACTIVE);
         foodBeverageRepository.save(foodAndBeverage);
 
         return APIResponse.<String>builder()

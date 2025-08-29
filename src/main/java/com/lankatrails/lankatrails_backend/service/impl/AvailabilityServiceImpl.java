@@ -21,7 +21,7 @@ import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.AvailableTime;
 import com.lankatrails.lankatrails_backend.model.enums.BookingStatus;
 import com.lankatrails.lankatrails_backend.model.enums.BookingType;
-import com.lankatrails.lankatrails_backend.repositories.AvailabilitySlotRepository;
+import com.lankatrails.lankatrails_backend.repositories.AvailableTimeRepository;
 import com.lankatrails.lankatrails_backend.repositories.BookingRepository;
 import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
 import com.lankatrails.lankatrails_backend.service.AvailabilityService;
@@ -39,7 +39,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     private BookingRepository bookingRepository;
     
     @Autowired
-    private AvailabilitySlotRepository availabilitySlotRepository;
+    private AvailableTimeRepository availableTimeRepository;
 
     @Override
     @Transactional
@@ -95,7 +95,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     @Transactional(readOnly = true)
     public APIResponse<String> validateDateTimeConstraints(AvailabilityDto availabilityDto) {
         // Get availability slots
-        List<AvailableTime> availableTimeList = availabilitySlotRepository.findByService_ServiceId(availabilityDto.getServiceId());
+        List<AvailableTime> availableTimeList = availableTimeRepository.findByService_ServiceId(availabilityDto.getServiceId());
         if (availableTimeList.isEmpty()) {
             return createErrorResponse("No availability slots defined for this service" + availabilityDto.getServiceId());
         }

@@ -9,7 +9,6 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class FoodBeverageRequest extends ServiceRequest {
-    private String openHours;
     private FoodAndBeverageType foodAndBeverageType;
     private Boolean vegetarianOptions;
     private Boolean halalCertified;

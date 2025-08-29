@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,12 +24,7 @@ import com.lankatrails.lankatrails_backend.model.AvailableTime;
 import com.lankatrails.lankatrails_backend.model.enums.BookingStatus;
 import com.lankatrails.lankatrails_backend.model.enums.BookingType;
 import com.lankatrails.lankatrails_backend.model.enums.TripPrivilege;
-import com.lankatrails.lankatrails_backend.repositories.AvailabilitySlotRepository;
-import com.lankatrails.lankatrails_backend.repositories.BookingRepository;
-import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
-import com.lankatrails.lankatrails_backend.repositories.TouristGuideRepository;
-import com.lankatrails.lankatrails_backend.repositories.TripItemRepository;
-import com.lankatrails.lankatrails_backend.repositories.TripParticipantRepository;
+import com.lankatrails.lankatrails_backend.repositories.AvailableTimeRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.AvailabilityService;
 import com.lankatrails.lankatrails_backend.service.BookingService;
@@ -40,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class BookingServiceImpl implements BookingService {
     @Autowired
-    AvailabilitySlotRepository availabilitySlotRepository;
+    AvailableTimeRepository availableTimeRepository;
 
     @Autowired
     BookingRepository bookingRepository;
@@ -162,7 +158,7 @@ public class BookingServiceImpl implements BookingService {
         //Get the current date
         LocalDate currentDate = LocalDate.now();
         //Get the day of the week which the current day belongs
-        List<AvailableTime> availableTimeList = availabilitySlotRepository.findByService_ServiceId(id);
+        List<AvailableTime> availableTimeList = availableTimeRepository.findByService_ServiceId(id);
         if (availableTimeList.isEmpty()){
             throw new BadRequestException("No Availability Slots Defined");
         }
@@ -182,7 +178,7 @@ public class BookingServiceImpl implements BookingService {
         LocalTime serviceCloseTime = endDaySlot.get().getCloseTime();
 
         //Get the duration one guiding
-        Long duration = touristGuide.getDuration();
+        Integer duration = touristGuide.getBookingConfiguration().getSlotDuration();
 
         return generateTimeSlots(serviceOpenTime,serviceCloseTime,duration);
     }
@@ -190,15 +186,15 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional(readOnly = true)
     //generating all the time slots based on the open time, close time and duration of one slot
-    public APIResponse<List<String>> generateTimeSlots(LocalTime openTime, LocalTime closeTime, Long hoursPerSlot) {
-        log.info("hours per slot" +hoursPerSlot);
+    public APIResponse<List<String>> generateTimeSlots(LocalTime openTime, LocalTime closeTime, Integer minutesPerSlot) {
+        log.info("Minutes per slot" + minutesPerSlot);
         // 1. Validate input
-        if (hoursPerSlot <= 0) {
-            throw new RuntimeException("Hours per slot duration should be greater than 0");
+        if (minutesPerSlot <= 0) {
+            throw new RuntimeException("Minutes per slot duration should be greater than 0");
         }
 
         // 2. Create duration (ensure this shows PT2H in logs for 2 hours)
-        Duration slotDuration = Duration.ofHours(hoursPerSlot);
+        Duration slotDuration = Duration.ofHours(minutesPerSlot / 60).plusMinutes(minutesPerSlot % 60);
         log.info("Slot duration: {}", slotDuration);
 
         // 3. Initialize variables
@@ -242,7 +238,7 @@ public class BookingServiceImpl implements BookingService {
             //Find the service
             Service service = serviceRepository.findById(id)
                     .orElseThrow(()-> new RuntimeException("Service not found"));
-            BookingType bookingType = service.getBookingType();
+            BookingType bookingType = service.getBookingConfiguration().getBookingType();
 
             //load the available free slots
             List<String> slots = new ArrayList<>();
@@ -300,7 +296,7 @@ public class BookingServiceImpl implements BookingService {
         //Get the current date
         LocalDate currentDate = LocalDate.now();
         //Get the day of the week which the current day belongs
-        List<AvailableTime> availableTimeList = availabilitySlotRepository.findByService_ServiceId(id);
+        List<AvailableTime> availableTimeList = availableTimeRepository.findByService_ServiceId(id);
         if (availableTimeList.isEmpty()){
             throw new RuntimeException("No Availability Slots Defined");
         }
@@ -320,7 +316,7 @@ public class BookingServiceImpl implements BookingService {
         LocalTime serviceCloseTime = endDaySlot.get().getCloseTime();
 
         //Get the duration one guiding
-        Long duration = service.getDuration();
+        Integer duration = service.getBookingConfiguration().getSlotDuration();
         APIResponse<List<String>> timeSlotsResponse = generateTimeSlots(serviceOpenTime,serviceCloseTime,duration);
 
         return timeSlotsResponse;
