@@ -294,13 +294,13 @@ public class TransportServiceImpl implements TransportService {
             imageService.uploadImagesForService(images,lastTransportAdded);
 
             // Set the availability slots
-            List<AvailabilitySlotDTO> availabilitySlots = transportRequestDTO.getAvailabilitySlots();
-            for(AvailabilitySlotDTO availabilitySlotDTO : availabilitySlots){
-                if(availabilitySlotDTO.getCloseTime() == null || availabilitySlotDTO.getOpenTime() == null){
+            List<AvailableTimeDTO> availabilitySlots = transportRequestDTO.getAvailabilitySlots();
+            for(AvailableTimeDTO availableTimeDTO : availabilitySlots){
+                if(availableTimeDTO.getCloseTime() == null || availableTimeDTO.getOpenTime() == null){
                     throw new BadCredentialsException("Invalid Availability Slots","All Week Days should have the schedule");
                 }
             }
-            servicesForAll.setAvailabilitySlots(availabilitySlots, lastTransportAdded);
+            servicesForAll.setAvailableTime(availabilitySlots, lastTransportAdded);
         }else{
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());
         }

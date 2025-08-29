@@ -1,13 +1,7 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
-import com.lankatrails.lankatrails_backend.model.Category;
-import com.lankatrails.lankatrails_backend.model.Image;
-import com.lankatrails.lankatrails_backend.model.Location;
-import com.lankatrails.lankatrails_backend.model.Provider;
 import com.lankatrails.lankatrails_backend.model.enums.PriceType;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -57,7 +51,7 @@ public abstract class ServiceRequest {
 //    @NotEmpty(message = "Should be at least one image")
     private List<ImageRequestDTO> images;
 
-    private List<AvailabilitySlotDTO> availabilitySlots;
+    private List<AvailableTimeDTO> availabilitySlots;
 
     private List<ImageRequestDTO> deletedImages;
 

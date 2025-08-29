@@ -76,8 +76,7 @@ public class TripController {
         log.info("Adding trip item to trip with ID: {}", tripId);
         APIResponse<String> response = tripItemService.addTripItem(tripId, tripItemDTO);
         log.info("Trip item added successfully: {}", response.getData());
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(response);
+        return ResponseEntity.status(response.isSuccess()? HttpStatus.OK:HttpStatus.BAD_REQUEST).body(response);
     }
 
     @GetMapping("/{tripId}/items")

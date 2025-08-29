@@ -12,7 +12,7 @@ import java.time.LocalTime;
 @Setter
 @Table(name = "availability_slots")
 @NoArgsConstructor
-public class AvailabilitySlot {
+public class AvailableTime {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long slotId;

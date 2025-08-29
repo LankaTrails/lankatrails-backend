@@ -1,10 +1,8 @@
 package com.lankatrails.lankatrails_backend.service;
 
-import com.lankatrails.lankatrails_backend.dtos.request.AvailabilitySlotDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.AvailableTimeDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceRequest;
-import com.lankatrails.lankatrails_backend.dtos.response.TouristGuideResponseDTO;
-import com.lankatrails.lankatrails_backend.model.ActivityService;
 import com.lankatrails.lankatrails_backend.model.Location;
 import com.lankatrails.lankatrails_backend.model.Service;
 
@@ -22,6 +20,6 @@ public interface ServicesForAll {
 
     Map<Long, ServiceDTO> getServiceDtos(Set<Long> serviceIds);
 
-    void setAvailabilitySlots(List<AvailabilitySlotDTO> availabilitySlots, Service service);
+    void setAvailableTime(List<AvailableTimeDTO> availabilitySlots, Service service);
 
 }

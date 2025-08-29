@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.lankatrails.lankatrails_backend.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,12 +19,7 @@ import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.AvailabilityResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.BookingResponseDTO;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
-import com.lankatrails.lankatrails_backend.model.AvailabilitySlot;
-import com.lankatrails.lankatrails_backend.model.Booking;
-import com.lankatrails.lankatrails_backend.model.Service;
-import com.lankatrails.lankatrails_backend.model.TouristGuide;
-import com.lankatrails.lankatrails_backend.model.TripItem;
-import com.lankatrails.lankatrails_backend.model.TripParticipant;
+import com.lankatrails.lankatrails_backend.model.AvailableTime;
 import com.lankatrails.lankatrails_backend.model.enums.BookingStatus;
 import com.lankatrails.lankatrails_backend.model.enums.BookingType;
 import com.lankatrails.lankatrails_backend.model.enums.TripPrivilege;
@@ -166,16 +162,16 @@ public class BookingServiceImpl implements BookingService {
         //Get the current date
         LocalDate currentDate = LocalDate.now();
         //Get the day of the week which the current day belongs
-        List<AvailabilitySlot> availabilitySlotList = availabilitySlotRepository.findByService_ServiceId(id);
-        if (availabilitySlotList.isEmpty()){
+        List<AvailableTime> availableTimeList = availabilitySlotRepository.findByService_ServiceId(id);
+        if (availableTimeList.isEmpty()){
             throw new BadRequestException("No Availability Slots Defined");
         }
         DayOfWeek requestedStartDay = currentDate.getDayOfWeek();
         DayOfWeek requestedEndDay = currentDate.getDayOfWeek();
-        Optional<AvailabilitySlot> startDaySlot = availabilitySlotList.stream()
+        Optional<AvailableTime> startDaySlot = availableTimeList.stream()
                 .filter(slot -> slot.getDayOfWeek().equalsIgnoreCase(requestedStartDay.toString()))
                 .findFirst();
-        Optional<AvailabilitySlot> endDaySlot = availabilitySlotList.stream()
+        Optional<AvailableTime> endDaySlot = availableTimeList.stream()
                 .filter(slot -> slot.getDayOfWeek().equalsIgnoreCase(requestedEndDay.toString()))
                 .findFirst();
 
@@ -304,16 +300,16 @@ public class BookingServiceImpl implements BookingService {
         //Get the current date
         LocalDate currentDate = LocalDate.now();
         //Get the day of the week which the current day belongs
-        List<AvailabilitySlot> availabilitySlotList = availabilitySlotRepository.findByService_ServiceId(id);
-        if (availabilitySlotList.isEmpty()){
+        List<AvailableTime> availableTimeList = availabilitySlotRepository.findByService_ServiceId(id);
+        if (availableTimeList.isEmpty()){
             throw new RuntimeException("No Availability Slots Defined");
         }
         DayOfWeek requestedStartDay = currentDate.getDayOfWeek();
         DayOfWeek requestedEndDay = currentDate.getDayOfWeek();
-        Optional<AvailabilitySlot> startDaySlot = availabilitySlotList.stream()
+        Optional<AvailableTime> startDaySlot = availableTimeList.stream()
                 .filter(slot -> slot.getDayOfWeek().equalsIgnoreCase(requestedStartDay.toString()))
                 .findFirst();
-        Optional<AvailabilitySlot> endDaySlot = availabilitySlotList.stream()
+        Optional<AvailableTime> endDaySlot = availableTimeList.stream()
                 .filter(slot -> slot.getDayOfWeek().equalsIgnoreCase(requestedEndDay.toString()))
                 .findFirst();
 

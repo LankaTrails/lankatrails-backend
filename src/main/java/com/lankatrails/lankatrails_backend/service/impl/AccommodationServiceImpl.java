@@ -3,7 +3,6 @@ package com.lankatrails.lankatrails_backend.service.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.lankatrails.lankatrails_backend.dtos.request.*;
@@ -116,13 +115,13 @@ public class AccommodationServiceImpl implements  AccommodationService {
             imageService.uploadImagesForService(images, lastServiceAdded);
 
             // Set the availability slots
-            List<AvailabilitySlotDTO> availabilitySlots = services.getAvailabilitySlots();
-            for(AvailabilitySlotDTO availabilitySlotDTO : availabilitySlots){
-                if(availabilitySlotDTO.getCloseTime() == null || availabilitySlotDTO.getOpenTime() == null){
+            List<AvailableTimeDTO> availabilitySlots = services.getAvailabilitySlots();
+            for(AvailableTimeDTO availableTimeDTO : availabilitySlots){
+                if(availableTimeDTO.getCloseTime() == null || availableTimeDTO.getOpenTime() == null){
                     throw new BadCredentialsException("Invalid Availability Slots","All Week Days should have the schedule");
                 }
             }
-            servicesForAll.setAvailabilitySlots(availabilitySlots,lastServiceAdded);
+            servicesForAll.setAvailableTime(availabilitySlots,lastServiceAdded);
 
         } else {
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());

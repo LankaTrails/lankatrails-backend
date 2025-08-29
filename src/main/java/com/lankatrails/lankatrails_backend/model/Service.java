@@ -81,7 +81,7 @@ public class Service {
     private Set<Tourist> tourists = new HashSet<>();
 
     @OneToMany(mappedBy = "service")
-    private List<AvailabilitySlot> availabilitySlots = new ArrayList<>();
+    private List<AvailableTime> availableTimes = new ArrayList<>();
 
 //    @OneToMany(mappedBy = "service")
 //    private List<Booking> serviceBookings = new ArrayList<>();

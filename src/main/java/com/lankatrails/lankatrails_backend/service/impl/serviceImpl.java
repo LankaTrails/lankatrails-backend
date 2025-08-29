@@ -1,12 +1,11 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.AvailabilitySlotDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.AvailableTimeDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceRequest;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.model.ActivityService;
-import com.lankatrails.lankatrails_backend.model.AvailabilitySlot;
+import com.lankatrails.lankatrails_backend.model.AvailableTime;
 import com.lankatrails.lankatrails_backend.model.Location;
 import com.lankatrails.lankatrails_backend.model.Service;
 import com.lankatrails.lankatrails_backend.repositories.AvailabilitySlotRepository;
@@ -77,11 +76,11 @@ public class serviceImpl implements ServicesForAll {
     }
 
     @Override
-    public void setAvailabilitySlots(List<AvailabilitySlotDTO> availabilitySlots, Service service) {
+    public void setAvailableTime(List<AvailableTimeDTO> availabilitySlots, Service service) {
         log.debug("Availability Slots{}", availabilitySlots.toString());
-        for (AvailabilitySlotDTO availabilitySlot : availabilitySlots){
+        for (AvailableTimeDTO availabilitySlot : availabilitySlots){
                 if(availabilitySlot.getOpenTime() != null && availabilitySlot.getCloseTime() != null){
-                    AvailabilitySlot slot = new AvailabilitySlot();
+                    AvailableTime slot = new AvailableTime();
                     slot.setCloseTime(availabilitySlot.getCloseTime());
                     slot.setOpenTime(availabilitySlot.getOpenTime());
                     slot.setDayOfWeek(availabilitySlot.getDayOfWeek());

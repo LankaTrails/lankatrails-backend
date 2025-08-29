@@ -126,13 +126,13 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
             imageService.uploadImagesForService(images, lastServiceAdded);
 
             // Set the availability slots
-            List<AvailabilitySlotDTO> availabilitySlots = foodBeverageRequest.getAvailabilitySlots();
-            for(AvailabilitySlotDTO availabilitySlotDTO : availabilitySlots){
-                if(availabilitySlotDTO.getCloseTime() == null || availabilitySlotDTO.getOpenTime() == null){
+            List<AvailableTimeDTO> availabilitySlots = foodBeverageRequest.getAvailabilitySlots();
+            for(AvailableTimeDTO availableTimeDTO : availabilitySlots){
+                if(availableTimeDTO.getCloseTime() == null || availableTimeDTO.getOpenTime() == null){
                     throw new BadCredentialsException("Invalid Availability Slots","All Week Days should have the schedule");
                 }
             }
-            servicesForAll.setAvailabilitySlots(availabilitySlots,lastServiceAdded);
+            servicesForAll.setAvailableTime(availabilitySlots,lastServiceAdded);
 
         } else {
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());

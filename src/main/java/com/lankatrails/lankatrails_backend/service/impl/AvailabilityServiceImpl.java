@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.lankatrails.lankatrails_backend.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,12 +18,7 @@ import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.AvailabilityResponse;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.model.Accommodation;
-import com.lankatrails.lankatrails_backend.model.ActivityService;
-import com.lankatrails.lankatrails_backend.model.AvailabilitySlot;
-import com.lankatrails.lankatrails_backend.model.FoodAndBeverage;
-import com.lankatrails.lankatrails_backend.model.TouristGuide;
-import com.lankatrails.lankatrails_backend.model.Transport;
+import com.lankatrails.lankatrails_backend.model.AvailableTime;
 import com.lankatrails.lankatrails_backend.model.enums.BookingStatus;
 import com.lankatrails.lankatrails_backend.model.enums.BookingType;
 import com.lankatrails.lankatrails_backend.repositories.AvailabilitySlotRepository;
@@ -99,8 +95,8 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     @Transactional(readOnly = true)
     public APIResponse<String> validateDateTimeConstraints(AvailabilityDto availabilityDto) {
         // Get availability slots
-        List<AvailabilitySlot> availabilitySlotList = availabilitySlotRepository.findByService_ServiceId(availabilityDto.getServiceId());
-        if (availabilitySlotList.isEmpty()) {
+        List<AvailableTime> availableTimeList = availabilitySlotRepository.findByService_ServiceId(availabilityDto.getServiceId());
+        if (availableTimeList.isEmpty()) {
             return createErrorResponse("No availability slots defined for this service" + availabilityDto.getServiceId());
         }
 
@@ -108,7 +104,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         LocalDateTime requestedEndDateTime = availabilityDto.getEndDateTime();
 
         // Create map for optimized availability slot lookup
-        Map<DayOfWeek, AvailabilitySlot> availabilityMap = availabilitySlotList.stream()
+        Map<DayOfWeek, AvailableTime> availabilityMap = availableTimeList.stream()
                 .collect(Collectors.toMap(
                     slot -> DayOfWeek.valueOf(slot.getDayOfWeek().toUpperCase()),
                     Function.identity(),
@@ -121,7 +117,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         
         while (!currentDate.isAfter(endDate)) {
             DayOfWeek currentDayOfWeek = currentDate.getDayOfWeek();
-            AvailabilitySlot daySlot = availabilityMap.get(currentDayOfWeek);
+            AvailableTime daySlot = availabilityMap.get(currentDayOfWeek);
             
             if (daySlot == null) {
                 return createErrorResponse("Service not available on " + currentDayOfWeek + " (" + currentDate + ")");

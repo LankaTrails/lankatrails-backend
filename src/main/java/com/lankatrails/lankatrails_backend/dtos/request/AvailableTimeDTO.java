@@ -1,6 +1,5 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
-import com.lankatrails.lankatrails_backend.model.Service;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,7 +11,7 @@ import java.time.LocalTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AvailabilitySlotDTO {
+public class AvailableTimeDTO {
 //    private Long slotId;
     private String dayOfWeek;
     private LocalTime openTime;
