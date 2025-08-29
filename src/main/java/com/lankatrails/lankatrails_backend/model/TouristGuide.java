@@ -5,11 +5,7 @@ import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -27,5 +23,7 @@ public class TouristGuide extends Service {
     @JoinColumn(name = "tour_guide_category_id")
     private TourGuideCategory tourGuideCategory;
 
+    @Column(name = "max_guests")
+    private Integer maxGuests;
 
 }

@@ -1,19 +1,22 @@
 package com.lankatrails.lankatrails_backend.controller;
 
-import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
-import com.lankatrails.lankatrails_backend.dtos.request.BookingRequestDTO;
-import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.BookingResponseDTO;
-import com.lankatrails.lankatrails_backend.dtos.response.TimeSlotsResponseDTO;
-import com.lankatrails.lankatrails_backend.model.Booking;
-import com.lankatrails.lankatrails_backend.service.impl.BookingServiceImpl;
-import io.vavr.API;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.AvailabilityResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.BookingResponseDTO;
+import com.lankatrails.lankatrails_backend.service.impl.BookingServiceImpl;
 
 @RestController
 @RequestMapping("/api")
@@ -23,8 +26,8 @@ public class BookingController {
 
     //check whether the time-slot is available for the booking
     @GetMapping("/tourist/booking/check-timeslot")
-    public ResponseEntity<APIResponse<String>> TimeSlotAvailability(@RequestBody AvailabilityDto availabilityDto){
-        APIResponse<String> availabilityStatus =bookingService.checkAvailability(availabilityDto);
+    public ResponseEntity<APIResponse<AvailabilityResponse>> TimeSlotAvailability(@RequestBody AvailabilityDto availabilityDto){
+        APIResponse<AvailabilityResponse> availabilityStatus = bookingService.checkAvailability(availabilityDto);
         return ResponseEntity.status(availabilityStatus.isSuccess()? HttpStatus.OK:HttpStatus.CONFLICT).body(availabilityStatus);
     }
 

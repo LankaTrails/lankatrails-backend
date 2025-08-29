@@ -1,8 +1,15 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.AvailabilityResponse;
 import com.lankatrails.lankatrails_backend.exception.IllegalParamsException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.Place;
@@ -15,12 +22,9 @@ import com.lankatrails.lankatrails_backend.repositories.TripItemRepository;
 import com.lankatrails.lankatrails_backend.repositories.TripRepository;
 import com.lankatrails.lankatrails_backend.service.BookingService;
 import com.lankatrails.lankatrails_backend.service.TripItemService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.time.LocalDateTime;
 
 @Slf4j
 @org.springframework.stereotype.Service
@@ -91,6 +95,12 @@ public class TripItemServiceImpl implements TripItemService {
                 Service service = serviceRepository.findById(tripItemDTO.getService().getServiceId())
                         .orElseThrow(() -> new IllegalParamsException("Service not found with ID: " + tripItemDTO.getService().getServiceId()));
 
+                // Default to 1 unit if not specified (null-safe)
+                Integer requestedUnits = Optional.ofNullable(tripItemDTO.getNoOfUnits()).orElse(1);
+                if (requestedUnits <= 0) {
+                    return createErrorResponse("Number of units must be at least 1");
+                }
+                
                 AvailabilityDto availabilityDto =  AvailabilityDto.builder()
                         .startDateTime(tripItemDTO.getStartTime())
                         .endDateTime(tripItemDTO.getEndTime())
@@ -98,14 +108,18 @@ public class TripItemServiceImpl implements TripItemService {
                         .childCount(trip.getNumberOfChildren())
                         .serviceId(service.getServiceId())
                         .tripId(tripId)
+                        .noOfUnits(requestedUnits)
                         .build();
 
                 // Check availability
-                APIResponse<String> availabilityResponse = bookingService.checkAvailability(availabilityDto);
-                if (!availabilityResponse.isSuccess()) {
-                    return availabilityResponse;
+                APIResponse<AvailabilityResponse> availabilityResponse = bookingService.checkAvailability(availabilityDto);
+                if (!availabilityResponse.isSuccess() || !availabilityResponse.getData().isAvailable()) {
+                    return createErrorResponse(availabilityResponse.getMessage());
                 }
+                
+                // Set the service and number of units on the trip item
                 tripItem.setService(service);
+                tripItem.setNoOfUnits(requestedUnits);
             }
 
             default -> throw new IllegalParamsException("Invalid trip item type: " + tripItemDTO.getType());
@@ -126,7 +140,7 @@ public class TripItemServiceImpl implements TripItemService {
         }
 
         boolean hasOverlap = tripItemRepository.existsOverlappingTripItemsForTripId(
-                tripId, endDateTime, startDateTime);
+                tripId, startDateTime, endDateTime);
 
         String message = hasOverlap ? "Overlapping trip items found" : "No overlapping trip items";
 

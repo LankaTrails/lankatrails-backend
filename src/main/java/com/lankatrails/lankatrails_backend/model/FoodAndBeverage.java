@@ -22,6 +22,7 @@ public class FoodAndBeverage extends Service{
     private Boolean outdoorSeating;
     private Boolean liveMusic;
     private String cuisineType;
+    private Integer maxGuests;
 
     @ManyToOne
     @JoinColumn(name = "foodAndBeverageCategory_id")

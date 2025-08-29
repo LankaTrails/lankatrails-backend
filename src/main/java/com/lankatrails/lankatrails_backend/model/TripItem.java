@@ -25,6 +25,9 @@ public class TripItem {
     @Column(name = "end_time", nullable = false)
     private LocalDateTime endTime;
 
+    @Column(name = "no_of_units")
+    private Integer noOfUnits;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "trip_item_type", nullable = false, columnDefinition = "VARCHAR(20)")
     private TripItemType tripItemType;

@@ -16,4 +16,5 @@ public class AvailabilityDto {
     private LocalDateTime endDateTime;
     private Long serviceId;
     private Long tripId;
+    private Integer noOfUnits;
 }

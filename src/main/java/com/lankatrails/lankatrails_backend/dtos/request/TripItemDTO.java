@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
 import com.lankatrails.lankatrails_backend.model.enums.TripItemType;
+import jakarta.persistence.Column;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -16,4 +17,5 @@ public class TripItemDTO {
     private ServiceDTO service;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+    private Integer noOfUnits;
 }

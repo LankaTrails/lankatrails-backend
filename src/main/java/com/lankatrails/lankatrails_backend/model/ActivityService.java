@@ -21,4 +21,6 @@ public class ActivityService extends Service {
     private String safetyInstructions;
 
     private String activityDuration;
+
+    private Integer maxGuests;
 }
