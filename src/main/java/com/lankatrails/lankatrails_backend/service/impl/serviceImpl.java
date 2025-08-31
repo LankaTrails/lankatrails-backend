@@ -2,15 +2,10 @@ package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.model.AvailableTime;
-import com.lankatrails.lankatrails_backend.model.BreakTime;
-import com.lankatrails.lankatrails_backend.model.Location;
-import com.lankatrails.lankatrails_backend.model.Service;
+import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.enums.LocationType;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
-import com.lankatrails.lankatrails_backend.repositories.AvailableTimeRepository;
-import com.lankatrails.lankatrails_backend.repositories.BreakTimeRepository;
-import com.lankatrails.lankatrails_backend.repositories.LocationRepository;
-import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
+import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.service.ServicesForAll;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -18,11 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.List;
 
 @org.springframework.stereotype.Service
 @Slf4j
@@ -38,6 +30,12 @@ public class serviceImpl implements ServicesForAll {
 
     @Autowired
     BreakTimeRepository breakTimeRepository;
+
+    @Autowired
+    BookingConfigurationRepository bookingConfigurationRepository;
+
+    @Autowired
+    PriceConfigurationRepository priceConfigurationRepository;
 
     @Autowired
     ModelMapper modelMapper;
@@ -73,6 +71,7 @@ public class serviceImpl implements ServicesForAll {
                     } else {
                         log.info("Creating new location from request: {}", locationDTO);
                         Location location = modelMapper.map(locationDTO, Location.class);
+                        location.setLocationType(LocationType.POINT_OF_INTEREST);
                         return locationRepository.save(location);
                     }
                 }).collect(Collectors.toSet());
@@ -82,7 +81,7 @@ public class serviceImpl implements ServicesForAll {
     public void setAvailableTime(List<AvailableTimeDTO> availableTimeDTOS, Service service) {
         log.debug("Availability Slots{}", availableTimeDTOS.toString());
         for (AvailableTimeDTO availableTime : availableTimeDTOS){
-                if(availableTime.getOpenTime() != null && availableTime.getCloseTime() != null){
+                if(availableTime.getOpenTime() != null && availableTime.getCloseTime() != null  || availableTime.getIs24Hours() != null || availableTime.getIsClosed() != null){
                     AvailableTime time = new AvailableTime();
                     time.setCloseTime(availableTime.getCloseTime());
                     time.setOpenTime(availableTime.getOpenTime());
@@ -90,7 +89,8 @@ public class serviceImpl implements ServicesForAll {
                     time.setIs24Hours(availableTime.getIs24Hours());
                     time.setIsClosed(availableTime.getIsClosed());
                     time.setService(service);
-                    availableTimeRepository.save(time);
+                    time.setBreakTimes(new ArrayList<>());
+                    AvailableTime savedAvailableTime = availableTimeRepository.save(time);
 
                     if(availableTime.getBreakTimes() != null){
                         for (BreakTimeDTO breakTimeDTO : availableTime.getBreakTimes()){
@@ -99,15 +99,26 @@ public class serviceImpl implements ServicesForAll {
                                 breakTime.setBreakStart(breakTimeDTO.getBreakStart());
                                 breakTime.setBreakEnd(breakTimeDTO.getBreakEnd());
                                 breakTime.setAvailableTime(time);
-                                breakTimeRepository.save(breakTime);
+                                savedAvailableTime.getBreakTimes().add(breakTimeRepository.save(breakTime));
                             }
                         }
                     }
                 }
-
-
         }
+    }
 
+    @Override
+    @Transactional
+    public BookingConfiguration setBookingConfig(BookingConfigDTO bookingConfigDTO){
+        BookingConfiguration bookingConfiguration = modelMapper.map(bookingConfigDTO, BookingConfiguration.class);
+        return bookingConfigurationRepository.save(bookingConfiguration);
+    }
+
+    @Override
+    @Transactional
+    public PriceConfiguration setPriceConfig(PriceConfigDTO priceConfigDTO){
+        PriceConfiguration priceConfiguration = modelMapper.map(priceConfigDTO, PriceConfiguration.class);
+        return priceConfigurationRepository.save(priceConfiguration);
     }
 
     @Override

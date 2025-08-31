@@ -9,7 +9,7 @@ public class UpdateServiceFactory {
 
     public Transport updateTransport(Transport transport,Transport request){
 //        transport.setVehicleType(request.getVehicleType());
-        transport.setVehicleQty(request.getVehicleQty());
+//        transport.setVehicleQty(request.getVehicleQty());
         return transport;
     }
 

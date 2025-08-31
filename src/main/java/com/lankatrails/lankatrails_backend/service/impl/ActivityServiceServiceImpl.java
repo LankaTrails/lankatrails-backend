@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
+import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -103,6 +104,9 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         mappedObj.setProvider(provider);
 
         mappedObj.setLocations(servicesForAll.setServiceLocation(services));
+        mappedObj.setBookingConfiguration(servicesForAll.setBookingConfig(services.getBookingConfig()));
+        mappedObj.setPriceConfiguration(servicesForAll.setPriceConfig(services.getPriceConfig()));
+        mappedObj.setStatus(ServiceStatus.ACTIVE);
 
         Optional<ActivityService> checkDb = activityServiceRepository.findByServiceName(mappedObj.getServiceName());
         ActivityService lastServiceAdded;
@@ -129,12 +133,10 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
             // Set the availability slots
             List<AvailableTimeDTO> availabilitySlots = services.getAvailableTimeDTOS();
-            for(AvailableTimeDTO availableTimeDTO : availabilitySlots){
-                if(availableTimeDTO.getCloseTime() == null || availableTimeDTO.getOpenTime() == null){
-                    throw new BadCredentialsException("Invalid Availability Slots","All Week Days should have the schedule");
-                }
+            if (availabilitySlots == null ){
+                throw new BadRequestException("Availability Slots cannot be empty");
             }
-            serviceImpl.setAvailableTime(availabilitySlots,lastServiceAdded);
+            servicesForAll.setAvailableTime(availabilitySlots, lastServiceAdded);
 
         } else {
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());
@@ -374,80 +376,33 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
       activity.setStatus(activityService.getStatus());
       activity.setActivityDetails(activityService.getActivityDetails());
       activity.setSafetyInstructions(activityService.getSafetyInstructions());
-      activity.setPriceConfiguration(modelMapper.map(activityService.getPriceConfig(),com.lankatrails.lankatrails_backend.model.PriceConfiguration.class));
-      activity.setBookingConfiguration(modelMapper.map(activityService.getBookingConfig(),com.lankatrails.lankatrails_backend.model.BookingConfiguration.class));
       
       // Update locations
       if (activityService.getLocations() != null && !activityService.getLocations().isEmpty()) {
           activity.setLocations(servicesForAll.setServiceLocation(activityService));
       }
 
+        // Update configurations
+        activity.setBookingConfiguration(servicesForAll.setBookingConfig(activityService.getBookingConfig()));
+        activity.setPriceConfiguration(servicesForAll.setPriceConfig(activityService.getPriceConfig()));
+
       //save the updated activity service
-      activityServiceRepository.save(activity);
+      ActivityService updatedActivity = activityServiceRepository.save(activity);
 
-      //update or add tabs
-      //get the tabs from the database
-      Set<TabsSection> tabs=activity.getTabs();
+        // Set the availability slots
+        List<AvailableTimeDTO> availabilitySlots = activityService.getAvailableTimeDTOS();
+        if (availabilitySlots == null ){
+            throw new BadRequestException("Availability Slots cannot be empty");
+        }
+        servicesForAll.setAvailableTime(availabilitySlots, updatedActivity);
 
-      //get the tabs from the request
-      List<TabSectionRequest> reqTabs=activityService.getTabsSection();
+        // Update tabs
+        tabsImpl.updateTabs(activityService.getTabsSection(), updatedActivity);
+        tabsImpl.deleteTabs(activityService.getDeletedTabs());
 
-      //create a map of existing tabs by ID for quick lookup
-      Map<Long,TabsSection> savedTabMap=tabs.stream()
-              .collect(Collectors.toMap(TabsSection::getId, Function.identity()));
-
-      //create a set to track updated or newly added tabs
-      Set<TabsSection> updatedTabs=new HashSet<>();
-
-      for (TabSectionRequest req:reqTabs){
-          TabsSection tab;
-          if (req.getId()!=null && savedTabMap.containsKey(req.getId())){
-              //update the existing tab
-              tab=savedTabMap.get(req.getId());
-              tab.setHeading(req.getHeading());
-              tab.setContent(req.getContent());
-          }else{
-              //create new tab
-              tab=new TabsSection();
-              tab.setHeading(req.getHeading());
-              tab.setContent(req.getContent());
-              tab.setService(activity);
-          }
-          updatedTabs.add(tab);
-      }
-
-      tabsSectionRepository.saveAll(updatedTabs);
-
-      //update or add policies
-      Set<PolicySection> policies=activity.getPolicies();
-
-      //get the policySection from the request
-      List<PolicySectionRequest> reqPolicies=activityService.getPolicySection();
-      //create a map from existing policy ids in the db for easy lookup
-      Map<Long,PolicySection> savedPoliciesMap=policies.stream()
-              .collect(Collectors.toMap(PolicySection::getId,Function.identity()));
-
-      //create a set to track updated policies or the newly added policies
-      Set<PolicySection> updatedPolicies=new HashSet<>();
-
-      for (PolicySectionRequest policy:reqPolicies){
-          PolicySection policySection;
-          if (policy.getId()!=null && savedPoliciesMap.containsKey(policy.getId())){
-              //update the existing tab
-              policySection=savedPoliciesMap.get(policy.getId());
-              policySection.setHeading(policy.getHeading());
-              policySection.setPolicy(policy.getPolicy());
-          }else{
-              //create new tab
-              policySection=new PolicySection();
-              policySection.setHeading(policy.getHeading());
-              policySection.setPolicy(policy.getPolicy());
-              policySection.setProvider(activity.getProvider());
-          }
-          updatedPolicies.add(policySection);
-
-      }
-      policySectionRepository.saveAll(updatedPolicies);
+        // Update policies
+        policyImpl.updatePolicies(activityService.getPolicySection(), updatedActivity);
+        policyImpl.deletePolicies(activityService.getDeletedPolicies(), updatedActivity);
 
       return APIResponse.<String>builder()
               .success(true)

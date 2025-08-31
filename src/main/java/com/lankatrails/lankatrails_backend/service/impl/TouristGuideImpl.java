@@ -4,6 +4,7 @@ import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TouristGuideResponseDTO;
 import com.lankatrails.lankatrails_backend.exception.APIException;
+import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
 import com.lankatrails.lankatrails_backend.model.*;
@@ -129,6 +130,9 @@ public class TouristGuideImpl implements TouristGuideService {
         mappedObj.setProvider(provider);
 
         mappedObj.setLocations(servicesForAll.setServiceLocation(requestDTO));
+        mappedObj.setBookingConfiguration(servicesForAll.setBookingConfig(requestDTO.getBookingConfig()));
+        mappedObj.setPriceConfiguration(servicesForAll.setPriceConfig(requestDTO.getPriceConfig()));
+        mappedObj.setStatus(ServiceStatus.ACTIVE);
 
         Optional<TouristGuide> checkDb = touristGuideRepository.findByServiceName(mappedObj.getServiceName());
 
@@ -178,6 +182,12 @@ public class TouristGuideImpl implements TouristGuideService {
             }
 
             imageRepository.saveAll(savedImages); // Persist images
+            // Set the availability slots
+            List<AvailableTimeDTO> availabilitySlots = requestDTO.getAvailableTimeDTOS();
+            if (availabilitySlots == null ){
+                throw new BadRequestException("Availability Slots cannot be empty");
+            }
+            servicesForAll.setAvailableTime(availabilitySlots, lastGuideAdded);
 
             //save the languages served
             List<String> languageList = requestDTO.getLanguages();
@@ -293,82 +303,27 @@ public class TouristGuideImpl implements TouristGuideService {
         touristGuide.setServiceName(requestDTO.getServiceName());
         touristGuide.setContactNo(requestDTO.getContactNo());
         touristGuide.setStatus(requestDTO.getStatus());
-        touristGuide.setPriceConfiguration(modelMapper.map(requestDTO.getPriceConfig(), PriceConfiguration.class));
-        touristGuide.setBookingConfiguration(modelMapper.map(requestDTO.getBookingConfig(), BookingConfiguration.class));
         
         // Update locations
         if (requestDTO.getLocations() != null && !requestDTO.getLocations().isEmpty()) {
             touristGuide.setLocations(servicesForAll.setServiceLocation(requestDTO));
         }
 
+        // Update configurations
+        touristGuide.setBookingConfiguration(servicesForAll.setBookingConfig(requestDTO.getBookingConfig()));
+        touristGuide.setPriceConfiguration(servicesForAll.setPriceConfig(requestDTO.getPriceConfig()));
+
         //save the updated tour guide
-        touristGuideRepository.save(touristGuide);
+        TouristGuide updatedTourGuide = touristGuideRepository.save(touristGuide);
+// Update tabs
+        tabsImpl.updateTabs(requestDTO.getTabsSection(), updatedTourGuide);
+        tabsImpl.deleteTabs(requestDTO.getDeletedTabs());
 
-        //update or add tabs
-        //get the tabs from the database
-        Set<TabsSection> tabs=touristGuide.getTabs();
-
-        //get the tabs from the request
-        List<TabSectionRequest> reqTabs=requestDTO.getTabsSection();
-
-        //create a map of existing tabs by ID for quick lookup
-        Map<Long,TabsSection> savedTabMap=tabs.stream()
-                .collect(Collectors.toMap(TabsSection::getId, Function.identity()));
-
-        //create a set to track updated or newly added tabs
-        Set<TabsSection> updatedTabs=new HashSet<>();
-
-        for(TabSectionRequest req:reqTabs){
-            TabsSection tab;
-            if (req.getId()!=null && savedTabMap.containsKey(req.getId())){
-                //update the existing tab
-                tab=savedTabMap.get(req.getId());
-                tab.setHeading(req.getHeading());
-                tab.setContent(req.getContent());
-            }else{
-                //create new tab
-                tab=new TabsSection();
-                tab.setHeading(req.getHeading());
-                tab.setContent(req.getContent());
-                tab.setService(touristGuide);
-            }
-            updatedTabs.add(tab);
-        }
-        tabsSectionRepository.saveAll(updatedTabs);
-
-        //update or add policies
-        Set<PolicySection> policies=touristGuide.getPolicies();
-
-        //get the policySection from the request
-        List<PolicySectionRequest> reqPolicies=requestDTO.getPolicySection();
-        //create a map from existing policy ids in the db for easy lookup
-        Map<Long,PolicySection> savedPoliciesMap=policies.stream()
-                .collect(Collectors.toMap(PolicySection::getId,Function.identity()));
-
-        //create a set to track updated policies or the newly added policies
-        Set<PolicySection> updatedPolicies=new HashSet<>();
-
-        for (PolicySectionRequest policy:reqPolicies){
-            PolicySection policySection;
-            if (policy.getId()!=null && savedPoliciesMap.containsKey(policy.getId())){
-                //update the existing tab
-                policySection=savedPoliciesMap.get(policy.getId());
-                policySection.setHeading(policy.getHeading());
-                policySection.setPolicy(policy.getPolicy());
-            }else{
-                //create new tab
-                policySection=new PolicySection();
-                policySection.setHeading(policy.getHeading());
-                policySection.setPolicy(policy.getPolicy());
-                policySection.setProvider(touristGuide.getProvider());
-            }
-            updatedPolicies.add(policySection);
-
-        }
+        // Update policies
+        policyImpl.updatePolicies(requestDTO.getPolicySection(), updatedTourGuide);
+        policyImpl.deletePolicies(requestDTO.getDeletedPolicies(), updatedTourGuide);
 
         TouristGuideRequestDTO responseDTO=modelMapper.map(touristGuideRepository.findById(id),TouristGuideRequestDTO.class);
-        responseDTO.setTabsSection(reqTabs);
-        responseDTO.setPolicySection(reqPolicies);
 
         List<TouristGuideRequestDTO> responseList=new ArrayList<>();
         responseList.add(responseDTO);

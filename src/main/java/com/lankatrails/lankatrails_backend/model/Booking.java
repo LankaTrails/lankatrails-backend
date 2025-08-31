@@ -38,6 +38,14 @@ public class Booking {
     @Column(name = "end_date_time")
     private LocalDateTime endDateTime;
 
+    @Column(name = "total_price")
+    private Double totalPrice;
+
+    @Column(name = "paid_amount")
+    private Double paidAmount;
+
+    @Column(name = "deposit_amount")
+    private Double depositAmount;
 
     @Enumerated(EnumType.STRING)
     private BookingStatus bookingStatus;

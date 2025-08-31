@@ -7,7 +7,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.lankatrails.lankatrails_backend.dtos.request.*;
-import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
+import com.lankatrails.lankatrails_backend.exception.*;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import org.modelmapper.ModelMapper;
@@ -21,9 +21,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TransportResponseDTO;
-import com.lankatrails.lankatrails_backend.exception.APIException;
-import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
 import com.lankatrails.lankatrails_backend.factory.CreateServiceFactory;
 import com.lankatrails.lankatrails_backend.factory.UpdateServiceFactory;
 import com.lankatrails.lankatrails_backend.model.Category;
@@ -211,38 +208,37 @@ public class TransportServiceImpl implements TransportService {
                 .orElseThrow(()->new ResourceNotFoundException("Transport Service",Id));
 
         Transport mappedObj=modelMapper.map(transportRequestDTO,Transport.class);
-        Transport updatedObj=updateServiceFactory.updateTransport(transport,mappedObj);
         
         // Update basic service properties
-        updatedObj.setServiceName(transportRequestDTO.getServiceName());
-        updatedObj.setContactNo(transportRequestDTO.getContactNo());
-        updatedObj.setStatus(transportRequestDTO.getStatus());
-        updatedObj.setPriceConfiguration(modelMapper.map(transportRequestDTO.getPriceConfig(),com.lankatrails.lankatrails_backend.model.PriceConfiguration.class));
-        updatedObj.setBookingConfiguration(modelMapper.map(transportRequestDTO.getBookingConfig(),com.lankatrails.lankatrails_backend.model.BookingConfiguration.class));
+        mappedObj.setServiceName(transportRequestDTO.getServiceName());
+        mappedObj.setContactNo(transportRequestDTO.getContactNo());
+        mappedObj.setStatus(transportRequestDTO.getStatus());
         
         // Update locations
         if (transportRequestDTO.getLocations() != null && !transportRequestDTO.getLocations().isEmpty()) {
-            updatedObj.setLocations(servicesForAll.setServiceLocation(transportRequestDTO));
+            mappedObj.setLocations(servicesForAll.setServiceLocation(transportRequestDTO));
         }
+
+        // Update configurations
+        mappedObj.setBookingConfiguration(servicesForAll.setBookingConfig(transportRequestDTO.getBookingConfig()));
+        mappedObj.setPriceConfiguration(servicesForAll.setPriceConfig(transportRequestDTO.getPriceConfig()));
         
-        transportRepository.save(updatedObj);
+        Transport updatedTransport = transportRepository.save(mappedObj);
 
-        //save the tabs if updated
-        //get the tabs from the database
-        Set<TabsSection> tabs=transport.getTabs();
-        //get the tabs from the request
-        List<TabSectionRequest> reqTabs=transportRequestDTO.getTabsSection();
+        // Set the availability slots
+        List<AvailableTimeDTO> availabilitySlots = transportRequestDTO.getAvailableTimeDTOS();
+        if (availabilitySlots == null ){
+            throw new BadRequestException("Availability Slots cannot be empty");
+        }
+        servicesForAll.setAvailableTime(availabilitySlots, updatedTransport);
 
-        Set<TabsSection> updatedTabs=tabsImpl.updateTabs(tabs,reqTabs,transport);
-        tabsSectionRepository.saveAll(updatedTabs);
+        // Update tabs
+        tabsImpl.updateTabs(transportRequestDTO.getTabsSection(), updatedTransport);
+        tabsImpl.deleteTabs(transportRequestDTO.getDeletedTabs());
 
-        //update or add policies
-        Set<PolicySection> policies=transport.getPolicies();
-        //get the policySection from the request
-        List<PolicySectionRequest> reqPolicies=transportRequestDTO.getPolicySection();
-        Set<PolicySection> updatedPolicies=policiesImpl.updatePolicies(policies,reqPolicies,transport);
-
-        policySectionRepository.saveAll(updatedPolicies);
+        // Update policies
+        policiesImpl.updatePolicies(transportRequestDTO.getPolicySection(), updatedTransport);
+        policiesImpl.deletePolicies(transportRequestDTO.getDeletedPolicies(), updatedTransport);
 
         List<TransportRequestDTO> makeResponse=new ArrayList<>();
         makeResponse.add(transportRequestDTO);
@@ -269,6 +265,9 @@ public class TransportServiceImpl implements TransportService {
         mappedObj.setProvider(provider);
 
         mappedObj.setLocations(servicesForAll.setServiceLocation(transportRequestDTO));
+        mappedObj.setBookingConfiguration(servicesForAll.setBookingConfig(transportRequestDTO.getBookingConfig()));
+        mappedObj.setPriceConfiguration(servicesForAll.setPriceConfig(transportRequestDTO.getPriceConfig()));
+        mappedObj.setStatus(ServiceStatus.ACTIVE);
 
         Optional<Transport> checkDb=transportRepository.findByServiceName(mappedObj.getServiceName());
         Transport lastTransportAdded;
@@ -294,11 +293,10 @@ public class TransportServiceImpl implements TransportService {
 
             // Set the availability slots
             List<AvailableTimeDTO> availabilitySlots = transportRequestDTO.getAvailableTimeDTOS();
-            for(AvailableTimeDTO availableTimeDTO : availabilitySlots){
-                if(availableTimeDTO.getCloseTime() == null || availableTimeDTO.getOpenTime() == null){
-                    throw new BadCredentialsException("Invalid Availability Slots","All Week Days should have the schedule");
-                }
+            if (availabilitySlots == null ){
+                throw new BadRequestException("Availability Slots cannot be empty");
             }
+            servicesForAll.setAvailableTime(availabilitySlots, lastTransportAdded);
             servicesForAll.setAvailableTime(availabilitySlots, lastTransportAdded);
         }else{
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());

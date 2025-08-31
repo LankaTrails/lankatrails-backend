@@ -1,10 +1,11 @@
 package com.lankatrails.lankatrails_backend.service;
 
-import com.lankatrails.lankatrails_backend.dtos.request.AvailableTimeDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.ServiceRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.*;
+import com.lankatrails.lankatrails_backend.model.BookingConfiguration;
 import com.lankatrails.lankatrails_backend.model.Location;
+import com.lankatrails.lankatrails_backend.model.PriceConfiguration;
 import com.lankatrails.lankatrails_backend.model.Service;
+import com.lankatrails.lankatrails_backend.repositories.PriceConfigurationRepository;
 
 import java.util.List;
 import java.util.Map;
@@ -21,5 +22,9 @@ public interface ServicesForAll {
     Map<Long, ServiceDTO> getServiceDtos(Set<Long> serviceIds);
 
     void setAvailableTime(List<AvailableTimeDTO> availabilitySlots, Service service);
+
+    BookingConfiguration setBookingConfig(BookingConfigDTO bookingConfigDTO);
+
+    PriceConfiguration setPriceConfig(PriceConfigDTO priceConfigDTO);
 
 }

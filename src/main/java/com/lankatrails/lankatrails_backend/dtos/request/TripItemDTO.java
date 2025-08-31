@@ -18,4 +18,6 @@ public class TripItemDTO {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Integer noOfUnits;
+    private Integer numberOfAdults;
+    private Integer numberOfChildren;
 }

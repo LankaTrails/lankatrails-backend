@@ -16,13 +16,17 @@ import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.AvailabilityResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.BookingResponseDTO;
-import com.lankatrails.lankatrails_backend.service.impl.BookingServiceImpl;
+import com.lankatrails.lankatrails_backend.service.BookingService;
+import com.lankatrails.lankatrails_backend.service.TimeSlotService;
 
 @RestController
 @RequestMapping("/api")
 public class BookingController {
     @Autowired
-    BookingServiceImpl bookingService;
+    BookingService bookingService;
+    
+    @Autowired
+    TimeSlotService timeSlotService;
 
     //check whether the time-slot is available for the booking
     @GetMapping("/tourist/booking/check-timeslot")
@@ -77,7 +81,7 @@ public class BookingController {
     //Needed when placing the booking
     @GetMapping("/tourist/booking/tour-guide/slots/{id}")
     public ResponseEntity<APIResponse<List<String>>> getTouristDaySlots(@PathVariable Long id) {
-        APIResponse<List<String>> getDaySlots = bookingService.getTourGuideDaySlots(id);
+        APIResponse<List<String>> getDaySlots = timeSlotService.getTourGuideDaySlots(id);
         return  ResponseEntity.status(getDaySlots.isSuccess()? HttpStatus.OK:HttpStatus.BAD_REQUEST).body(getDaySlots);
 
     }
@@ -85,7 +89,7 @@ public class BookingController {
     //Get the available free slots
     @GetMapping("/tourist/booking/available-slots/{id}")
     public ResponseEntity<APIResponse<List<String>>> getAvailableFreeSlots(@RequestBody AvailabilityDto availabilityDto, @PathVariable Long id){
-        APIResponse<List<String>> response = bookingService.getAllFreeTimeSlots(availabilityDto,id);
+        APIResponse<List<String>> response = timeSlotService.getAllFreeTimeSlots(availabilityDto,id);
         return ResponseEntity.status(response.isSuccess()? HttpStatus.OK:HttpStatus.BAD_REQUEST).body(response);
     }
 

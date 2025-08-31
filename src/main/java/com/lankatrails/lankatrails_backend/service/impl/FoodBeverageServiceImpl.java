@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.lankatrails.lankatrails_backend.dtos.request.*;
-import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
+import com.lankatrails.lankatrails_backend.exception.*;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +19,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.FoodBeverageResponse;
-import com.lankatrails.lankatrails_backend.exception.APIException;
-import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
 import com.lankatrails.lankatrails_backend.model.Category;
 import com.lankatrails.lankatrails_backend.model.FoodAndBeverage;
 import com.lankatrails.lankatrails_backend.model.FoodAndBeverageCategory;
@@ -102,6 +99,9 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         mappedObj.setProvider(provider);
 
         mappedObj.setLocations(servicesForAll.setServiceLocation(foodBeverageRequest));
+        mappedObj.setBookingConfiguration(servicesForAll.setBookingConfig(foodBeverageRequest.getBookingConfig()));
+        mappedObj.setPriceConfiguration(servicesForAll.setPriceConfig(foodBeverageRequest.getPriceConfig()));
+        mappedObj.setStatus(ServiceStatus.ACTIVE);
 
         Optional<FoodAndBeverage> checkDb = foodBeverageRepository.findByServiceName(mappedObj.getServiceName());
         FoodAndBeverage lastServiceAdded;
@@ -128,12 +128,10 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
 
             // Set the availability slots
             List<AvailableTimeDTO> availabilitySlots = foodBeverageRequest.getAvailableTimeDTOS();
-            for(AvailableTimeDTO availableTimeDTO : availabilitySlots){
-                if(availableTimeDTO.getCloseTime() == null || availableTimeDTO.getOpenTime() == null){
-                    throw new BadCredentialsException("Invalid Availability Slots","All Week Days should have the schedule");
-                }
+            if (availabilitySlots == null ){
+                throw new BadRequestException("Availability Slots cannot be empty");
             }
-            servicesForAll.setAvailableTime(availabilitySlots,lastServiceAdded);
+            servicesForAll.setAvailableTime(availabilitySlots, lastServiceAdded);
 
         } else {
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());
@@ -313,15 +311,23 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         foodAndBeverageService.setLiveMusic(foodBeverageRequest.getLiveMusic());
         foodAndBeverageService.setCuisineType(foodBeverageRequest.getCuisineType());
         foodAndBeverageService.setContactNo(foodBeverageRequest.getContactNo());
-        foodAndBeverageService.setPriceConfiguration(modelMapper.map(foodBeverageRequest.getPriceConfig(), com.lankatrails.lankatrails_backend.model.PriceConfiguration.class));
-        foodAndBeverageService.setBookingConfiguration(modelMapper.map(foodBeverageRequest.getBookingConfig(), com.lankatrails.lankatrails_backend.model.BookingConfiguration.class));
         foodAndBeverageService.setFoodAndBeverageCategory(foodAndBeverageCategory);
 
         // Update the locations
         foodAndBeverageService.setLocations(servicesForAll.setServiceLocation(foodBeverageRequest));
+        // Update configurations
+        foodAndBeverageService.setBookingConfiguration(servicesForAll.setBookingConfig(foodBeverageRequest.getBookingConfig()));
+        foodAndBeverageService.setPriceConfiguration(servicesForAll.setPriceConfig(foodBeverageRequest.getPriceConfig()));
 
         // Save the updated service
         foodAndBeverageService = foodBeverageRepository.save(foodAndBeverageService);
+
+        // Set the availability slots
+        List<AvailableTimeDTO> availabilitySlots = foodBeverageRequest.getAvailableTimeDTOS();
+        if (availabilitySlots == null ){
+            throw new BadRequestException("Availability Slots cannot be empty");
+        }
+        servicesForAll.setAvailableTime(availabilitySlots, foodAndBeverageService);
 
         // Update the tabs
         tabsImpl.updateTabs(foodBeverageRequest.getTabsSection(), foodAndBeverageService);

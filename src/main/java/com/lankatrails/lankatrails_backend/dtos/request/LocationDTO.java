@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
+import com.lankatrails.lankatrails_backend.model.enums.LocationType;
 import lombok.*;
 
 @Getter
@@ -16,5 +17,6 @@ public class LocationDTO {
     private String postalCode;
     private Double latitude;
     private Double longitude;
+    private LocationType locationType;
 
 }

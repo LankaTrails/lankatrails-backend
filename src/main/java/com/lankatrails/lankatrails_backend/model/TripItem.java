@@ -28,6 +28,12 @@ public class TripItem {
     @Column(name = "no_of_units")
     private Integer noOfUnits;
 
+    @Column(name = "number_of_adults")
+    private Integer numberOfAdults;
+
+    @Column(name = "number_of_children")
+    private Integer numberOfChildren;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "trip_item_type", nullable = false, columnDefinition = "VARCHAR(20)")
     private TripItemType tripItemType;
