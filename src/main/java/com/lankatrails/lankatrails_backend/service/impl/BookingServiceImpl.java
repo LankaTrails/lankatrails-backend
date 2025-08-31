@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -90,9 +91,9 @@ public class BookingServiceImpl implements BookingService {
 
         if (availabilityResponse.isSuccess()) {
             // Calculate deposit amount safely
-            Double depositAmount = 0.0;
+            BigDecimal depositAmount = BigDecimal.ZERO;
             if (Boolean.TRUE.equals(serviceWithLock.getPriceConfiguration().getRequiresDeposit())) {
-                Double configDepositAmount = serviceWithLock.getPriceConfiguration().getDepositAmount();
+                BigDecimal configDepositAmount = serviceWithLock.getPriceConfiguration().getDepositAmount();
                 if (configDepositAmount != null) {
                     depositAmount = configDepositAmount;
                 }
@@ -110,7 +111,7 @@ public class BookingServiceImpl implements BookingService {
                             tripItem.getNoOfUnits()
                     ))
                     .depositAmount(depositAmount)
-                    .paidAmount(0.0)
+                    .paidAmount(BigDecimal.ZERO)
                     .bookingStatus(BookingStatus.BOOKED)
                     .build();
 

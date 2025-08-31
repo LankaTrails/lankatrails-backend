@@ -5,6 +5,7 @@ import com.lankatrails.lankatrails_backend.model.enums.PriceType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -24,30 +25,30 @@ public class PriceConfiguration {
     @OneToOne(mappedBy = "priceConfiguration", fetch = FetchType.LAZY)
     private Service service;
 
-    @Column(name = "fixed_price")
-    private Double fixedPrice;
+    @Column(name = "fixed_price", scale = 2)
+    private BigDecimal fixedPrice;
 
-    @Column(name = "price_per_unit")
-    private Double pricePerUnit;
+    @Column(name = "price_per_unit", scale = 2)
+    private BigDecimal pricePerUnit;
 
-    @Column(name = "price_per_adult")
-    private Double pricePerAdult;
+    @Column(name = "price_per_adult", scale = 2)
+    private BigDecimal pricePerAdult;
 
-    @Column(name = "price_per_child")
-    private Double pricePerChild;
+    @Column(name = "price_per_child", scale = 2)
+    private BigDecimal pricePerChild;
 
     @Column(name = "price_type")
     @Enumerated(EnumType.STRING)
     private PriceType priceType;
 
-    @Column(name = "extra_charge_per_unit")
-    private Double extraChargePerUnit;
+    @Column(name = "extra_charge_per_unit", scale = 2)
+    private BigDecimal extraChargePerUnit;
 
-    @Column(name = "extra_per_adult")
-    private Double extraPerAdult;
+    @Column(name = "extra_per_adult", scale = 2)
+    private BigDecimal extraPerAdult;
 
-    @Column(name = "extra_per_child")
-    private Double extraPerChild;
+    @Column(name = "extra_per_child", scale = 2)
+    private BigDecimal extraPerChild;
 
     @Column(name = "extra_charge_type")
     @Enumerated(EnumType.STRING)
@@ -56,17 +57,17 @@ public class PriceConfiguration {
     @Column(name = "allow_advance_payment")
     private Boolean allowAdvancePayment;
 
-    @Column(name = "advance_payment_percentage")
-    private Double advancePaymentPercentage;
+    @Column(name = "advance_payment_percentage", precision = 2, scale = 2)
+    private BigDecimal advancePaymentPercentage;
 
-    @Column(name = "advance_payment_fixed_amount")
-    private Double advancePaymentFixedAmount;
+    @Column(name = "advance_payment_fixed_amount", scale = 2)
+    private BigDecimal advancePaymentFixedAmount;
 
-    @Column(name = "requires_deposit")
+    @Column(name = "requires_deposit", scale = 2)
     private Boolean requiresDeposit;
 
-    @Column(name = "deposit_amount")
-    private Double depositAmount;
+    @Column(name = "deposit_amount", scale = 2)
+    private BigDecimal depositAmount;
 
     public List<PriceDTO> getPriceWithType() {
         return Stream.of(
@@ -85,22 +86,21 @@ public class PriceConfiguration {
         ).filter(Objects::nonNull).toList();
     }
 
-    public Double calculateTotalPrice(int units, int adults, int children) {
-        double totalPrice = 0.0;
+    public BigDecimal calculateTotalPrice(int units, int adults, int children) {
+        BigDecimal totalPrice = BigDecimal.ZERO;
         if (fixedPrice != null) {
-            totalPrice += fixedPrice;
+            totalPrice = fixedPrice;
         }
         if (pricePerUnit != null) {
-            totalPrice += pricePerUnit * units;
+            totalPrice = totalPrice.add(pricePerUnit.multiply(BigDecimal.valueOf(units)));
         }
         if (pricePerAdult != null) {
-            totalPrice += pricePerAdult * adults;
+            totalPrice = totalPrice.add(pricePerAdult.multiply(BigDecimal.valueOf(adults)));
         }
         if (pricePerChild != null) {
-            totalPrice += pricePerChild * children;
+            totalPrice = totalPrice.add(pricePerChild.multiply(BigDecimal.valueOf(children)));
         }
         return totalPrice;
     }
-
 
 }

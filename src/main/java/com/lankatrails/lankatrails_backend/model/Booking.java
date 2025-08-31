@@ -1,13 +1,26 @@
 package com.lankatrails.lankatrails_backend.model;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.lankatrails.lankatrails_backend.model.enums.BookingStatus;
-import jakarta.persistence.*;
-import lombok.*;
-
-import java.time.LocalDate;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
+
+import com.lankatrails.lankatrails_backend.model.enums.BookingStatus;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Getter
@@ -38,15 +51,15 @@ public class Booking {
     @Column(name = "end_date_time")
     private LocalDateTime endDateTime;
 
-    @Column(name = "total_price")
-    private Double totalPrice;
+    @Column(name = "total_price", scale = 2)
+    private BigDecimal totalPrice;
 
-    @Column(name = "paid_amount")
-    private Double paidAmount;
+    @Column(name = "paid_amount", scale = 2)
+    private BigDecimal paidAmount;
 
-    @Column(name = "deposit_amount")
-    private Double depositAmount;
-
+    @Column(name = "deposit_amount", scale = 2)
+    private BigDecimal depositAmount;
+    
     @Enumerated(EnumType.STRING)
     private BookingStatus bookingStatus;
 }
