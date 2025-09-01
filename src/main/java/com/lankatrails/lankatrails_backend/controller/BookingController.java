@@ -16,6 +16,7 @@ import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.AvailabilityResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.BookingResponseDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.TimeSlotsResponseDTO;
 import com.lankatrails.lankatrails_backend.service.BookingService;
 import com.lankatrails.lankatrails_backend.service.TimeSlotService;
 
@@ -87,9 +88,9 @@ public class BookingController {
     }
 
     //Get the available free slots
-    @GetMapping("/tourist/booking/available-slots/{id}")
-    public ResponseEntity<APIResponse<List<String>>> getAvailableFreeSlots(@RequestBody AvailabilityDto availabilityDto, @PathVariable Long id){
-        APIResponse<List<String>> response = timeSlotService.getAllFreeTimeSlots(availabilityDto,id);
+    @PostMapping("/tourist/booking/available-slots/{id}")
+    public ResponseEntity<APIResponse<TimeSlotsResponseDTO>> getAvailableFreeSlots(@RequestBody AvailabilityDto availabilityDto, @PathVariable Long id){
+        APIResponse<TimeSlotsResponseDTO> response = timeSlotService.getAllFreeTimeSlots(availabilityDto,id);
         return ResponseEntity.status(response.isSuccess()? HttpStatus.OK:HttpStatus.BAD_REQUEST).body(response);
     }
 

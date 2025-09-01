@@ -16,6 +16,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class PriceConfigDTO {
+    private Long priceConfigId;
     private BigDecimal fixedPrice;
     private BigDecimal pricePerUnit;
     private BigDecimal pricePerAdult;

@@ -282,6 +282,18 @@ public class TouristGuideImpl implements TouristGuideService {
                         .map(Language::getLanguage)
                         .collect(Collectors.toList())
         );
+        prepareResponse.setStatus(touristGuide.getStatus());
+        prepareResponse.setAvailableTimeDTOS(touristGuide.getAvailableTimes().stream()
+                .map(availableTime -> {
+                    AvailableTimeDTO availableTimeDTO = modelMapper.map(availableTime, AvailableTimeDTO.class);
+                    List<BreakTimeDTO> breakTimeDTOS = availableTime.getBreakTimes().stream()
+                            .map(breakTime -> modelMapper.map(breakTime, BreakTimeDTO.class))
+                            .collect(Collectors.toList());
+                    availableTimeDTO.setBreakTimes(breakTimeDTOS);
+                    return availableTimeDTO;
+                })
+                .collect(Collectors.toList())
+        );
 
 
         return APIResponse.<TouristGuideRequestDTO>builder()

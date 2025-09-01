@@ -11,6 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class AvailableTimeDTO {
+    private Long availableTimeId;
     private String dayOfWeek;
     private LocalTime openTime;
     private LocalTime closeTime;

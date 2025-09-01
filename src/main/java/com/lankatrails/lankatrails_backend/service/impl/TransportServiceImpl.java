@@ -190,6 +190,18 @@ public class TransportServiceImpl implements TransportService {
         prepareResponse.setBookingConfig(modelMapper.map(transport.getBookingConfiguration(),BookingConfigDTO.class));
         prepareResponse.setServiceId(Id);
         prepareResponse.setTabsSection(tabs);
+        prepareResponse.setStatus(transport.getStatus());
+        prepareResponse.setAvailableTimeDTOS(transport.getAvailableTimes().stream()
+                .map(availableTime -> {
+                    AvailableTimeDTO availableTimeDTO = modelMapper.map(availableTime, AvailableTimeDTO.class);
+                    List<BreakTimeDTO> breakTimeDTOS = availableTime.getBreakTimes().stream()
+                            .map(breakTime -> modelMapper.map(breakTime, BreakTimeDTO.class))
+                            .collect(Collectors.toList());
+                    availableTimeDTO.setBreakTimes(breakTimeDTOS);
+                    return availableTimeDTO;
+                })
+                .collect(Collectors.toList())
+        );
 
 
 

@@ -205,8 +205,11 @@ public class AvailabilityServiceImpl implements AvailabilityService {
             LocalDateTime actualStart = isStartDay ? requestedStart : LocalDateTime.of(currentDate, daySlot.getOpenTime());
             LocalDateTime actualEnd = isEndDay ? requestedEnd : LocalDateTime.of(currentDate, daySlot.getCloseTime());
 
-            // Check if requested time overlaps with break time (using standard interval overlap logic)
-            if (!(actualEnd.isBefore(breakStart) || actualStart.isAfter(breakEnd))) {
+            // Check if requested time overlaps with break time
+            // Two intervals [a,b] and [c,d] do NOT overlap if: b <= c || d <= a
+            // They just touch if b == c || d == a, which should be allowed
+            if (!(actualEnd.isBefore(breakStart) || actualEnd.equals(breakStart) || 
+                  actualStart.isAfter(breakEnd) || actualStart.equals(breakEnd))) {
                 return createErrorResponse(String.format("Requested time overlaps with break time %s-%s on %s", 
                         breakTime.getBreakStart(), breakTime.getBreakEnd(), currentDate));
             }
@@ -495,12 +498,15 @@ public class AvailabilityServiceImpl implements AvailabilityService {
             LocalDateTime breakStart = LocalDateTime.of(requestedStart.toLocalDate(), breakTime.getBreakStart());
             LocalDateTime breakEnd = LocalDateTime.of(requestedStart.toLocalDate(), breakTime.getBreakEnd());
 
-            // Check if requested time overlaps with break time
-            if (!(requestedEnd.isBefore(breakStart) || requestedStart.isAfter(breakEnd))) {
-                return createErrorResponse(String.format("Requested time overlaps with break time %s-%s", 
-                        breakTime.getBreakStart(), breakTime.getBreakEnd()));
+            // overlap only if intervals actually intersect
+            if (requestedStart.isBefore(breakEnd) && requestedEnd.isAfter(breakStart)) {
+                return createErrorResponse(String.format(
+                        "Requested time overlaps with break time %s-%s",
+                        breakTime.getBreakStart(), breakTime.getBreakEnd()
+                ));
             }
         }
+
 
         return createSuccessResponse("Time slot validation passed");
     }

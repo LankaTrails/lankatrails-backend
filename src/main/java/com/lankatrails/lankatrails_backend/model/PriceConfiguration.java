@@ -57,7 +57,7 @@ public class PriceConfiguration {
     @Column(name = "allow_advance_payment")
     private Boolean allowAdvancePayment;
 
-    @Column(name = "advance_payment_percentage", precision = 2, scale = 2)
+    @Column(name = "advance_payment_percentage", precision = 4, scale = 2)
     private BigDecimal advancePaymentPercentage;
 
     @Column(name = "advance_payment_fixed_amount", scale = 2)

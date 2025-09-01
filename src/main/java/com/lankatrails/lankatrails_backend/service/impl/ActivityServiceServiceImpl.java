@@ -248,6 +248,18 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         prepareResponse.setTabsSection(tabs);
         prepareResponse.setPolicySection(policies);
         prepareResponse.setImages(imgDTOs);
+        prepareResponse.setStatus(activityService.getStatus());
+          prepareResponse.setAvailableTimeDTOS(activityService.getAvailableTimes().stream()
+                  .map(availableTime -> {
+                      AvailableTimeDTO availableTimeDTO = modelMapper.map(availableTime, AvailableTimeDTO.class);
+                      List<BreakTimeDTO> breakTimeDTOS = availableTime.getBreakTimes().stream()
+                              .map(breakTime -> modelMapper.map(breakTime, BreakTimeDTO.class))
+                              .collect(Collectors.toList());
+                      availableTimeDTO.setBreakTimes(breakTimeDTOS);
+                      return availableTimeDTO;
+                  })
+                  .collect(Collectors.toList())
+          );
 
         return  APIResponse.<ActivityServiceRequest>builder()
                 .success(true)
@@ -378,9 +390,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
       activity.setSafetyInstructions(activityService.getSafetyInstructions());
       
       // Update locations
-      if (activityService.getLocations() != null && !activityService.getLocations().isEmpty()) {
           activity.setLocations(servicesForAll.setServiceLocation(activityService));
-      }
 
         // Update configurations
         activity.setBookingConfiguration(servicesForAll.setBookingConfig(activityService.getBookingConfig()));
@@ -403,6 +413,8 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         // Update policies
         policyImpl.updatePolicies(activityService.getPolicySection(), updatedActivity);
         policyImpl.deletePolicies(activityService.getDeletedPolicies(), updatedActivity);
+
+
 
       return APIResponse.<String>builder()
               .success(true)

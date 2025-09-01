@@ -240,6 +240,18 @@ public class AccommodationServiceImpl implements  AccommodationService {
         prepareResponse.setTabsSection(tabs);
         prepareResponse.setPolicySection(policies);
         prepareResponse.setImages(imgDTOs);
+        prepareResponse.setStatus(accommodation.getStatus());
+        prepareResponse.setAvailableTimeDTOS(accommodation.getAvailableTimes().stream()
+                .map(availableTime -> {
+                    AvailableTimeDTO availableTimeDTO = modelMapper.map(availableTime, AvailableTimeDTO.class);
+                    List<BreakTimeDTO> breakTimeDTOS = availableTime.getBreakTimes().stream()
+                            .map(breakTime -> modelMapper.map(breakTime, BreakTimeDTO.class))
+                            .collect(Collectors.toList());
+                    availableTimeDTO.setBreakTimes(breakTimeDTOS);
+                    return availableTimeDTO;
+                })
+                .collect(Collectors.toList())
+        );
 
         return  APIResponse.<AccommodationServiceRequestDTO>builder()
                 .success(true)

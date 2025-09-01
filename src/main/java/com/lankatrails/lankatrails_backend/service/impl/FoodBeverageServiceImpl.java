@@ -246,6 +246,18 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         prepareResponse.setPriceConfig(modelMapper.map(foodAndBeverage.getPriceConfiguration(), PriceConfigDTO.class));
         prepareResponse.setBookingConfig(modelMapper.map(foodAndBeverage.getBookingConfiguration(), BookingConfigDTO.class));
         prepareResponse.setServiceId(Id);
+        prepareResponse.setStatus(foodAndBeverage.getStatus());
+        prepareResponse.setAvailableTimeDTOS(foodAndBeverage.getAvailableTimes().stream()
+                .map(availableTime -> {
+                    AvailableTimeDTO availableTimeDTO = modelMapper.map(availableTime, AvailableTimeDTO.class);
+                    List<BreakTimeDTO> breakTimeDTOS = availableTime.getBreakTimes().stream()
+                            .map(breakTime -> modelMapper.map(breakTime, BreakTimeDTO.class))
+                            .collect(Collectors.toList());
+                    availableTimeDTO.setBreakTimes(breakTimeDTOS);
+                    return availableTimeDTO;
+                })
+                .collect(Collectors.toList())
+        );
 
         return  APIResponse.<FoodBeverageRequest>builder()
                 .success(true)

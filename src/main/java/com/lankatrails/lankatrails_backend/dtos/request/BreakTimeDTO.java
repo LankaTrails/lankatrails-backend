@@ -10,6 +10,7 @@ import java.time.LocalTime;
 @AllArgsConstructor
 @Builder
 public class BreakTimeDTO {
+    private Long breakId;
     private LocalTime breakStart;
     private LocalTime breakEnd;
 }

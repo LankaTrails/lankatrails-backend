@@ -11,6 +11,7 @@ import java.time.LocalTime;
 @AllArgsConstructor
 @Builder
 public class BookingConfigDTO {
+    private Long bookingConfigId;
     private BookingType bookingType;
     // Capacity and unit management
     private Integer totalUnits;

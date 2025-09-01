@@ -78,38 +78,62 @@ public class serviceImpl implements ServicesForAll {
     }
 
     @Override
+    @Transactional
     public void setAvailableTime(List<AvailableTimeDTO> availableTimeDTOS, Service service) {
-        log.debug("Availability Slots{}", availableTimeDTOS.toString());
-        for (AvailableTimeDTO availableTime : availableTimeDTOS){
-                if(availableTime.getOpenTime() != null && availableTime.getCloseTime() != null  || availableTime.getIs24Hours() != null || availableTime.getIsClosed() != null){
-                    AvailableTime time = new AvailableTime();
-                    time.setCloseTime(availableTime.getCloseTime());
-                    time.setOpenTime(availableTime.getOpenTime());
-                    time.setDayOfWeek(availableTime.getDayOfWeek());
-                    time.setIs24Hours(availableTime.getIs24Hours());
-                    time.setIsClosed(availableTime.getIsClosed());
-                    time.setService(service);
-                    time.setBreakTimes(new ArrayList<>());
-                    AvailableTime savedAvailableTime = availableTimeRepository.save(time);
+        log.debug("Availability Slots {}", availableTimeDTOS);
 
-                    if(availableTime.getBreakTimes() != null){
-                        for (BreakTimeDTO breakTimeDTO : availableTime.getBreakTimes()){
-                            if(breakTimeDTO.getBreakStart() != null && breakTimeDTO.getBreakEnd() != null){
-                                BreakTime breakTime = new BreakTime();
-                                breakTime.setBreakStart(breakTimeDTO.getBreakStart());
-                                breakTime.setBreakEnd(breakTimeDTO.getBreakEnd());
-                                breakTime.setAvailableTime(time);
-                                savedAvailableTime.getBreakTimes().add(breakTimeRepository.save(breakTime));
-                            }
+        for (AvailableTimeDTO dto : availableTimeDTOS) {
+            AvailableTime availableTime = dto.getAvailableTimeId() != null
+                    ? availableTimeRepository.findById(dto.getAvailableTimeId()).orElse(null)
+                    : null;
+
+            if (availableTime == null) {
+                // create new
+                if ((dto.getOpenTime() != null && dto.getCloseTime() != null)
+                        || Boolean.TRUE.equals(dto.getIs24Hours())
+                        || Boolean.TRUE.equals(dto.getIsClosed())) {
+
+                    availableTime = new AvailableTime();
+                    availableTime.setService(service);
+                }
+            }
+
+            if (availableTime != null) {
+                // update common fields
+                availableTime.setDayOfWeek(dto.getDayOfWeek());
+                availableTime.setOpenTime(dto.getOpenTime());
+                availableTime.setCloseTime(dto.getCloseTime());
+                availableTime.setIs24Hours(dto.getIs24Hours());
+                availableTime.setIsClosed(dto.getIsClosed());
+
+                // handle break times
+                availableTime.getBreakTimes().clear();
+                if (dto.getBreakTimes() != null) {
+                    for (BreakTimeDTO btDto : dto.getBreakTimes()) {
+                        if (btDto.getBreakStart() != null && btDto.getBreakEnd() != null) {
+                            BreakTime breakTime = new BreakTime();
+                            breakTime.setBreakStart(btDto.getBreakStart());
+                            breakTime.setBreakEnd(btDto.getBreakEnd());
+                            breakTime.setAvailableTime(availableTime);
+                            availableTime.getBreakTimes().add(breakTime);
                         }
                     }
                 }
+
+                availableTimeRepository.save(availableTime);
+            }
         }
     }
 
     @Override
     @Transactional
     public BookingConfiguration setBookingConfig(BookingConfigDTO bookingConfigDTO){
+        BookingConfiguration existingConfig = bookingConfigurationRepository.findById(bookingConfigDTO.getBookingConfigId())
+                .orElse(null);
+        if (existingConfig != null) {
+            modelMapper.map(bookingConfigDTO, existingConfig);
+            return bookingConfigurationRepository.save(existingConfig);
+        }
         BookingConfiguration bookingConfiguration = modelMapper.map(bookingConfigDTO, BookingConfiguration.class);
         return bookingConfigurationRepository.save(bookingConfiguration);
     }
@@ -117,6 +141,12 @@ public class serviceImpl implements ServicesForAll {
     @Override
     @Transactional
     public PriceConfiguration setPriceConfig(PriceConfigDTO priceConfigDTO){
+        PriceConfiguration existingConfig = priceConfigurationRepository.findById(priceConfigDTO.getPriceConfigId())
+                .orElse(null);
+        if (existingConfig != null) {
+            modelMapper.map(priceConfigDTO, existingConfig);
+            return priceConfigurationRepository.save(existingConfig);
+        }
         PriceConfiguration priceConfiguration = modelMapper.map(priceConfigDTO, PriceConfiguration.class);
         return priceConfigurationRepository.save(priceConfiguration);
     }

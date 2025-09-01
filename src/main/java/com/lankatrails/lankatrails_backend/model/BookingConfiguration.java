@@ -30,6 +30,9 @@ public class BookingConfiguration {
     @Column(name = "total_units")
     private Integer totalUnits;
 
+    @Column(name = "manage_capacity")
+    private Boolean manageCapacity;
+
     @Column(name = "unit_adult_capacity")
     private Integer unitAdultCapacity;
 
