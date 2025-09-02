@@ -256,7 +256,7 @@ public class TimeSlotServiceImpl implements TimeSlotService {
         List<TimeSlotsRequestDTO> allPossibleSlots = generateTimeSlotsAsObjects(serviceOpenTime, serviceCloseTime, slotDuration, availableTime, config);
 
         // Get existing bookings for the requested day
-        List<Booking> existingBookings = bookingRepository.findBookingsOnADay(requestedDate, serviceId, BookingStatus.BOOKED);
+        List<Booking> existingBookings = bookingRepository.findBookingsOnADay(requestedDate, serviceId, BookingStatus.CONFIRMED);
 
         // Filter out slots that would exceed capacity if this booking was added
         List<TimeSlotsRequestDTO> availableSlots = new ArrayList<>();

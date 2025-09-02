@@ -2,6 +2,7 @@ package com.lankatrails.lankatrails_backend.repositories;
 
 import com.lankatrails.lankatrails_backend.model.Trip;
 import com.lankatrails.lankatrails_backend.model.TripItem;
+import com.lankatrails.lankatrails_backend.model.enums.TripItemType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,6 +14,8 @@ import java.util.List;
 @Repository
 public interface TripItemRepository extends JpaRepository<TripItem, Long> {
     List<TripItem> findByTrip_TripId(Long tripId);
+
+    List<TripItem> findByTripItemTypeAndTrip_TripId(TripItemType tripItemType, Long tripId);
 
     @Query("SELECT ti FROM TripItem ti " +
             "WHERE ti.trip.tripId = :tripId " +

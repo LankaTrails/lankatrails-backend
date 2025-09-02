@@ -77,6 +77,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/locations/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/chat-rooms/**").permitAll()
+                        .requestMatchers("/api/webhook/stripe/**").permitAll()
                         .requestMatchers("/ws/**").permitAll() // Allow WebSocket connections
                         .anyRequest().authenticated()
                 )

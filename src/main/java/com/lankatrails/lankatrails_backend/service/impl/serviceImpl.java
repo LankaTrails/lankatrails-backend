@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.dtos.ProviderDto;
 import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.*;
@@ -155,16 +156,17 @@ public class serviceImpl implements ServicesForAll {
     @Transactional
     public Optional<ServiceDTO> getServiceDto(Long serviceId) {
         return serviceRepository.findById(serviceId)
-                .map(service -> new ServiceDTO(
-                        service.getServiceId(),
-                        service.getServiceName(),
-                        service.getCategory().getCategoryName(),
-                        service.getLocations().stream()
+                .map(service -> ServiceDTO.builder()
+                        .serviceId(service.getServiceId())
+                        .serviceName(service.getServiceName())
+                        .Category(service.getCategory().getCategoryName())
+                        .locations(service.getLocations().stream()
                                 .map(location -> modelMapper.map(location, LocationDTO.class))
-                                .collect(Collectors.toSet()),
-                        service.getPriceConfiguration().getPriceWithType(),
-                        service.getImages().getFirst().getImageUrl()
-                ));
+                                .collect(Collectors.toSet()))
+                        .prices(service.getPriceConfiguration().getPriceWithType())
+                        .mainImageUrl(service.getImages().isEmpty() ? null : service.getImages().getFirst().getImageUrl())
+                        .provider(modelMapper.map(service.getProvider(), ProviderDto.class))
+                        .build());
     }
 
     @Override
@@ -173,16 +175,17 @@ public class serviceImpl implements ServicesForAll {
                 .stream()
                 .collect(Collectors.toMap(
                         Service::getServiceId,
-                        service -> new ServiceDTO(
-                                service.getServiceId(),
-                                service.getServiceName(),
-                                service.getCategory().getCategoryName(),
-                                service.getLocations().stream()
+                        service -> ServiceDTO.builder()
+                                .serviceId(service.getServiceId())
+                                .serviceName(service.getServiceName())
+                                .Category(service.getCategory().getCategoryName())
+                                .locations(service.getLocations().stream()
                                         .map(location -> modelMapper.map(location, LocationDTO.class))
-                                        .collect(Collectors.toSet()),
-                                service.getPriceConfiguration().getPriceWithType(),
-                                service.getImages().isEmpty() ? null : service.getImages().getFirst().getImageUrl()
-                        )
+                                        .collect(Collectors.toSet()))
+                                .prices(service.getPriceConfiguration().getPriceWithType())
+                                .mainImageUrl(service.getImages().isEmpty() ? null : service.getImages().getFirst().getImageUrl())
+                                .provider(modelMapper.map(service.getProvider(), ProviderDto.class))
+                                .build()
                 ));
     }
 }

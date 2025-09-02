@@ -416,7 +416,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                     service.getServiceId(),
                     availabilityDto.getStartDateTime(),
                     availabilityDto.getEndDateTime(),
-                    BookingStatus.BOOKED
+                    BookingStatus.CONFIRMED
             );
 
             int availableUnits = config.getTotalUnits() - bookedUnits;
@@ -529,7 +529,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                 accommodation.getServiceId(),
                 availabilityDto.getStartDateTime(),
                 availabilityDto.getEndDateTime(),
-                BookingStatus.BOOKED
+                BookingStatus.CONFIRMED
         );
 
         // Note: getNumberOfRooms() method may not exist in new configuration model
@@ -738,7 +738,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                     service.getServiceId(),
                     availabilityDto.getStartDateTime(),
                     availabilityDto.getEndDateTime(),
-                    BookingStatus.BOOKED
+                    BookingStatus.CONFIRMED
             );
 
             availableUnits = totalUnits - bookedUnits;

@@ -2,6 +2,9 @@ package com.lankatrails.lankatrails_backend.controller;
 
 import java.util.List;
 
+import com.lankatrails.lankatrails_backend.dtos.BookingItemDto;
+import com.lankatrails.lankatrails_backend.dtos.request.PaymentRequestDto;
+import com.lankatrails.lankatrails_backend.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +28,9 @@ import com.lankatrails.lankatrails_backend.service.TimeSlotService;
 public class BookingController {
     @Autowired
     BookingService bookingService;
+
+    @Autowired
+    PaymentService paymentService;
     
     @Autowired
     TimeSlotService timeSlotService;
@@ -37,10 +43,24 @@ public class BookingController {
     }
 
     //insert new booking
-    @PostMapping("/trip-item/{tripItemId}/book")
-    public ResponseEntity<APIResponse<String>> createBooking(@PathVariable Long tripItemId){
-        APIResponse<String>  createBooking = bookingService.addNewBooking(tripItemId);
+    @PostMapping("/tourist/booking/{tripItemId}/book")
+    public ResponseEntity<APIResponse<PaymentRequestDto>> createBooking(@PathVariable Long tripItemId){
+        APIResponse<PaymentRequestDto>  createBooking = bookingService.addNewBooking(tripItemId);
         return ResponseEntity.status(createBooking.isSuccess()? HttpStatus.CREATED:HttpStatus.BAD_REQUEST).body(createBooking);
+    }
+
+    //get all bookings for a trip
+    @GetMapping("/tourist/booking/{tripId}/all")
+    public ResponseEntity<APIResponse<List<BookingItemDto>>> getAllBookingsForTrip(@PathVariable Long tripId){
+        APIResponse<List<BookingItemDto>> allBookingsForTrip = bookingService.getAllBookingForTrip(tripId);
+        return ResponseEntity.status(allBookingsForTrip.isSuccess()? HttpStatus.OK:HttpStatus.BAD_REQUEST).body(allBookingsForTrip);
+    }
+
+    //confirm the booking
+    @PostMapping("/tourist/booking/{paymentIntentId}/confirm")
+    public ResponseEntity<APIResponse<String>> confirmBooking(@PathVariable String paymentIntentId){
+        APIResponse<String> confirmBooking = paymentService.confirmPayment(paymentIntentId);
+        return ResponseEntity.status(confirmBooking.isSuccess()? HttpStatus.OK:HttpStatus.BAD_REQUEST).body(confirmBooking);
     }
 
     //get all bookings in a day for food-beverage

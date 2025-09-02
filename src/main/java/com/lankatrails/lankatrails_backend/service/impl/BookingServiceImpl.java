@@ -4,10 +4,23 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+import com.lankatrails.lankatrails_backend.dtos.BookingItemDto;
+import com.lankatrails.lankatrails_backend.dtos.ProviderDto;
+import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.PaymentRequestDto;
+import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
+import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.enums.TripItemType;
 import com.lankatrails.lankatrails_backend.repositories.*;
+import com.lankatrails.lankatrails_backend.service.PaymentService;
+import com.stripe.model.PaymentIntent;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,7 +62,13 @@ public class BookingServiceImpl implements BookingService {
     AuthUtils authUtils;
 
     @Autowired
-    private AvailabilityService availabilityService;
+    AvailabilityService availabilityService;
+
+    @Autowired
+    PaymentService paymentService;
+
+    @Autowired
+    ModelMapper modelMapper;
 
     @Override
     @Transactional
@@ -60,7 +79,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public APIResponse<String> addNewBooking(Long tripItemId) {
+    public APIResponse<PaymentRequestDto> addNewBooking(Long tripItemId) {
         TripParticipant tripParticipant = tripParticipantRepository.findByTourist_UserId(authUtils.loggedInUserId())
                 .orElseThrow(() -> new RuntimeException("Trip Participant not found"));
 
@@ -70,11 +89,11 @@ public class BookingServiceImpl implements BookingService {
         }
 
         TripItem tripItem = tripItemRepository.findById(tripItemId)
-                .orElseThrow(() -> new RuntimeException("Trip Item not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Trip Item", tripItemId));
 
         // Use pessimistic locking to prevent race conditions during booking
         Service serviceWithLock = serviceRepository.findByIdWithLock(tripItem.getService().getServiceId())
-                .orElseThrow(() -> new RuntimeException("Service not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("ServiceID", tripItem.getService().getServiceId()));
 
         AvailabilityDto availabilityDto = AvailabilityDto.builder()
                 .startDateTime(tripItem.getStartTime())
@@ -112,22 +131,47 @@ public class BookingServiceImpl implements BookingService {
                     ))
                     .depositAmount(depositAmount)
                     .paidAmount(BigDecimal.ZERO)
-                    .bookingStatus(BookingStatus.BOOKED)
+                    .bookingStatus(BookingStatus.PENDING)
                     .build();
 
-            bookingRepository.save(newBooking);
+            Booking savedBooking = bookingRepository.save(newBooking);
 
-            return createSuccessResponse("Booking added successfully");
+            try {
+                // Create payment intent
+                PaymentIntent paymentIntent = paymentService.createPaymentIntent(savedBooking.getBookingId());
+
+                return APIResponse.<PaymentRequestDto>builder()
+                        .success(true)
+                        .message("Booking created successfully. Proceed to payment.")
+                        .data(PaymentRequestDto.builder()
+                                .bookingId(savedBooking.getBookingId())
+                                .paymentIntentId(paymentIntent.getId())
+                                .clientSecret(paymentIntent.getClientSecret())
+                                .paymentAmount(BigDecimal.valueOf(paymentIntent.getAmount()).divide(BigDecimal.valueOf(100))) // Convert cents to dollars
+                                .currency(paymentIntent.getCurrency())
+                                .build())
+                        .build();
+            } catch (Exception e) {
+                newBooking.setBookingStatus(BookingStatus.PAYMENT_FAILED);
+                bookingRepository.save(newBooking);
+
+                log.error("Error creating payment intent for booking ID: " + newBooking.getBookingId(), e);
+                throw new RuntimeException("Failed to create payment intent: " + e.getMessage());
+            }
         }
 
-        return availabilityResponse;
+        return APIResponse.<PaymentRequestDto>builder()
+                .success(false)
+                .message(availabilityResponse.getMessage())
+                .data(null)
+                .build();
     }
 
     //find the bookings a service has on a particular day
     @Override
     @Transactional(readOnly = true)
     public APIResponse<BookingResponseDTO> getBookingsOnTheDay(AvailabilityDto availabilityDto,Long id){
-        List<Booking> bookings = bookingRepository.findBookingsOnADay(availabilityDto.getStartDateTime().toLocalDate(),id,BookingStatus.BOOKED);
+        List<Booking> bookings = bookingRepository.findBookingsOnADay(availabilityDto.getStartDateTime().toLocalDate(),id,BookingStatus.CONFIRMED);
         List<BookingRequestDTO> prepareResponse = new ArrayList<>();
         for (Booking booking : bookings){
             //map each to BookingRequestDTO
@@ -150,11 +194,56 @@ public class BookingServiceImpl implements BookingService {
                 .build();
     }
 
-    private APIResponse<String> createSuccessResponse(String message) {
-        return APIResponse.<String>builder()
+    @Override
+    @Transactional(readOnly = true)
+    public APIResponse<List<BookingItemDto>> getAllBookingForTrip(Long tripId) {
+        List<TripItem> tripItems = tripItemRepository.findByTripItemTypeAndTrip_TripId(TripItemType.SERVICE, tripId);
+        List<BookingItemDto> bookingItemDtos = new ArrayList<>();
+        for (TripItem tripItem : tripItems) {
+            BookingItemDto dto = new BookingItemDto();
+            dto.setTripItemId(tripItem.getTripItemId());
+            dto.setStartTime(tripItem.getStartTime());
+            dto.setEndTime(tripItem.getEndTime());
+            dto.setNoOfUnits(tripItem.getNoOfUnits());
+            dto.setNumberOfAdults(tripItem.getNumberOfAdults());
+            dto.setNumberOfChildren(tripItem.getNumberOfChildren());
+            dto.setService(ServiceDTO.builder()
+                    .serviceId(tripItem.getService().getServiceId())
+                    .serviceName(tripItem.getService().getServiceName())
+                    .Category(tripItem.getService().getCategory().getCategoryName())
+                    .mainImageUrl(tripItem.getService().getImages().isEmpty() ? null : tripItem.getService().getImages().getFirst().getImageUrl())
+                    .locations(tripItem.getService().getLocations().stream()
+                            .map(location -> modelMapper.map(location, LocationDTO.class))
+                            .collect(Collectors.toSet()))
+                    .prices(tripItem.getService().getPriceConfiguration().getPriceWithType())
+                    .provider(modelMapper.map(tripItem.getService().getProvider(), ProviderDto.class))
+                    .build());
+            if (tripItem.getBooking() != null) {
+                dto.setStatus(tripItem.getBooking().getBookingStatus());
+                dto.setTotalPrice(tripItem.getBooking().getTotalPrice());
+                dto.setDepositAmount(tripItem.getBooking().getDepositAmount());
+                dto.setPaidAmount(tripItem.getBooking().getPaidAmount());
+                dto.setDueAmount(tripItem.getBooking().getTotalPrice().subtract(tripItem.getBooking().getPaidAmount()));
+                dto.setBookingDate(tripItem.getBooking().getBookedDateTime());
+            } else {
+                dto.setStatus(BookingStatus.PENDING);
+                dto.setTotalPrice(tripItem.getService().getPriceConfiguration().calculateTotalPrice(
+                        tripItem.getNumberOfAdults(),
+                        tripItem.getNumberOfChildren(),
+                        tripItem.getNoOfUnits()
+                ));
+                dto.setDepositAmount(BigDecimal.ZERO);
+                dto.setPaidAmount(BigDecimal.ZERO);
+                dto.setDueAmount(dto.getTotalPrice());
+                dto.setBookingDate(null);
+            }
+            bookingItemDtos.add(dto);
+        }
+        return APIResponse.<List<BookingItemDto>>builder()
                 .success(true)
-                .message(message)
-                .data("")
+                .message("Bookings retrieved successfully")
+                .data(bookingItemDtos)
                 .build();
     }
+
 }
