@@ -39,6 +39,9 @@ public class Provider extends User {
     @Column(name = "br_url")
     private String businessRegistrationUrl;
 
+    @Column(name = "stripe_account_id")
+    private String stripeAccountId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "accommodation_approval_status", columnDefinition = "VARCHAR(20)")
     private ApprovalStatus accommodationApprovalStatus;

@@ -2,6 +2,7 @@ package com.lankatrails.lankatrails_backend.model;
 
 import com.lankatrails.lankatrails_backend.model.enums.BookingType;
 import com.lankatrails.lankatrails_backend.model.enums.PriceType;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,21 +27,15 @@ public class Service {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long serviceId;
 
+    @Column(name = "service_name", nullable = false)
     private String serviceName;
 
+    @Column(name = "contact_no")
     private String contactNo;
 
-    private Boolean status;
-
-    private Double price;
-
-    private Long duration;
-
+    @Column(name = "status", nullable = false)
     @Enumerated(EnumType.STRING)
-    private PriceType priceType;
-
-    @Enumerated(EnumType.STRING)
-    private BookingType bookingType;
+    private ServiceStatus status;
 
     @ManyToOne
     @JoinColumn(name = "provider_id")
@@ -81,12 +76,13 @@ public class Service {
     private Set<Tourist> tourists = new HashSet<>();
 
     @OneToMany(mappedBy = "service")
-    private List<AvailabilitySlot> availabilitySlots = new ArrayList<>();
+    private List<AvailableTime> availableTimes = new ArrayList<>();
 
-    @OneToMany(mappedBy = "service")
-    private List<Booking> serviceBookings = new ArrayList<>();
+    @OneToOne
+    @JoinColumn(name = "booking_config_id", nullable = false)
+    private BookingConfiguration bookingConfiguration;
 
-//    @OneToMany(mappedBy = "service")
-//    private List<ChatRoom> chatRooms = new ArrayList<>();
-
+    @OneToOne
+    @JoinColumn(name = "price_config_id", nullable = false)
+    private PriceConfiguration priceConfiguration;
 }

@@ -12,27 +12,38 @@ import lombok.Setter;
 @NoArgsConstructor
 public class Accommodation extends Service {
 
-//    private String about;
-    private Integer maxGuests;
-    private Integer numberOfRooms;
+    @Column(name = "free_wifi")
     private Boolean freeWifi;
+
+    @Column(name = "parking_available")
     private Boolean parkingAvailable;
+
+    @Column(name = "breakfast_included")
     private Boolean breakfastIncluded;
+
+    @Column(name = "air_conditioned")
     private Boolean airConditioned;
+
+    @Column(name = "swimming_pool")
     private Boolean swimmingPool;
+
+    @Column(name = "pet_friendly")
     private Boolean petFriendly;
+
+    @Column(name = "laundry_service")
     private Boolean laundryService;
+
+    @Column(name = "room_service")
     private Boolean roomService;
+
+    @Column(name = "gym_access")
     private Boolean gymAccess;
+
+    @Column(name = "spa_services")
     private Boolean spaServices;
-    private String checkInTime;
-    private String checkOutTime;
 
     @ManyToOne
     @JoinColumn(name = "accommodationCategory_id")
     private AccommodationCategory accommodationCategory;
-
-
-
 
 }

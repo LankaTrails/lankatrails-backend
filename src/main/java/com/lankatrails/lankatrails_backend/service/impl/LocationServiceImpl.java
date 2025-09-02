@@ -6,8 +6,6 @@ import com.lankatrails.lankatrails_backend.model.Location;
 import com.lankatrails.lankatrails_backend.model.enums.LocationType;
 import com.lankatrails.lankatrails_backend.repositories.LocationRepository;
 import com.lankatrails.lankatrails_backend.service.LocationService;
-import org.checkerframework.checker.units.qual.A;
-import org.geolatte.geom.M;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -47,15 +45,17 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public APIResponse<List<LocationDTO>> getAllDistricts() {
-        List<Location> cities = locationRepository.findByLocationType(LocationType.DISTRICT); // This method should return a list of LocationDTOs
-        if (cities.isEmpty()) {
+        List<Location> locations = locationRepository.findByLocationType(LocationType.CITY); // This method should return a list of LocationDTOs
+//        locations.addAll(locationRepository.findByLocationType(LocationType.DISTRICT));
+//        locations.addAll(locationRepository.findByLocationType(LocationType.POINT_OF_INTEREST));
+        if (locations.isEmpty()) {
             return APIResponse.<List<LocationDTO>>builder()
                     .success(false)
                     .message("No districts found")
                     .data(List.of())
                     .build();
         } else {
-            List<LocationDTO> cityDTOs = cities.stream()
+            List<LocationDTO> cityDTOs = locations.stream()
                     .map(location -> modelMapper.map(location, LocationDTO.class))
                     .toList(); // Convert each Location to LocationDTO
             return APIResponse.<List<LocationDTO>>builder()

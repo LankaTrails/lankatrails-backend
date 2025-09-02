@@ -54,8 +54,8 @@ public class Tourist extends User {
             inverseJoinColumns = @JoinColumn(name = "place_id"))
     private Set<Place> favouritePlaces;
 
-    @OneToMany(mappedBy = "tourist")
-    private List<Booking> bookings = new ArrayList<>();
+//    @OneToMany(mappedBy = "tourist")
+//    private List<Booking> bookings = new ArrayList<>();
 
     @OneToMany(mappedBy = "tourist", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude

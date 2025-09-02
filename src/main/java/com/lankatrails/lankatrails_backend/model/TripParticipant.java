@@ -49,4 +49,7 @@ public class TripParticipant {
     @ManyToMany(mappedBy = "participants")
     private Set<GroupChatRoom> chatRooms = new HashSet<>();
 
+    @OneToMany(mappedBy = "tripParticipant")
+    private Set<Booking> bookings = new HashSet<>();
+
 }

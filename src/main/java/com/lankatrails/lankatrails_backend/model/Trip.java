@@ -4,6 +4,7 @@ import com.lankatrails.lankatrails_backend.model.enums.TripStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -52,11 +53,11 @@ public class Trip {
     @Column(name = "trip_status", nullable = false, columnDefinition = "VARCHAR(20)")
     private TripStatus tripStatus;
 
-    @Column(name = "total_budget")
-    private Double totalBudget = 0.0;
+    @Column(name = "total_budget", scale = 2)
+    private BigDecimal totalBudget = BigDecimal.ZERO;
 
-    @Column(name = "total_budget_limit")
-    private Double totalBudgetLimit = 0.0;
+    @Column(name = "total_budget_limit", scale = 2)
+    private BigDecimal totalBudgetLimit = BigDecimal.ZERO;
 
     @Column(name = "total_distance")
     private Double totalDistance = 0.0;
