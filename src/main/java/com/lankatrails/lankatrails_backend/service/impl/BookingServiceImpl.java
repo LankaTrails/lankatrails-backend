@@ -236,6 +236,21 @@ public class BookingServiceImpl implements BookingService {
                 dto.setPaidAmount(BigDecimal.ZERO);
                 dto.setDueAmount(dto.getTotalPrice());
                 dto.setBookingDate(null);
+
+                // check the availability for the trip item
+                AvailabilityDto availabilityDto = AvailabilityDto.builder()
+                        .startDateTime(tripItem.getStartTime())
+                        .endDateTime(tripItem.getEndTime())
+                        .adultCount(tripItem.getNumberOfAdults())
+                        .childCount(tripItem.getNumberOfChildren())
+                        .serviceId(tripItem.getService().getServiceId())
+                        .tripId(tripItem.getTrip().getTripId())
+                        .noOfUnits(tripItem.getNoOfUnits())
+                        .build();
+                APIResponse<String> availabilityResponse = availabilityService.validateServiceAvailability(availabilityDto);
+                if (!availabilityResponse.isSuccess()) {
+                    dto.setStatus(BookingStatus.NOT_AVAILABLE);
+                }
             }
             bookingItemDtos.add(dto);
         }
