@@ -10,5 +10,9 @@ public interface TripExpenseService {
 
     APIResponse<String> createExpense(ExpenseDTO expenseDTO);
 
+    APIResponse<String> updateExpense(Long expenseId, ExpenseDTO expenseDTO);
+
+    APIResponse<String> deleteExpense(Long expenseId);
+
     APIResponse<List<ExpenseResponseDTO>> getExpensesByTripId(Long tripId);
 }

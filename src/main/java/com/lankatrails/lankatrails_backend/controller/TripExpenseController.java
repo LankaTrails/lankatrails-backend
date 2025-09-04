@@ -3,17 +3,24 @@ package com.lankatrails.lankatrails_backend.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.lankatrails.lankatrails_backend.dtos.ExpenseDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.ExpenseResponseDTO;
 import com.lankatrails.lankatrails_backend.service.TripExpenseService;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -31,21 +38,33 @@ public class TripExpenseController {
                 .body(response);
     }
 
-    // @PostMapping("/expense/update")
-    // public ResponseEntity<APIResponse<String>> updateExpense(@Valid @RequestBody ExpenseDTO expenseDTO) {
-    //     log.info("Updating expense: {}", expenseDTO);
-    //     APIResponse<String> response = tripExpenseService.updateExpense(expenseDTO);
-    //     log.info("Expense updated successfully: {}", response.getMessage());
-    //     return ResponseEntity.status(HttpStatus.OK)
-    //             .body(response);
-    // }
+    @PutMapping("/expense/{expenseId}")
+    public ResponseEntity<APIResponse<String>> updateExpense(
+            @PathVariable Long expenseId, 
+            @Valid @RequestBody ExpenseDTO expenseDTO) {
+        log.info("Updating expense with ID: {} - {}", expenseId, expenseDTO);
+        APIResponse<String> response = tripExpenseService.updateExpense(expenseId, expenseDTO);
+        log.info("Expense updated successfully: {}", response.getMessage());
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
+    }
 
-    // @PostMapping("/expense/delete")
-    // public ResponseEntity<APIResponse<String>> deleteExpense(@Valid @RequestBody ExpenseDTO expenseDTO) {
-    //     log.info("Deleting expense: {}", expenseDTO);
-    //     APIResponse<String> response = tripExpenseService.deleteExpense(expenseDTO);
-    //     log.info("Expense deleted successfully: {}", response.getMessage());
-    //     return ResponseEntity.status(HttpStatus.OK)
-    //             .body(response);
-    // }
+    @DeleteMapping("/expense/{expenseId}")
+    public ResponseEntity<APIResponse<String>> deleteExpense(@PathVariable Long expenseId) {
+        log.info("Deleting expense with ID: {}", expenseId);
+        APIResponse<String> response = tripExpenseService.deleteExpense(expenseId);
+        log.info("Expense deleted successfully: {}", response.getMessage());
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
+    }
+
+    @GetMapping("/expenses/{tripId}")
+    public ResponseEntity<APIResponse<List<ExpenseResponseDTO>>> getExpensesByTripId(@PathVariable Long tripId) {
+        log.info("Retrieving expenses for trip ID: {}", tripId);
+        APIResponse<List<ExpenseResponseDTO>> response = tripExpenseService.getExpensesByTripId(tripId);
+        log.info("Expenses retrieved successfully for trip ID {}: {} expenses found", tripId, 
+                response.getData() != null ? response.getData().size() : 0);
+        return ResponseEntity.status(response.isSuccess() ? HttpStatus.OK : HttpStatus.NOT_FOUND)
+                .body(response);
+    }
 }

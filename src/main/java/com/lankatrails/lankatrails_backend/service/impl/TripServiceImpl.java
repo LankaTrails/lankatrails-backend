@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.ChatRoomDto;
+import com.lankatrails.lankatrails_backend.dtos.TripParticipantDto;
 import com.lankatrails.lankatrails_backend.dtos.TripPeriodDto;
 import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
@@ -199,6 +200,28 @@ public class TripServiceImpl implements TripService {
         }
 
         return new APIResponse<>(true, "Trip items fetched successfully", tripItemDTOs);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public APIResponse<List<TripParticipantDto>> getTripParticipants(Long tripId) {
+        log.info("Fetching participants for trip with ID: {}", tripId);
+        Trip trip = tripRepository.findByTripId(tripId)
+                .orElseThrow(() -> new ResourceNotFoundException("Trip", tripId));
+
+        List<TripParticipantDto> participantDTOs = new ArrayList<>();
+        for (TripParticipant participant : trip.getParticipants()) {
+            TripParticipantDto dto = TripParticipantDto.builder()
+                    .participantId(participant.getParticipantId())
+                    .firstName(participant.getTourist().getFirstName())
+                    .lastName(participant.getTourist().getLastName())
+                    // .tripId(trip.getTripId())
+                    .role(participant.getTripRole().name())
+                    .build();
+            participantDTOs.add(dto);
+        }
+
+        return new APIResponse<>(true, "Trip participants fetched successfully", participantDTOs);
     }
 
     @Override

@@ -2,7 +2,10 @@ package com.lankatrails.lankatrails_backend.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
+import com.lankatrails.lankatrails_backend.dtos.TripParticipantDto;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,7 +68,7 @@ public class TripExpenseServiceImpl implements TripExpenseService {
         log.info("Creating expense: {}", expenseDTO);
 
         // Validate trip exists
-        Trip trip = tripRepository.findByTripId(expenseDTO.getTripId())
+        Trip trip = tripRepository.findById(expenseDTO.getTripId())
                 .orElseThrow(() -> new BadRequestException("Trip not found for the given id"));
 
         // Validate logged-in user is a participant of the trip
@@ -90,18 +93,25 @@ public class TripExpenseServiceImpl implements TripExpenseService {
                 .findFirst()
                 .orElseThrow(() -> new BadRequestException("Invalid budget category"));
 
-        Double totalExpenseAmount = expenseDTO.getShares().stream()
-                .mapToDouble(ExpenseShareDto::getAmount)
-                .sum();
+        Double totalExpenseAmount = expenseDTO.getTotalExpenseAmount();
+        
+        // If no shares provided, create a default share for the logged-in user
+        
+        // else {
+        //     // If shares are provided, validate them
+        //     Double calculatedTotal = expenseDTO.getShares().stream()
+        //             .mapToDouble(ExpenseShareDto::getAmount)
+        //             .sum();
 
-        // Validate total expense amount
-        if (totalExpenseAmount <= 0) {
-            throw new BadRequestException("Total expense amount must be greater than zero");
-        }
+        //     // Validate total expense amount
+        //     if (calculatedTotal <= 0) {
+        //         throw new BadRequestException("Total expense amount must be greater than zero");
+        //     }
 
-        if (!totalExpenseAmount.equals(expenseDTO.getTotalExpenseAmount())) {
-            throw new BadRequestException("Total expense amount does not match the sum of shares");
-        }
+        //     if (!totalExpenseAmount.equals(calculatedTotal)) {
+        //         throw new BadRequestException("Total expense amount does not match the sum of shares");
+        //     }
+        // }
 
         // Validate expense does not exceed category limit
         if (existingCategory.getLimitAmount() < existingCategory.getSpentAmount() + totalExpenseAmount) {
@@ -131,18 +141,31 @@ public class TripExpenseServiceImpl implements TripExpenseService {
         TripExpense savedExpense =  tripExpenseRepository.save(tripExpense);
 
         // Create ExpenseShare entities
-        for (ExpenseShareDto shareDto : expenseDTO.getShares()) {
-            TripParticipant participant = trip.getParticipants().stream()
-                    .filter(p -> p.getTourist().getUserId().equals(shareDto.getParticipant().getParticipantId()))
-                    .findFirst()
-                    .orElseThrow(() -> new BadRequestException("Participant not found for ID: " + shareDto.getParticipant().getParticipantId()));
+        if (expenseDTO.getShares() == null || expenseDTO.getShares().isEmpty()) {
+            // Validate total expense amount
+            if (totalExpenseAmount == null || totalExpenseAmount <= 0) {
+                throw new BadRequestException("Total expense amount must be greater than zero");
+            }
+            tripExpenseShareRepository.save(TripExpenseShare.builder()
+                    .amount(totalExpenseAmount)
+                    .tripExpense(savedExpense)
+                    .tripParticipant(loggedInParticipant)
+                    .build());
+        } else {
+            for (ExpenseShareDto shareDto : expenseDTO.getShares()) {
+                        TripParticipant participant = trip.getParticipants().stream()
+                                .filter(p -> p.getTourist().getUserId().equals(shareDto.getParticipant().getParticipantId()))
+                                .findFirst()
+                                .orElseThrow(() -> new BadRequestException("Participant not found for ID: " + shareDto.getParticipant().getParticipantId()));
 
-            TripExpenseShare share = new TripExpenseShare();
-            share.setAmount(shareDto.getAmount());
-            share.setTripExpense(savedExpense);
-            share.setTripParticipant(participant);
-            tripExpenseShareRepository.save(share);
+                        TripExpenseShare share = new TripExpenseShare();
+                        share.setAmount(shareDto.getAmount());
+                        share.setTripExpense(savedExpense);
+                        share.setTripParticipant(participant);
+                        tripExpenseShareRepository.save(share);
+                    }
         }
+        
 
         // Save the trip with updated budget categories
         Trip updatedTrip = tripRepository.save(trip);
@@ -155,6 +178,183 @@ public class TripExpenseServiceImpl implements TripExpenseService {
         return new APIResponse<>(true, "Expense created successfully", "Expense created successfully for trip ID: " + trip.getTripId());
     }
 
+    @Override
+    @Transactional
+    public APIResponse<String> updateExpense(Long expenseId, ExpenseDTO expenseDTO) {
+        log.info("Updating expense with ID: {}", expenseId);
+
+        // Validate expense exists
+        TripExpense existingExpense = tripExpenseRepository.findById(expenseId)
+                .orElseThrow(() -> new BadRequestException("Expense not found for the given id"));
+
+        Trip trip = existingExpense.getTrip();
+        
+        // Validate logged-in user is a participant of the trip
+        TripParticipant loggedInParticipant = trip.getParticipants().stream()
+                .filter(participant -> participant.getTourist().getUserId().equals(authUtils.loggedInUserId()))
+                .findFirst()
+                .orElseThrow(() -> new UserNotFoundException("Logged-in user is not a participant of this trip"));
+
+        // Validate participant has permission to update expenses (either creator or has privilege)
+        boolean canUpdate = existingExpense.getCreatedByParticipant().getTourist().getUserId().equals(authUtils.loggedInUserId()) ||
+                tripPrivilegeUtils.hasPrivilege(loggedInParticipant.getTripRole(), TripPrivilege.ADD_EXPENSES);
+        
+        if (!canUpdate) {
+            throw new BadRequestException("Only the expense creator or participants with ADD_EXPENSES privilege can update expenses");
+        }
+
+        // Validate expense data
+        if (expenseDTO.getExpenseName() == null || expenseDTO.getExpenseName().isEmpty()) {
+            throw new BadRequestException("Expense name cannot be empty");
+        }
+
+        // Calculate old and new expense amounts
+        Double oldTotalAmount = existingExpense.getTotalExpenseAmount();
+        Double newTotalAmount = expenseDTO.getShares().stream()
+                .mapToDouble(ExpenseShareDto::getAmount)
+                .sum();
+
+        // Validate new total expense amount
+        if (newTotalAmount <= 0) {
+            throw new BadRequestException("Total expense amount must be greater than zero");
+        }
+
+        if (!newTotalAmount.equals(expenseDTO.getTotalExpenseAmount())) {
+            throw new BadRequestException("Total expense amount does not match the sum of shares");
+        }
+
+        // Get old and new budget categories
+        BudgetCategory oldCategory = existingExpense.getBudgetCategory();
+        BudgetCategory newCategory = BudgetCategory.valueOf(expenseDTO.getBudgetCategory());
+
+        // Find budget category entities
+        TripBudgetCategory oldBudgetCategory = trip.getTripBudgetCategories().stream()
+                .filter(category -> category.getBudgetCategory() == oldCategory)
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException("Old budget category not found"));
+
+        TripBudgetCategory newBudgetCategory = trip.getTripBudgetCategories().stream()
+                .filter(category -> category.getBudgetCategory() == newCategory)
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException("New budget category not found"));
+
+        // Calculate spending differences
+        Double amountDifference = newTotalAmount - oldTotalAmount;
+
+        // Validate expense does not exceed category limit for new category
+        if (oldCategory.equals(newCategory)) {
+            // Same category - check if the difference doesn't exceed limit
+            if (newBudgetCategory.getLimitAmount() < newBudgetCategory.getSpentAmount() + amountDifference) {
+                throw new BadRequestException("Updated expense exceeds the budget limit for category: " + newBudgetCategory.getBudgetCategory());
+            }
+        } else {
+            // Different category - check if new category can accommodate the full new amount
+            if (newBudgetCategory.getLimitAmount() < newBudgetCategory.getSpentAmount() + newTotalAmount) {
+                throw new BadRequestException("Updated expense exceeds the budget limit for category: " + newBudgetCategory.getBudgetCategory());
+            }
+        }
+
+        // Validate total trip budget
+        if (trip.getTotalBudgetLimit() < trip.getTotalSpentAmount() + amountDifference) {
+            throw new BadRequestException("Updated expense exceeds the total budget limit for the trip");
+        }
+
+        // Update expense entity
+        existingExpense.setExpenseName(expenseDTO.getExpenseName());
+        existingExpense.setBudgetCategory(newCategory);
+        existingExpense.setTotalExpenseAmount(newTotalAmount);
+
+        // Update budget categories spent amounts
+        if (oldCategory.equals(newCategory)) {
+            // Same category - just update the difference
+            oldBudgetCategory.setSpentAmount(oldBudgetCategory.getSpentAmount() + amountDifference);
+        } else {
+            // Different categories - remove from old, add to new
+            oldBudgetCategory.setSpentAmount(oldBudgetCategory.getSpentAmount() - oldTotalAmount);
+            newBudgetCategory.setSpentAmount(newBudgetCategory.getSpentAmount() + newTotalAmount);
+        }
+
+        // Update trip total spent amount
+        trip.setTotalSpentAmount(trip.getTotalSpentAmount() + amountDifference);
+
+        // Delete existing expense shares
+        tripExpenseShareRepository.deleteByTripExpense(existingExpense);
+
+        // Create new expense shares
+        for (ExpenseShareDto shareDto : expenseDTO.getShares()) {
+            TripParticipant participant = trip.getParticipants().stream()
+                    .filter(p -> p.getTourist().getUserId().equals(shareDto.getParticipant().getParticipantId()))
+                    .findFirst()
+                    .orElseThrow(() -> new BadRequestException("Participant not found for ID: " + shareDto.getParticipant().getParticipantId()));
+
+            TripExpenseShare share = new TripExpenseShare();
+            share.setAmount(shareDto.getAmount());
+            share.setTripExpense(existingExpense);
+            share.setTripParticipant(participant);
+            tripExpenseShareRepository.save(share);
+        }
+
+        // Save updated entities
+        tripExpenseRepository.save(existingExpense);
+        tripRepository.save(trip);
+
+        log.info("Expense updated successfully for expense ID: {}", expenseId);
+        return new APIResponse<>(true, "Expense updated successfully", "Expense updated successfully for expense ID: " + expenseId);
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<String> deleteExpense(Long expenseId) {
+        log.info("Deleting expense with ID: {}", expenseId);
+
+        // Validate expense exists
+        TripExpense existingExpense = tripExpenseRepository.findById(expenseId)
+                .orElseThrow(() -> new BadRequestException("Expense not found for the given id"));
+
+        Trip trip = existingExpense.getTrip();
+        
+        // Validate logged-in user is a participant of the trip
+        TripParticipant loggedInParticipant = trip.getParticipants().stream()
+                .filter(participant -> participant.getTourist().getUserId().equals(authUtils.loggedInUserId()))
+                .findFirst()
+                .orElseThrow(() -> new UserNotFoundException("Logged-in user is not a participant of this trip"));
+
+        // Validate participant has permission to delete expenses (either creator or has privilege)
+        boolean canDelete = existingExpense.getCreatedByParticipant().getTourist().getUserId().equals(authUtils.loggedInUserId()) ||
+                tripPrivilegeUtils.hasPrivilege(loggedInParticipant.getTripRole(), TripPrivilege.ADD_EXPENSES);
+        
+        if (!canDelete) {
+            throw new BadRequestException("Only the expense creator or participants with ADD_EXPENSES privilege can delete expenses");
+        }
+
+        // Get expense details for rollback
+        Double expenseAmount = existingExpense.getTotalExpenseAmount();
+        BudgetCategory budgetCategory = existingExpense.getBudgetCategory();
+
+        // Find budget category
+        TripBudgetCategory existingBudgetCategory = trip.getTripBudgetCategories().stream()
+                .filter(category -> category.getBudgetCategory() == budgetCategory)
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException("Budget category not found"));
+
+        // Delete expense shares first (due to foreign key constraints)
+        tripExpenseShareRepository.deleteByTripExpense(existingExpense);
+
+        // Delete the expense
+        tripExpenseRepository.delete(existingExpense);
+
+        // Update budget category spent amount (subtract the deleted expense amount)
+        existingBudgetCategory.setSpentAmount(existingBudgetCategory.getSpentAmount() - expenseAmount);
+
+        // Update trip total spent amount (subtract the deleted expense amount)
+        trip.setTotalSpentAmount(trip.getTotalSpentAmount() - expenseAmount);
+
+        // Save updated trip
+        tripRepository.save(trip);
+
+        log.info("Expense deleted successfully for expense ID: {}", expenseId);
+        return new APIResponse<>(true, "Expense deleted successfully", "Expense deleted successfully for expense ID: " + expenseId);
+    }
 
     @Override
     @Transactional(readOnly = true)

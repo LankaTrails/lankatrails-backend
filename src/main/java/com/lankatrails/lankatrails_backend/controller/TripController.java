@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.controller;
 
 import com.lankatrails.lankatrails_backend.dtos.ExpenseDTO;
+import com.lankatrails.lankatrails_backend.dtos.TripParticipantDto;
 import com.lankatrails.lankatrails_backend.dtos.TripPeriodDto;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripRequestDTO;
@@ -90,5 +91,13 @@ public class TripController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
     }
-    
+
+    @GetMapping("/{tripId}/participants")
+    public ResponseEntity<APIResponse<List<TripParticipantDto>>> getTripParticipants(@PathVariable Long tripId) {
+        log.info("Fetching participants for trip with ID: {}", tripId);
+        APIResponse<List<TripParticipantDto>> response = tripService.getTripParticipants(tripId);
+        log.info("Fetched {} participants", response.getData().size());
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
+    }
 }
