@@ -41,7 +41,7 @@ public class TripExpense {
     @JoinColumn(name = "created_by_participant_id", nullable = false)
     private TripParticipant createdByParticipant;
 
-    @OneToMany(mappedBy = "tripExpense", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "tripExpense", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private List<TripExpenseShare> shares;
 
 }

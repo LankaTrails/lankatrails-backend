@@ -302,6 +302,61 @@ public class TripExpenseServiceImpl implements TripExpenseService {
         return new APIResponse<>(true, "Expense updated successfully", "Expense updated successfully for expense ID: " + expenseId);
     }
 
+    // @Override
+    // @Transactional
+    // public APIResponse<String> deleteExpense(Long expenseId) {
+    //     log.info("Deleting expense with ID: {}", expenseId);
+
+    //     // Validate expense exists
+    //     TripExpense existingExpense = tripExpenseRepository.findById(expenseId)
+    //             .orElseThrow(() -> new BadRequestException("Expense not found for the given id"));
+
+    //     Trip trip = existingExpense.getTrip();
+        
+    //     // Validate logged-in user is a participant of the trip
+    //     TripParticipant loggedInParticipant = trip.getParticipants().stream()
+    //             .filter(participant -> participant.getTourist().getUserId().equals(authUtils.loggedInUserId()))
+    //             .findFirst()
+    //             .orElseThrow(() -> new UserNotFoundException("Logged-in user is not a participant of this trip"));
+
+    //     // Validate participant has permission to delete expenses (either creator or has privilege)
+    //     boolean canDelete = existingExpense.getCreatedByParticipant().getTourist().getUserId().equals(authUtils.loggedInUserId()) ||
+    //             tripPrivilegeUtils.hasPrivilege(loggedInParticipant.getTripRole(), TripPrivilege.EDIT_EXPENSES);
+        
+    //     if (!canDelete) {
+    //         throw new BadRequestException("Only the expense creator or participants with EDIT_EXPENSES privilege can delete expenses");
+    //     }
+
+    //     // Get expense details for rollback
+    //     Double expenseAmount = existingExpense.getTotalExpenseAmount();
+    //     BudgetCategory budgetCategory = existingExpense.getBudgetCategory();
+
+    //     // Find budget category
+    //     TripBudgetCategory existingBudgetCategory = trip.getTripBudgetCategories().stream()
+    //             .filter(category -> category.getBudgetCategory() == budgetCategory)
+    //             .findFirst()
+    //             .orElseThrow(() -> new BadRequestException("Budget category not found"));
+
+    //     // Delete expense shares first (due to foreign key constraints)
+    //     tripExpenseShareRepository.
+
+    //     // Delete the expense
+    //     tripExpenseRepository.delete(existingExpense);
+
+    //     // Update budget category spent amount (subtract the deleted expense amount)
+    //     existingBudgetCategory.setSpentAmount(existingBudgetCategory.getSpentAmount() - expenseAmount);
+
+    //     // Update trip total spent amount (subtract the deleted expense amount)
+    //     trip.setTotalSpentAmount(trip.getTotalSpentAmount() - expenseAmount);
+
+    //     // Save updated trip
+    //     tripRepository.save(trip);
+
+    //     log.info("Expense deleted successfully for expense ID: {}", expenseId);
+    //     return new APIResponse<>(true, "Expense deleted successfully", "Expense deleted successfully for expense ID: " + expenseId);
+    // }
+
+
     @Override
     @Transactional
     public APIResponse<String> deleteExpense(Long expenseId) {
@@ -311,48 +366,8 @@ public class TripExpenseServiceImpl implements TripExpenseService {
         TripExpense existingExpense = tripExpenseRepository.findById(expenseId)
                 .orElseThrow(() -> new BadRequestException("Expense not found for the given id"));
 
-        Trip trip = existingExpense.getTrip();
-        
-        // Validate logged-in user is a participant of the trip
-        TripParticipant loggedInParticipant = trip.getParticipants().stream()
-                .filter(participant -> participant.getTourist().getUserId().equals(authUtils.loggedInUserId()))
-                .findFirst()
-                .orElseThrow(() -> new UserNotFoundException("Logged-in user is not a participant of this trip"));
-
-        // Validate participant has permission to delete expenses (either creator or has privilege)
-        boolean canDelete = existingExpense.getCreatedByParticipant().getTourist().getUserId().equals(authUtils.loggedInUserId()) ||
-                tripPrivilegeUtils.hasPrivilege(loggedInParticipant.getTripRole(), TripPrivilege.ADD_EXPENSES);
-        
-        if (!canDelete) {
-            throw new BadRequestException("Only the expense creator or participants with ADD_EXPENSES privilege can delete expenses");
-        }
-
-        // Get expense details for rollback
-        Double expenseAmount = existingExpense.getTotalExpenseAmount();
-        BudgetCategory budgetCategory = existingExpense.getBudgetCategory();
-
-        // Find budget category
-        TripBudgetCategory existingBudgetCategory = trip.getTripBudgetCategories().stream()
-                .filter(category -> category.getBudgetCategory() == budgetCategory)
-                .findFirst()
-                .orElseThrow(() -> new BadRequestException("Budget category not found"));
-
-        // Delete expense shares first (due to foreign key constraints)
-        tripExpenseShareRepository.deleteByTripExpense(existingExpense);
-
-        // Delete the expense
         tripExpenseRepository.delete(existingExpense);
 
-        // Update budget category spent amount (subtract the deleted expense amount)
-        existingBudgetCategory.setSpentAmount(existingBudgetCategory.getSpentAmount() - expenseAmount);
-
-        // Update trip total spent amount (subtract the deleted expense amount)
-        trip.setTotalSpentAmount(trip.getTotalSpentAmount() - expenseAmount);
-
-        // Save updated trip
-        tripRepository.save(trip);
-
-        log.info("Expense deleted successfully for expense ID: {}", expenseId);
         return new APIResponse<>(true, "Expense deleted successfully", "Expense deleted successfully for expense ID: " + expenseId);
     }
 
