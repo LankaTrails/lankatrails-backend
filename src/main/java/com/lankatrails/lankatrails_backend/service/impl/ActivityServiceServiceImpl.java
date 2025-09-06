@@ -125,8 +125,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
             tabsImpl.addTabs(tabsReq, lastServiceAdded);
 
             // Set Policies
-            List<PolicySectionRequest> policyReq = services.getPolicySection();
-            policyImpl.addPolicies(policyReq, lastServiceAdded, category);
+            lastServiceAdded.setPolicies(policyImpl.addPolicies(services.getPolicySection(), category, lastServiceAdded));
 
             // Upload and associate images
             imageService.uploadImagesForService(images, lastServiceAdded);
@@ -137,6 +136,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
                 throw new BadRequestException("Availability Slots cannot be empty");
             }
             servicesForAll.setAvailableTime(availabilitySlots, lastServiceAdded);
+            activityServiceRepository.save(lastServiceAdded);
 
         } else {
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());

@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 public interface Policies {
-    Boolean addPolicies(List<PolicySectionRequest> policyReq, ActivityService lastServiceAdded, Category category);
+    Set<PolicySection> addPolicies(List<PolicySectionRequest> policyReq, Category category, Service service);
     List<PolicySectionRequest> getAllPolicies(Long Id);
     Set<PolicySection> updatePolicies(Set<PolicySection> tabs, List<PolicySectionRequest> reqTabs, Transport transport);
     Boolean addPoliciesToTransport(List<PolicySectionRequest> policyReq,Transport transport);
