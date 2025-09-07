@@ -17,7 +17,4 @@ public class ActivityServiceRequest extends ServiceRequest {
     private ActivityType activityType;
     private String activityDetails;
     private String safetyInstructions;
-
-
-
 }

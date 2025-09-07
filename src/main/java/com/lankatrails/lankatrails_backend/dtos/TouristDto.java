@@ -1,6 +1,5 @@
 package com.lankatrails.lankatrails_backend.dtos;
 
-
 import lombok.*;
 
 @Getter
@@ -9,8 +8,9 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TouristDto {
+    private Long id;
     private String firstName;
     private String lastName;
-    private Long id;
-    private String profileImage;
+    private String country;
+    private String profilePictureUrl;
 }

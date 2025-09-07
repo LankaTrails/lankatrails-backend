@@ -1,71 +1,93 @@
 package com.lankatrails.lankatrails_backend.repositories;
 
-import com.lankatrails.lankatrails_backend.model.Booking;
-import com.lankatrails.lankatrails_backend.model.Tourist;
-import com.lankatrails.lankatrails_backend.model.enums.BookingStatus;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-
 import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import com.lankatrails.lankatrails_backend.model.Booking;
+import com.lankatrails.lankatrails_backend.model.enums.BookingStatus;
+
+@Repository
 public interface BookingRepository extends JpaRepository<Booking,Long> {
-    List<Booking> findByStartTimeAndEndTimeAndFromDateAndToDateAndService_ServiceIdAndBookingStatus(
-            LocalTime startTime,
-            LocalTime endTime,
-            LocalDate fromDate,
-            LocalDate endDate,
+    List<Booking> findByStartDateTimeAndEndDateTimeAndTripItem_Service_ServiceIdAndBookingStatus(
+            LocalDateTime startDateTime,
+            LocalDateTime endDateTime,
             Long serviceId,
             BookingStatus bookingStatus
     );
-    List<Booking> findByStartTimeAndEndTimeAndFromDateAndToDateAndTourist_UserIdAndBookingStatus(
-            LocalTime startTime,
-            LocalTime endTime,
-            LocalDate fromDate,
-            LocalDate toDate,
+
+    List<Booking> findByStartDateTimeAndEndDateTimeAndTripParticipant_Tourist_UserIdAndBookingStatus(
+            LocalDateTime startDateTime,
+            LocalDateTime endDateTime,
             Long userId,
             BookingStatus bookingStatus
     );
-    Optional<Booking> findByFromDateAndService_ServiceIdAndBookingStatus(LocalDate fromDate, Long id,BookingStatus bookingStatus);
+
+    Optional<Booking> findByStartDateTimeAndTripItem_Service_ServiceIdAndBookingStatus(
+            LocalDateTime startDateTime,
+            Long serviceId,
+            BookingStatus bookingStatus
+    );
 
     @Query("SELECT b FROM Booking b WHERE " +
-            "b.service.id = :serviceId AND " +
-            "((b.fromDate < :toDate OR (b.fromDate = :toDate AND b.startTime <= :endTime)) AND " +
-            "(b.toDate > :fromDate OR (b.toDate = :fromDate AND b.endTime >= :startTime))) AND "+
+            "b.tripItem.service.serviceId = :serviceId AND " +
+            "(b.startDateTime < :endDateTime AND b.endDateTime > :startDateTime) AND " +
             "b.bookingStatus = :bookingStatus")
     List<Booking> findExactConflictingBookings(
             @Param("serviceId") Long serviceId,
-            @Param("fromDate") LocalDate fromDate,
-            @Param("startTime") LocalTime startTime,
-            @Param("toDate") LocalDate toDate,
-            @Param("endTime") LocalTime endTime,
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime,
             @Param("bookingStatus") BookingStatus bookingStatus
     );
 
     @Query("SELECT b FROM Booking b WHERE " +
-            "b.tourist.userId = :userId AND " +
-            // Date range overlap condition (more flexible than exact match)
-            "((b.fromDate <= :toDate AND b.toDate >= :fromDate) AND " +
-            // Time slot overlap condition
-            "(b.startTime < :endTime AND b.endTime > :startTime)) AND "+
+            "b.tripParticipant.tourist.userId = :userId AND " +
+            "(b.startDateTime < :endDateTime AND b.endDateTime > :startDateTime) AND " +
             "b.bookingStatus = :bookingStatus")
     List<Booking> findOverlappingBookings(
             @Param("userId") Long userId,
-            @Param("fromDate") LocalDate fromDate,
-            @Param("toDate") LocalDate toDate,
-            @Param("startTime") LocalTime startTime,
-            @Param("endTime") LocalTime endTime,
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime,
             @Param("bookingStatus") BookingStatus bookingStatus
     );
 
-    @Query("SELECT b FROM Booking b WHERE :date BETWEEN b.fromDate AND b.toDate AND b.service.serviceId = :serviceId AND b.bookingStatus = :bookingStatus")
-    List<Booking> findBookingsOnADay (
+    @Query("SELECT b FROM Booking b WHERE " +
+            "DATE(b.startDateTime) = :date AND " +
+            "b.tripItem.service.serviceId = :serviceId AND " +
+            "b.bookingStatus = :bookingStatus")
+    List<Booking> findBookingsOnADay(
             @Param("date") LocalDate date,
             @Param("serviceId") Long serviceId,
             @Param("bookingStatus") BookingStatus bookingStatus
     );
+
+    // Query to find already booked units for a service using standard interval overlap logic
+    @Query("SELECT COALESCE(SUM(ti.noOfUnits), 0) " +
+           "FROM Booking b " +
+           "JOIN b.tripItem ti " +
+           "WHERE ti.service.serviceId = :serviceId " +
+           "AND b.bookingStatus = :status " +
+           "AND (b.startDateTime < :end AND b.endDateTime > :start)")
+    Integer findBookedUnitsDuringPeriod(@Param("serviceId") Long serviceId,
+                                        @Param("start") LocalDateTime start,
+                                        @Param("end") LocalDateTime end,
+                                        @Param("status") BookingStatus status);
+
+    // Optimization for TIME_SLOTS bookings - check exact time matches
+    @Query("SELECT COUNT(b) > 0 FROM Booking b " +
+           "WHERE b.tripItem.service.serviceId = :serviceId " +
+           "AND b.startDateTime = :startDateTime " +
+           "AND b.endDateTime = :endDateTime " +
+           "AND b.bookingStatus = :bookingStatus")
+    boolean existsExactTimeSlotBooking(@Param("serviceId") Long serviceId,
+                                       @Param("startDateTime") LocalDateTime startDateTime,
+                                       @Param("endDateTime") LocalDateTime endDateTime,
+                                       @Param("bookingStatus") BookingStatus bookingStatus);
 
 }

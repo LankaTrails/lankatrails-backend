@@ -6,6 +6,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.lankatrails.lankatrails_backend.dtos.request.*;
+import com.lankatrails.lankatrails_backend.exception.*;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,16 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.lankatrails.lankatrails_backend.dtos.request.ImageRequestDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TransportRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TransportResponseDTO;
-import com.lankatrails.lankatrails_backend.exception.APIException;
-import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
 import com.lankatrails.lankatrails_backend.factory.CreateServiceFactory;
 import com.lankatrails.lankatrails_backend.factory.UpdateServiceFactory;
 import com.lankatrails.lankatrails_backend.model.Category;
@@ -109,7 +104,7 @@ public class TransportServiceImpl implements TransportService {
 
         for (Transport transport : transportPage){
             TransportRequestDTO transportRequestDTO = new TransportRequestDTO();
-            if (transport.getStatus()){
+            if (transport.getStatus() == ServiceStatus.ACTIVE){
                 transportRequestDTO.setServiceId(transport.getServiceId());
                 transportRequestDTO.setServiceName(transport.getServiceName());
                 transportRequestDTO.setStatus(transport.getStatus());
@@ -180,8 +175,6 @@ public class TransportServiceImpl implements TransportService {
 
         TransportRequestDTO prepareResponse = new TransportRequestDTO();
         prepareResponse.setServiceName(transport.getServiceName());
-        prepareResponse.setVehicleCapacity(transport.getVehicleCapacity());
-        prepareResponse.setVehicleQty(transport.getVehicleQty());
         prepareResponse.setVehicleCategory(transport.getVehicleCategory().getCategoryName());
         prepareResponse.setDriverIncluded(transport.getDriverIncluded());
         prepareResponse.setAirConditioned(transport.getAirConditioned());
@@ -193,10 +186,22 @@ public class TransportServiceImpl implements TransportService {
                 .map(location -> modelMapper.map(location, LocationDTO.class))
                 .collect(Collectors.toSet()));
         prepareResponse.setPolicySection(policies);
-        prepareResponse.setPrice(transport.getPrice());
-        prepareResponse.setPriceType(transport.getPriceType());
+        prepareResponse.setPriceConfig(modelMapper.map(transport.getPriceConfiguration(),PriceConfigDTO.class));
+        prepareResponse.setBookingConfig(modelMapper.map(transport.getBookingConfiguration(),BookingConfigDTO.class));
         prepareResponse.setServiceId(Id);
         prepareResponse.setTabsSection(tabs);
+        prepareResponse.setStatus(transport.getStatus());
+        prepareResponse.setAvailableTimeDTOS(transport.getAvailableTimes().stream()
+                .map(availableTime -> {
+                    AvailableTimeDTO availableTimeDTO = modelMapper.map(availableTime, AvailableTimeDTO.class);
+                    List<BreakTimeDTO> breakTimeDTOS = availableTime.getBreakTimes().stream()
+                            .map(breakTime -> modelMapper.map(breakTime, BreakTimeDTO.class))
+                            .collect(Collectors.toList());
+                    availableTimeDTO.setBreakTimes(breakTimeDTOS);
+                    return availableTimeDTO;
+                })
+                .collect(Collectors.toList())
+        );
 
 
 
@@ -215,38 +220,37 @@ public class TransportServiceImpl implements TransportService {
                 .orElseThrow(()->new ResourceNotFoundException("Transport Service",Id));
 
         Transport mappedObj=modelMapper.map(transportRequestDTO,Transport.class);
-        Transport updatedObj=updateServiceFactory.updateTransport(transport,mappedObj);
         
         // Update basic service properties
-        updatedObj.setServiceName(transportRequestDTO.getServiceName());
-        updatedObj.setContactNo(transportRequestDTO.getContactNo());
-        updatedObj.setStatus(transportRequestDTO.getStatus());
-        updatedObj.setPrice(transportRequestDTO.getPrice());
-        updatedObj.setPriceType(transportRequestDTO.getPriceType());
+        mappedObj.setServiceName(transportRequestDTO.getServiceName());
+        mappedObj.setContactNo(transportRequestDTO.getContactNo());
+        mappedObj.setStatus(transportRequestDTO.getStatus());
         
         // Update locations
         if (transportRequestDTO.getLocations() != null && !transportRequestDTO.getLocations().isEmpty()) {
-            updatedObj.setLocations(servicesForAll.setServiceLocation(transportRequestDTO));
+            mappedObj.setLocations(servicesForAll.setServiceLocation(transportRequestDTO));
         }
+
+        // Update configurations
+        mappedObj.setBookingConfiguration(servicesForAll.setBookingConfig(transportRequestDTO.getBookingConfig()));
+        mappedObj.setPriceConfiguration(servicesForAll.setPriceConfig(transportRequestDTO.getPriceConfig()));
         
-        transportRepository.save(updatedObj);
+        Transport updatedTransport = transportRepository.save(mappedObj);
 
-        //save the tabs if updated
-        //get the tabs from the database
-        Set<TabsSection> tabs=transport.getTabs();
-        //get the tabs from the request
-        List<TabSectionRequest> reqTabs=transportRequestDTO.getTabsSection();
+        // Set the availability slots
+        List<AvailableTimeDTO> availabilitySlots = transportRequestDTO.getAvailableTimeDTOS();
+        if (availabilitySlots == null ){
+            throw new BadRequestException("Availability Slots cannot be empty");
+        }
+        servicesForAll.setAvailableTime(availabilitySlots, updatedTransport);
 
-        Set<TabsSection> updatedTabs=tabsImpl.updateTabs(tabs,reqTabs,transport);
-        tabsSectionRepository.saveAll(updatedTabs);
+        // Update tabs
+        tabsImpl.updateTabs(transportRequestDTO.getTabsSection(), updatedTransport);
+        tabsImpl.deleteTabs(transportRequestDTO.getDeletedTabs());
 
-        //update or add policies
-        Set<PolicySection> policies=transport.getPolicies();
-        //get the policySection from the request
-        List<PolicySectionRequest> reqPolicies=transportRequestDTO.getPolicySection();
-        Set<PolicySection> updatedPolicies=policiesImpl.updatePolicies(policies,reqPolicies,transport);
-
-        policySectionRepository.saveAll(updatedPolicies);
+        // Update policies
+        policiesImpl.updatePolicies(transportRequestDTO.getPolicySection(), updatedTransport);
+        policiesImpl.deletePolicies(transportRequestDTO.getDeletedPolicies(), updatedTransport);
 
         List<TransportRequestDTO> makeResponse=new ArrayList<>();
         makeResponse.add(transportRequestDTO);
@@ -273,6 +277,9 @@ public class TransportServiceImpl implements TransportService {
         mappedObj.setProvider(provider);
 
         mappedObj.setLocations(servicesForAll.setServiceLocation(transportRequestDTO));
+        mappedObj.setBookingConfiguration(servicesForAll.setBookingConfig(transportRequestDTO.getBookingConfig()));
+        mappedObj.setPriceConfiguration(servicesForAll.setPriceConfig(transportRequestDTO.getPriceConfig()));
+        mappedObj.setStatus(ServiceStatus.ACTIVE);
 
         Optional<Transport> checkDb=transportRepository.findByServiceName(mappedObj.getServiceName());
         Transport lastTransportAdded;
@@ -296,9 +303,13 @@ public class TransportServiceImpl implements TransportService {
             //upload and associate images
             imageService.uploadImagesForService(images,lastTransportAdded);
 
-
-
-
+            // Set the availability slots
+            List<AvailableTimeDTO> availabilitySlots = transportRequestDTO.getAvailableTimeDTOS();
+            if (availabilitySlots == null ){
+                throw new BadRequestException("Availability Slots cannot be empty");
+            }
+            servicesForAll.setAvailableTime(availabilitySlots, lastTransportAdded);
+            servicesForAll.setAvailableTime(availabilitySlots, lastTransportAdded);
         }else{
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());
         }
@@ -315,7 +326,7 @@ public class TransportServiceImpl implements TransportService {
     public APIResponse<String> deleteTransport(Long Id) {
         Transport transport=transportRepository.findById(Id)
                 .orElseThrow(()->new ResourceNotFoundException("Transport Service",Id));
-        transport.setStatus(false);
+        transport.setStatus(ServiceStatus.INACTIVE);
         transportRepository.save(transport);
         return APIResponse.<String>builder()
                 .success(true)
@@ -372,17 +383,14 @@ public class TransportServiceImpl implements TransportService {
         // Update basic service properties
         transport.setServiceName(transportRequestDTO.getServiceName());
         transport.setContactNo(transportRequestDTO.getContactNo());
-        transport.setVehicleCapacity(transportRequestDTO.getVehicleCapacity());
-        transport.setVehicleQty(transportRequestDTO.getVehicleQty());
         transport.setVehicleCategory(vehicleCategory);
         transport.setDriverIncluded(transportRequestDTO.getDriverIncluded());
         transport.setAirConditioned(transportRequestDTO.getAirConditioned());
         transport.setTransmissionType(transportRequestDTO.getTransmissionType());
         transport.setFuelType(transportRequestDTO.getFuelType());
         transport.setContactNo(transportRequestDTO.getContactNo());
-//        transport.setStatus(transportRequestDTO.getStatus());
-        transport.setPrice(transportRequestDTO.getPrice());
-        transport.setPriceType(transportRequestDTO.getPriceType());
+        transport.setPriceConfiguration(modelMapper.map(transportRequestDTO.getPriceConfig(),com.lankatrails.lankatrails_backend.model.PriceConfiguration.class));
+        transport.setBookingConfiguration(modelMapper.map(transportRequestDTO.getBookingConfig(),com.lankatrails.lankatrails_backend.model.BookingConfiguration.class));
         transport.setLocations(servicesForAll.setServiceLocation(transportRequestDTO));
 
         // Update the transport object in the database

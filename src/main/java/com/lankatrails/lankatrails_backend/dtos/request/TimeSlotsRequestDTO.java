@@ -14,5 +14,4 @@ import java.time.LocalTime;
 public class TimeSlotsRequestDTO {
     private LocalTime slotStartTime;
     private LocalTime slotEndTime;
-
 }

@@ -11,10 +11,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AccommodationServiceRequestDTO extends ServiceRequest{
-//    private String about;
     private AccommodationType accommodationType;
-    private Integer maxGuests;
-    private Integer numberOfRooms;
     private Boolean freeWifi;
     private Boolean parkingAvailable;
     private Boolean breakfastIncluded;
@@ -25,5 +22,4 @@ public class AccommodationServiceRequestDTO extends ServiceRequest{
     private Boolean roomService;
     private Boolean gymAccess;
     private Boolean spaServices;
-
 }

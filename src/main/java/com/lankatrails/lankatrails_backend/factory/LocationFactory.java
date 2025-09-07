@@ -2,6 +2,7 @@ package com.lankatrails.lankatrails_backend.factory;
 
 import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
 import com.lankatrails.lankatrails_backend.model.Location;
+import com.lankatrails.lankatrails_backend.model.enums.LocationType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +20,7 @@ public class LocationFactory {
                 .postalCode(locationDTO.getPostalCode())
                 .latitude(locationDTO.getLatitude())
                 .longitude(locationDTO.getLongitude())
+                .locationType(locationDTO.getLocationType() != null ? locationDTO.getLocationType()  : LocationType.POINT_OF_INTEREST)
                 .build();
     }
 }

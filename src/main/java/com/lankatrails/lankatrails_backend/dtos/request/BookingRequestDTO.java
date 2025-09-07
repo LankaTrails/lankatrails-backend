@@ -12,6 +12,7 @@ import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Getter
@@ -21,18 +22,7 @@ import java.time.LocalTime;
 public class BookingRequestDTO {
     private Integer childCount;
     private Integer adultCount;
-    private LocalDate fromDate;
-    private LocalDate toDate;
-
-//    @JsonDeserialize(using = LocalTimeDeserializer.class)
-//    @JsonSerialize(using = LocalTimeSerializer.class)
-//    @DateTimeFormat(pattern = "HH:mm")
-    private LocalTime fromTime;
-
-//    @JsonDeserialize(using = LocalTimeDeserializer.class)
-//    @JsonSerialize(using = LocalTimeSerializer.class)
-//    @DateTimeFormat(pattern = "HH:mm")
-    private LocalTime toTime;
-
+    private LocalDateTime startDateTime;
+    private LocalDateTime endDateTime;
     private BookingStatus bookingStatus;
 }

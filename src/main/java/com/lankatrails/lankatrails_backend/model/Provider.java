@@ -39,6 +39,9 @@ public class Provider extends User {
     @Column(name = "br_url")
     private String businessRegistrationUrl;
 
+    @Column(name = "stripe_account_id")
+    private String stripeAccountId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "accommodation_approval_status", columnDefinition = "VARCHAR(20)")
     private ApprovalStatus accommodationApprovalStatus;
@@ -70,6 +73,10 @@ public class Provider extends User {
 
     @OneToMany(mappedBy = "provider", cascade = CascadeType.ALL)
     private Set<Service> services = new HashSet<>();
+
+    @OneToMany(mappedBy = "provider", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    private Set<DirectChatRoom> directChatRooms = new HashSet<>();
 
     @PrePersist
     protected void onCreate() {

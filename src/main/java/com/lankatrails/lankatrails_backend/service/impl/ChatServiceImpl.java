@@ -7,9 +7,9 @@ import com.lankatrails.lankatrails_backend.exception.UnauthorizedException;
 import com.lankatrails.lankatrails_backend.model.ChatFiles;
 import com.lankatrails.lankatrails_backend.model.ChatRoom;
 import com.lankatrails.lankatrails_backend.model.enums.ChatMessageType;
-import com.lankatrails.lankatrails_backend.model.enums.ChatRoomType;
 import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
 import com.lankatrails.lankatrails_backend.repositories.ChatRoomRepository;
+import com.lankatrails.lankatrails_backend.repositories.DirectChatRoomRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ServicesForAll;
 import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
@@ -45,6 +45,7 @@ public class ChatServiceImpl implements ChatService {
     private final ChatRoomService chatRoomService;
     private final AuthUtils authUtils;
     private final ChatRoomRepository chatRoomRepository;
+    private final DirectChatRoomRepository directChatRoomRepository;
     private final ServicesForAll servicesForAll;
     private final FileUploadService fileUploadService;
 
@@ -148,7 +149,7 @@ public class ChatServiceImpl implements ChatService {
             throw new UnauthorizedException("You are not part of this conversation");
         }
 
-        ChatRoom chatRoom = chatRoomRepository.findDirectRoomBetweenUsers(user1Id, user2Id, ChatRoomType.DIRECT)
+        ChatRoom chatRoom = directChatRoomRepository.findByProvider_UserIdAndTourist_UserId(user1Id, user2Id)
                 .orElseThrow(() -> new BadRequestException("No direct chat room found between the users"));
         return getMessagesForRoom(chatRoom.getRoomId());
     }

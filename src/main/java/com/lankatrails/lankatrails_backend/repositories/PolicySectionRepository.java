@@ -5,9 +5,11 @@ import com.lankatrails.lankatrails_backend.model.PolicySection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@Repository
 public interface PolicySectionRepository extends JpaRepository<PolicySection,Long> {
     List<PolicySection> findByServices_ServiceId(Long Id);
     PolicySection findByHeading(String heading);

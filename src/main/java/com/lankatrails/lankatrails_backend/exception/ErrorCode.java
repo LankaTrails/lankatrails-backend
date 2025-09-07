@@ -23,6 +23,7 @@ public enum ErrorCode {
     BAD_REQUEST("RESOURCE_003", "Bad request"),
     SERVICE_ALREADY_EXISTS("RESOURCE_004","Service already in use"),
     POLICY_HEADING_ALREADY_EXISTS("RESOURCE_005","Policy heading already exists"),
+    LICENSE_EXPIRED("RESOURCE_006","License has Expired"),
     // System Errors
     INTERNAL_ERROR("SYSTEM_001", "Internal server error"),
 

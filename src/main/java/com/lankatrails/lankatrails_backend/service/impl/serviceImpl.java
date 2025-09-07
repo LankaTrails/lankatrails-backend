@@ -1,17 +1,12 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.AvailabilitySlotDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.ServiceRequest;
+import com.lankatrails.lankatrails_backend.dtos.ProviderDto;
+import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.model.ActivityService;
-import com.lankatrails.lankatrails_backend.model.AvailabilitySlot;
-import com.lankatrails.lankatrails_backend.model.Location;
-import com.lankatrails.lankatrails_backend.model.Service;
-import com.lankatrails.lankatrails_backend.repositories.AvailabilitySlotRepository;
-import com.lankatrails.lankatrails_backend.repositories.LocationRepository;
-import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
+import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.enums.LocationType;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
+import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.service.ServicesForAll;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -19,11 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.List;
 
 @org.springframework.stereotype.Service
 @Slf4j
@@ -35,7 +27,16 @@ public class serviceImpl implements ServicesForAll {
     LocationRepository locationRepository;
 
     @Autowired
-    AvailabilitySlotRepository availabilitySlotRepository;
+    AvailableTimeRepository availableTimeRepository;
+
+    @Autowired
+    BreakTimeRepository breakTimeRepository;
+
+    @Autowired
+    BookingConfigurationRepository bookingConfigurationRepository;
+
+    @Autowired
+    PriceConfigurationRepository priceConfigurationRepository;
 
     @Autowired
     ModelMapper modelMapper;
@@ -43,7 +44,7 @@ public class serviceImpl implements ServicesForAll {
     public Boolean removeService(Long id){
         Service service=serviceRepository.findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("Service",id));
-        service.setStatus(false);
+        service.setStatus(ServiceStatus.INACTIVE);
         return true;
 
     }
@@ -71,43 +72,101 @@ public class serviceImpl implements ServicesForAll {
                     } else {
                         log.info("Creating new location from request: {}", locationDTO);
                         Location location = modelMapper.map(locationDTO, Location.class);
+                        location.setLocationType(LocationType.POINT_OF_INTEREST);
                         return locationRepository.save(location);
                     }
                 }).collect(Collectors.toSet());
     }
 
-    public void setAvailabilitySlots(List<AvailabilitySlotDTO> availabilitySlots, ActivityService activityService){
-        log.debug("Availability Slots{}", availabilitySlots.toString());
-        for (AvailabilitySlotDTO availabilitySlot : availabilitySlots){
-                if(!availabilitySlot.getOpenTime().isEmpty() && !availabilitySlot.getCloseTime().isEmpty()){
-                    AvailabilitySlot slot = new AvailabilitySlot();
-                    slot.setCloseTime(availabilitySlot.getCloseTime());
-                    slot.setOpenTime(availabilitySlot.getOpenTime());
-                    slot.setDayOfWeek(availabilitySlot.getDayOfWeek());
-                    slot.setService(activityService);
-                    availabilitySlotRepository.save(slot);
+    @Override
+    @Transactional
+    public void setAvailableTime(List<AvailableTimeDTO> availableTimeDTOS, Service service) {
+        log.debug("Availability Slots {}", availableTimeDTOS);
+
+        for (AvailableTimeDTO dto : availableTimeDTOS) {
+            AvailableTime availableTime = dto.getAvailableTimeId() != null
+                    ? availableTimeRepository.findById(dto.getAvailableTimeId()).orElse(null)
+                    : null;
+
+            if (availableTime == null) {
+                // create new
+                if ((dto.getOpenTime() != null && dto.getCloseTime() != null)
+                        || Boolean.TRUE.equals(dto.getIs24Hours())
+                        || Boolean.TRUE.equals(dto.getIsClosed())) {
+
+                    availableTime = new AvailableTime();
+                    availableTime.setService(service);
+                }
+            }
+
+            if (availableTime != null) {
+                // update common fields
+                availableTime.setDayOfWeek(dto.getDayOfWeek());
+                availableTime.setOpenTime(dto.getOpenTime());
+                availableTime.setCloseTime(dto.getCloseTime());
+                availableTime.setIs24Hours(dto.getIs24Hours());
+                availableTime.setIsClosed(dto.getIsClosed());
+
+                // handle break times
+                availableTime.getBreakTimes().clear();
+                if (dto.getBreakTimes() != null) {
+                    for (BreakTimeDTO btDto : dto.getBreakTimes()) {
+                        if (btDto.getBreakStart() != null && btDto.getBreakEnd() != null) {
+                            BreakTime breakTime = new BreakTime();
+                            breakTime.setBreakStart(btDto.getBreakStart());
+                            breakTime.setBreakEnd(btDto.getBreakEnd());
+                            breakTime.setAvailableTime(availableTime);
+                            availableTime.getBreakTimes().add(breakTime);
+                        }
+                    }
                 }
 
-
+                availableTimeRepository.save(availableTime);
+            }
         }
+    }
 
+    @Override
+    @Transactional
+    public BookingConfiguration setBookingConfig(BookingConfigDTO bookingConfigDTO){
+        BookingConfiguration existingConfig = bookingConfigurationRepository.findById(bookingConfigDTO.getBookingConfigId())
+                .orElse(null);
+        if (existingConfig != null) {
+            modelMapper.map(bookingConfigDTO, existingConfig);
+            return bookingConfigurationRepository.save(existingConfig);
+        }
+        BookingConfiguration bookingConfiguration = modelMapper.map(bookingConfigDTO, BookingConfiguration.class);
+        return bookingConfigurationRepository.save(bookingConfiguration);
+    }
+
+    @Override
+    @Transactional
+    public PriceConfiguration setPriceConfig(PriceConfigDTO priceConfigDTO){
+        PriceConfiguration existingConfig = priceConfigurationRepository.findById(priceConfigDTO.getPriceConfigId())
+                .orElse(null);
+        if (existingConfig != null) {
+            modelMapper.map(priceConfigDTO, existingConfig);
+            return priceConfigurationRepository.save(existingConfig);
+        }
+        PriceConfiguration priceConfiguration = modelMapper.map(priceConfigDTO, PriceConfiguration.class);
+        return priceConfigurationRepository.save(priceConfiguration);
     }
 
     @Override
     @Transactional
     public Optional<ServiceDTO> getServiceDto(Long serviceId) {
         return serviceRepository.findById(serviceId)
-                .map(service -> new ServiceDTO(
-                        service.getServiceId(),
-                        service.getServiceName(),
-                        service.getCategory().getCategoryName(),
-                        service.getLocations().stream()
+                .map(service -> ServiceDTO.builder()
+                        .serviceId(service.getServiceId())
+                        .serviceName(service.getServiceName())
+                        .Category(service.getCategory().getCategoryName())
+                        .locations(service.getLocations().stream()
                                 .map(location -> modelMapper.map(location, LocationDTO.class))
-                                .collect(Collectors.toSet()),
-                        service.getPrice(),
-                        service.getPriceType(),
-                        service.getImages().getFirst().getImageUrl()
-                ));
+                                .collect(Collectors.toSet()))
+                        .prices(service.getPriceConfiguration().getPriceWithType())
+                        .mainImageUrl(service.getImages().isEmpty() ? null : service.getImages().getFirst().getImageUrl())
+                        .provider(modelMapper.map(service.getProvider(), ProviderDto.class))
+                        .build());
     }
 
     @Override
@@ -116,17 +175,17 @@ public class serviceImpl implements ServicesForAll {
                 .stream()
                 .collect(Collectors.toMap(
                         Service::getServiceId,
-                        service -> new ServiceDTO(
-                                service.getServiceId(),
-                                service.getServiceName(),
-                                service.getCategory().getCategoryName(),
-                                service.getLocations().stream()
+                        service -> ServiceDTO.builder()
+                                .serviceId(service.getServiceId())
+                                .serviceName(service.getServiceName())
+                                .Category(service.getCategory().getCategoryName())
+                                .locations(service.getLocations().stream()
                                         .map(location -> modelMapper.map(location, LocationDTO.class))
-                                        .collect(Collectors.toSet()),
-                                service.getPrice(),
-                                service.getPriceType(),
-                                service.getImages().isEmpty() ? null : service.getImages().getFirst().getImageUrl()
-                        )
+                                        .collect(Collectors.toSet()))
+                                .prices(service.getPriceConfiguration().getPriceWithType())
+                                .mainImageUrl(service.getImages().isEmpty() ? null : service.getImages().getFirst().getImageUrl())
+                                .provider(modelMapper.map(service.getProvider(), ProviderDto.class))
+                                .build()
                 ));
     }
 }

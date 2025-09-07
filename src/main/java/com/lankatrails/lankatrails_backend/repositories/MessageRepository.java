@@ -6,7 +6,9 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
 import com.lankatrails.lankatrails_backend.model.ChatMessage;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface MessageRepository extends MongoRepository<ChatMessage, String> {
     List<ChatMessage> findByChatRoomIdOrderBySentAtAsc(Long chatRoomId);
     

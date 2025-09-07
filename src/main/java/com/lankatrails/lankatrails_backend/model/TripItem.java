@@ -25,6 +25,15 @@ public class TripItem {
     @Column(name = "end_time", nullable = false)
     private LocalDateTime endTime;
 
+    @Column(name = "no_of_units")
+    private Integer noOfUnits;
+
+    @Column(name = "number_of_adults")
+    private Integer numberOfAdults;
+
+    @Column(name = "number_of_children")
+    private Integer numberOfChildren;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "trip_item_type", nullable = false, columnDefinition = "VARCHAR(20)")
     private TripItemType tripItemType;
@@ -40,4 +49,7 @@ public class TripItem {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trip_id", nullable = false)
     private Trip trip;
+
+    @OneToOne(mappedBy = "tripItem", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
+    private Booking booking;
 }
