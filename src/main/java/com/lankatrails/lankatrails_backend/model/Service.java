@@ -85,4 +85,7 @@ public class Service {
     @OneToOne
     @JoinColumn(name = "price_config_id", nullable = false)
     private PriceConfiguration priceConfiguration;
+    @OneToMany(mappedBy = "service")
+    private Set<RateAndReview> reviews = new HashSet<>();
+
 }
