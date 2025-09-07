@@ -24,61 +24,43 @@ public class ReviewController {
 
     // Create a new review
     @PostMapping("/{serviceId}")
-    public ResponseEntity<APIResponse<RateAndReviewRequest>> createReview(
+    public ResponseEntity<APIResponse<String>> createReview(
             @PathVariable Long serviceId,
             @RequestBody RateAndReviewRequest reviewRequest) {
-        APIResponse<RateAndReviewRequest> response = reviewService.createReview(serviceId, reviewRequest);
+        APIResponse<String> response = reviewService.createReview(serviceId, reviewRequest);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-//     Get all reviews for a specific service
+   // Get all reviews for a specific service
     @GetMapping("/{serviceId}")
     public ResponseEntity<APIResponse<RateAndReviewResponse>> getReviewsByService(
             @PathVariable Long serviceId) {
         APIResponse<RateAndReviewResponse> response = reviewService.getReviewsByServiceId(serviceId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-//
-//    // Get a specific review by ID
-//    @GetMapping("/{reviewId}")
-//    public ResponseEntity<APIResponse<RateAndReviewDTO>> getReviewById(
-//            @PathVariable Long reviewId) {
-//        APIResponse<RateAndReviewDTO> response = reviewService.getReviewById(reviewId);
-//        return new ResponseEntity<>(response, HttpStatus.OK);
-//    }
-//
-//    // Update a review (only by the author)
-//    @PutMapping("/{reviewId}")
-//    public ResponseEntity<APIResponse<RateAndReviewDTO>> updateReview(
-//            @PathVariable Long reviewId,
-//            @RequestBody RateAndReviewDTO reviewRequest) {
-//        Long touristId = authUtils.loggedInUserId();
-//        APIResponse<RateAndReviewDTO> response = reviewService.updateReview(reviewId, reviewRequest, touristId);
-//        return new ResponseEntity<>(response, HttpStatus.OK);
-//    }
-//
-//    // Delete a review (only by the author or admin)
-//    @DeleteMapping("/{reviewId}")
-//    public ResponseEntity<APIResponse<String>> deleteReview(
-//            @PathVariable Long reviewId) {
-//        Long touristId = authUtils.loggedInUserId();
-//        APIResponse<String> response = reviewService.deleteReview(reviewId, touristId);
-//        return new ResponseEntity<>(response, HttpStatus.OK);
-//    }
-//
-//    // Get average rating for a service
+
+    // Update a review (only by the author)
+    @PutMapping("/{reviewId}")
+    public ResponseEntity<APIResponse<String>> updateReview(
+            @PathVariable Long reviewId,
+            @RequestBody RateAndReviewRequest reviewRequest) {
+        APIResponse<String> response = reviewService.updateReview(reviewId, reviewRequest);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    // Delete a review (only by the author or admin)
+    @DeleteMapping("/{reviewId}")
+    public ResponseEntity<APIResponse<String>> deleteReview(
+            @PathVariable Long reviewId) {
+        APIResponse<String> response = reviewService.deleteReview(reviewId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    // Get average rating for a service
     @GetMapping("/{serviceId}/average")
     public ResponseEntity<APIResponse<RateAndReviewResponse>> getAverageRatingByService(
             @PathVariable Long serviceId) {
         APIResponse<RateAndReviewResponse> response = reviewService.getAverageRatingByServiceId(serviceId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-//
-//    // Get reviews by tourist (current user)
-//    @GetMapping("/my-reviews")
-//    public ResponseEntity<APIResponse<List<RateAndReviewDTO>>> getMyReviews() {
-//        Long touristId = authUtils.loggedInUserId();
-//        APIResponse<List<RateAndReviewDTO>> response = reviewService.getReviewsByTouristId(touristId);
-//        return new ResponseEntity<>(response, HttpStatus.OK);
-//    }
 }

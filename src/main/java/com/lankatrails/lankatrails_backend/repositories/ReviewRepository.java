@@ -10,11 +10,13 @@ import java.util.List;
 @Repository
 public interface ReviewRepository extends JpaRepository<RateAndReview, Long> {
     List<RateAndReview> findByService_ServiceId(Long serviceId);
+
     @Query("SELECT AVG(r.rate) FROM RateAndReview r WHERE r.service.serviceId = :serviceId")
     Double findAverageRatingByServiceId(@Param("serviceId") Long serviceId);
 
-    @Query("SELECT COUNT(r) FROM RateAndReview r WHERE r.service.serviceId = :serviceId")
-    Long countReviewsByServiceId(@Param("serviceId") Long serviceId);
+    Long countByService_ServiceId(Long serviceId);
+
+    Boolean existsByTourist_UserIdAndService_ServiceId(Long touristId, Long serviceId);
 
     @Query("SELECT AVG(r.rate) FROM RateAndReview r")
     Double findGlobalAverageRating();
