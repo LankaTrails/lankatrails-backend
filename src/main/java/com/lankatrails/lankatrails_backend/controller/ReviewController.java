@@ -1,7 +1,8 @@
 package com.lankatrails.lankatrails_backend.controller;
 
-import com.lankatrails.lankatrails_backend.dtos.request.RateAndReviewDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.RateAndReviewRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.RateAndReviewResponse;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/tourist")
+@RequestMapping("/api/reviews")
 public class ReviewController {
 
     @Autowired
@@ -22,22 +23,19 @@ public class ReviewController {
     private AuthUtils authUtils;
 
     // Create a new review
-    @PostMapping("/reviews")
-    public ResponseEntity<APIResponse<RateAndReviewDTO>> createReview(
-            @RequestBody RateAndReviewDTO reviewRequest) {
-        // Set the tourist ID from the authenticated user
-        Long touristId = authUtils.loggedInUserId();
-        reviewRequest.getTourist().setId(touristId);
-
-        APIResponse<RateAndReviewDTO> response = reviewService.createReview(reviewRequest);
+    @PostMapping("/{serviceId}")
+    public ResponseEntity<APIResponse<RateAndReviewRequest>> createReview(
+            @PathVariable Long serviceId,
+            @RequestBody RateAndReviewRequest reviewRequest) {
+        APIResponse<RateAndReviewRequest> response = reviewService.createReview(serviceId, reviewRequest);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
 //     Get all reviews for a specific service
-    @GetMapping("/reviews/{serviceId}")
-    public ResponseEntity<APIResponse<List<RateAndReviewDTO>>> getReviewsByService(
+    @GetMapping("/{serviceId}")
+    public ResponseEntity<APIResponse<RateAndReviewResponse>> getReviewsByService(
             @PathVariable Long serviceId) {
-        APIResponse<List<RateAndReviewDTO>> response = reviewService.getReviewsByServiceId(serviceId);
+        APIResponse<RateAndReviewResponse> response = reviewService.getReviewsByServiceId(serviceId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 //
@@ -69,12 +67,12 @@ public class ReviewController {
 //    }
 //
 //    // Get average rating for a service
-//    @GetMapping("/service/{serviceId}/average-rating")
-//    public ResponseEntity<APIResponse<Double>> getAverageRatingByService(
-//            @PathVariable Long serviceId) {
-//        APIResponse<Double> response = reviewService.getAverageRatingByServiceId(serviceId);
-//        return new ResponseEntity<>(response, HttpStatus.OK);
-//    }
+    @GetMapping("/{serviceId}/average")
+    public ResponseEntity<APIResponse<RateAndReviewResponse>> getAverageRatingByService(
+            @PathVariable Long serviceId) {
+        APIResponse<RateAndReviewResponse> response = reviewService.getAverageRatingByServiceId(serviceId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 //
 //    // Get reviews by tourist (current user)
 //    @GetMapping("/my-reviews")
