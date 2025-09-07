@@ -49,7 +49,7 @@ public class Service {
     private Set<TabsSection> tabs=new HashSet<>();
 
 
-    @ManyToMany
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
           name = "service_policy",
           joinColumns = @JoinColumn(name = "service_id"),

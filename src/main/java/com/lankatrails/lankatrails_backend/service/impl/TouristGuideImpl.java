@@ -1,21 +1,12 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.*;
-import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.TouristGuideResponseDTO;
-import com.lankatrails.lankatrails_backend.exception.APIException;
-import com.lankatrails.lankatrails_backend.exception.BadRequestException;
-import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
-import com.lankatrails.lankatrails_backend.model.*;
-import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
-import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
-import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
-import com.lankatrails.lankatrails_backend.repositories.*;
-import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
-import com.lankatrails.lankatrails_backend.service.ServicesForAll;
-import com.lankatrails.lankatrails_backend.service.TouristGuideService;
-import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -25,9 +16,45 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import com.lankatrails.lankatrails_backend.dtos.request.AvailableTimeDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.BookingConfigDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.BreakTimeDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.ImageRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.PriceConfigDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.TouristGuideRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.TouristGuideResponseDTO;
+import com.lankatrails.lankatrails_backend.exception.APIException;
+import com.lankatrails.lankatrails_backend.exception.BadRequestException;
+import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
+import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
+import com.lankatrails.lankatrails_backend.model.BookingConfiguration;
+import com.lankatrails.lankatrails_backend.model.Category;
+import com.lankatrails.lankatrails_backend.model.Image;
+import com.lankatrails.lankatrails_backend.model.Language;
+import com.lankatrails.lankatrails_backend.model.PolicySection;
+import com.lankatrails.lankatrails_backend.model.PriceConfiguration;
+import com.lankatrails.lankatrails_backend.model.Provider;
+import com.lankatrails.lankatrails_backend.model.TabsSection;
+import com.lankatrails.lankatrails_backend.model.TourGuideCategory;
+import com.lankatrails.lankatrails_backend.model.TouristGuide;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
+import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
+import com.lankatrails.lankatrails_backend.repositories.ImageRepository;
+import com.lankatrails.lankatrails_backend.repositories.LanguageRepository;
+import com.lankatrails.lankatrails_backend.repositories.PolicySectionRepository;
+import com.lankatrails.lankatrails_backend.repositories.ProviderRepository;
+import com.lankatrails.lankatrails_backend.repositories.TabsSectionRepository;
+import com.lankatrails.lankatrails_backend.repositories.TourGuideCategoryRepository;
+import com.lankatrails.lankatrails_backend.repositories.TouristGuideRepository;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
+import com.lankatrails.lankatrails_backend.service.ServicesForAll;
+import com.lankatrails.lankatrails_backend.service.TouristGuideService;
+import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 
 @Service
 public class TouristGuideImpl implements TouristGuideService {
@@ -147,41 +174,14 @@ public class TouristGuideImpl implements TouristGuideService {
 
             // Set Tabs
             List<TabSectionRequest> tabsReq = requestDTO.getTabsSection();
-            if (tabsReq != null) {
-                for (TabSectionRequest tab : tabsReq) {
-                    TabsSection tabsSection = new TabsSection();
-                    tabsSection.setHeading(tab.getHeading());
-                    tabsSection.setContent(tab.getContent());
-                    tabsSection.setService(lastGuideAdded);
-                    tabsSectionRepository.save(tabsSection);
-                }
-            }
+            tabsImpl.addTabs(tabsReq, lastGuideAdded);
 
             // Set Policies
             List<PolicySectionRequest> policyReq = requestDTO.getPolicySection();
-            if (policyReq != null) {
-                for (PolicySectionRequest policy : policyReq) {
-                    PolicySection policySection = new PolicySection();
-                    policySection.setHeading(policy.getHeading());
-                    policySection.setPolicy(policy.getPolicy());
-                    policySection.setProvider(lastGuideAdded.getProvider());
-                    policySectionRepository.save(policySection);
-                }
-            }
+            lastGuideAdded.setPolicies(policyImpl.addPolicies(policyReq, category, lastGuideAdded));
 
             // Upload and associate images
-            Set<Image> savedImages = new HashSet<>();
-            for (MultipartFile file : images) {
-                String imageUrl = fileUploadService.storeFile(file, UploadCategory.SERVICE_PICTURE, "service");
-
-                Image image = new Image();
-                image.setImageUrl(imageUrl);
-                image.setService(lastGuideAdded);
-
-                savedImages.add(image);
-            }
-
-            imageRepository.saveAll(savedImages); // Persist images
+            imageService.uploadImagesForService(images, lastGuideAdded);
             // Set the availability slots
             List<AvailableTimeDTO> availabilitySlots = requestDTO.getAvailableTimeDTOS();
             if (availabilitySlots == null ){
@@ -199,6 +199,7 @@ public class TouristGuideImpl implements TouristGuideService {
                 languages.add(language);
             });
             languageRepository.saveAll(languages);
+            touristGuideRepository.save(lastGuideAdded);
             
             // Prepare response
             TouristGuideRequestDTO responseDTO = new TouristGuideRequestDTO();
@@ -327,7 +328,15 @@ public class TouristGuideImpl implements TouristGuideService {
 
         //save the updated tour guide
         TouristGuide updatedTourGuide = touristGuideRepository.save(touristGuide);
-// Update tabs
+
+        // Set the availability slots
+        List<AvailableTimeDTO> availabilitySlots = requestDTO.getAvailableTimeDTOS();
+        if (availabilitySlots == null ){
+            throw new BadRequestException("Availability Slots cannot be empty");
+        }
+        servicesForAll.setAvailableTime(availabilitySlots, updatedTourGuide);
+
+        // Update tabs
         tabsImpl.updateTabs(requestDTO.getTabsSection(), updatedTourGuide);
         tabsImpl.deleteTabs(requestDTO.getDeletedTabs());
 

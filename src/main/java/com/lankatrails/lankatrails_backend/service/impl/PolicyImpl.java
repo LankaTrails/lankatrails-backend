@@ -34,44 +34,35 @@ public class PolicyImpl implements Policies {
     ProviderRepository providerRepository;
 
     private Boolean status;
+    @Transactional
+    public Set<PolicySection> addPolicies(List<PolicySectionRequest> requests, Category category, Service service) {
 
-    @Override
-    public Boolean addPolicies(List<PolicySectionRequest> policyReq,
-                               ActivityService lastServiceAdded,
-                               Category category) {
+        Provider provider = providerRepository.findByUserId(authUtils.loggedInUserId())
+                .orElseThrow(() -> new UserNotFoundException("Provider not found"));
+        Set<PolicySection> policies = new HashSet<>();
 
-
-        //check whether the policy exists
-        for (PolicySectionRequest policy : policyReq){
-            PolicySection policies = modelMapper.map(policy, PolicySection.class);
-            PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
-
-            Provider provider = providerRepository.findByUserId(authUtils.loggedInUserId())
-                    .orElseThrow(() -> new UserNotFoundException("Provider not found for user ID: " + authUtils.loggedInUserId()));
-
-            if (policyCheck==null){
-                //Policy doesn't exist
-                policies.setProvider(provider);
-                policies.getServices().add(lastServiceAdded);
-                policies.setCategory(category);
-                lastServiceAdded.getPolicies().add(policies);
-                policySectionRepository.save(policies);
-                status =true;
-
-            }else{
-//            Set<PolicySection> policy = policyCheck.stream().collect(Collectors.toSet());
-//            service.getPolicies().add(policy);
-                lastServiceAdded.getPolicies().add(policyCheck);
-                policyCheck.getServices().add(lastServiceAdded);
-                activityServiceRepository.save(lastServiceAdded);
-                status = true;
-
+        for (PolicySectionRequest req : requests) {
+            if (req.getId() != null) {
+                // If ID is present, fetch the existing policy
+                PolicySection existingPolicy = policySectionRepository.findById(req.getId())
+                        .orElseThrow(() -> new IllegalArgumentException("Policy not found with ID: " + req.getId()));
+                policies.add(existingPolicy);
+                continue; // Skip to the next request
             }
+            PolicySection policy = new PolicySection();
+            policy.setHeading(req.getHeading());
+            policy.setPolicy(req.getPolicy());
+            policy.setCategory(category);
+            policy.setProvider(provider);
+            if (service != null) {
+                policy.getServices().add(service);
+            }
+            policySectionRepository.save(policy);
+            policies.add(policy);
         }
-
-        status = false;
-        return  status;
+        return policies;
     }
+
     @Override
     public List<PolicySectionRequest> getAllPolicies(Long Id) {
 
