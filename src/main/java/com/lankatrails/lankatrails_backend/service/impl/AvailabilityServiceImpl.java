@@ -426,25 +426,87 @@ public class AvailabilityServiceImpl implements AvailabilityService {
             }
         }
 
-        // Check guest capacity per unit
-        if (config.getUnitAdultCapacity() != null && config.getUnitChildCapacity() != null) {
-            int maxGuestsForRequestedUnits = (config.getUnitAdultCapacity() + config.getUnitChildCapacity()) * requestedUnits;
-            
-            if (totalGuests > maxGuestsForRequestedUnits) {
-                // Check if extra capacity is allowed
-                if (Boolean.TRUE.equals(config.getAllowExtraCapacity())) {
-                    int extraGuestsNeeded = totalGuests - maxGuestsForRequestedUnits;
-                    int maxExtraAdults = Optional.ofNullable(config.getExtraAdultCapacityLimit()).orElse(0) * requestedUnits;
-                    int maxExtraChildren = Optional.ofNullable(config.getExtraChildCapacityLimit()).orElse(0) * requestedUnits;
-                    
-                    if (extraGuestsNeeded > maxExtraAdults + maxExtraChildren) {
-                        return createErrorResponse(String.format("Requested %d units can accommodate max %d guests (including %d extra), but %d guests provided", 
-                                requestedUnits, maxGuestsForRequestedUnits + maxExtraAdults + maxExtraChildren, 
-                                maxExtraAdults + maxExtraChildren, totalGuests));
+        // Check guest capacity per unit based on requireChildInfo setting
+        if (config.getUnitAdultCapacity() != null) {
+            // If requireChildInfo is false, treat all guests as adults
+            if (Boolean.FALSE.equals(config.getRequireChildInfo())) {
+                int maxAdultsForRequestedUnits = config.getUnitAdultCapacity() * requestedUnits;
+                
+                if (totalGuests > maxAdultsForRequestedUnits) {
+                    // Check if extra capacity is allowed
+                    if (Boolean.TRUE.equals(config.getAllowExtraCapacity())) {
+                        int extraGuestsNeeded = totalGuests - maxAdultsForRequestedUnits;
+                        int maxExtraAdults = Optional.ofNullable(config.getExtraAdultCapacityLimit()).orElse(0) * requestedUnits;
+                        
+                        if (extraGuestsNeeded > maxExtraAdults) {
+                            return createErrorResponse(String.format("Requested %d units can accommodate max %d guests (including %d extra), but %d guests provided", 
+                                    requestedUnits, maxAdultsForRequestedUnits + maxExtraAdults, maxExtraAdults, totalGuests));
+                        }
+                    } else {
+                        return createErrorResponse(String.format("Requested %d units can accommodate max %d guests, but %d guests provided", 
+                                requestedUnits, maxAdultsForRequestedUnits, totalGuests));
                     }
-                } else {
-                    return createErrorResponse(String.format("Requested %d units can accommodate max %d guests, but %d guests provided", 
-                            requestedUnits, maxGuestsForRequestedUnits, totalGuests));
+                }
+            } 
+            // If requireChildInfo is true, validate adults and children separately
+            else if (Boolean.TRUE.equals(config.getRequireChildInfo()) && config.getUnitChildCapacity() != null) {
+                int maxAdultsForRequestedUnits = config.getUnitAdultCapacity() * requestedUnits;
+                int maxChildrenForRequestedUnits = config.getUnitChildCapacity() * requestedUnits;
+                
+                // Validate adult count
+                if (availabilityDto.getAdultCount() > maxAdultsForRequestedUnits) {
+                    // Check if extra adult capacity is allowed
+                    if (Boolean.TRUE.equals(config.getAllowExtraCapacity())) {
+                        int extraAdultsNeeded = availabilityDto.getAdultCount() - maxAdultsForRequestedUnits;
+                        int maxExtraAdults = Optional.ofNullable(config.getExtraAdultCapacityLimit()).orElse(0) * requestedUnits;
+                        
+                        if (extraAdultsNeeded > maxExtraAdults) {
+                            return createErrorResponse(String.format("Requested %d units can accommodate max %d adults (including %d extra), but %d adults provided", 
+                                    requestedUnits, maxAdultsForRequestedUnits + maxExtraAdults, maxExtraAdults, availabilityDto.getAdultCount()));
+                        }
+                    } else {
+                        return createErrorResponse(String.format("Requested %d units can accommodate max %d adults, but %d adults provided", 
+                                requestedUnits, maxAdultsForRequestedUnits, availabilityDto.getAdultCount()));
+                    }
+                }
+                
+                // Validate child count
+                if (availabilityDto.getChildCount() > maxChildrenForRequestedUnits) {
+                    // Check if extra child capacity is allowed
+                    if (Boolean.TRUE.equals(config.getAllowExtraCapacity())) {
+                        int extraChildrenNeeded = availabilityDto.getChildCount() - maxChildrenForRequestedUnits;
+                        int maxExtraChildren = Optional.ofNullable(config.getExtraChildCapacityLimit()).orElse(0) * requestedUnits;
+                        
+                        if (extraChildrenNeeded > maxExtraChildren) {
+                            return createErrorResponse(String.format("Requested %d units can accommodate max %d children (including %d extra), but %d children provided", 
+                                    requestedUnits, maxChildrenForRequestedUnits + maxExtraChildren, maxExtraChildren, availabilityDto.getChildCount()));
+                        }
+                    } else {
+                        return createErrorResponse(String.format("Requested %d units can accommodate max %d children, but %d children provided", 
+                                requestedUnits, maxChildrenForRequestedUnits, availabilityDto.getChildCount()));
+                    }
+                }
+            }
+            // If requireChildInfo is null or true but no child capacity is configured, fall back to combined validation
+            else if (config.getUnitChildCapacity() != null) {
+                int maxGuestsForRequestedUnits = (config.getUnitAdultCapacity() + config.getUnitChildCapacity()) * requestedUnits;
+                
+                if (totalGuests > maxGuestsForRequestedUnits) {
+                    // Check if extra capacity is allowed
+                    if (Boolean.TRUE.equals(config.getAllowExtraCapacity())) {
+                        int extraGuestsNeeded = totalGuests - maxGuestsForRequestedUnits;
+                        int maxExtraAdults = Optional.ofNullable(config.getExtraAdultCapacityLimit()).orElse(0) * requestedUnits;
+                        int maxExtraChildren = Optional.ofNullable(config.getExtraChildCapacityLimit()).orElse(0) * requestedUnits;
+                        
+                        if (extraGuestsNeeded > maxExtraAdults + maxExtraChildren) {
+                            return createErrorResponse(String.format("Requested %d units can accommodate max %d guests (including %d extra), but %d guests provided", 
+                                    requestedUnits, maxGuestsForRequestedUnits + maxExtraAdults + maxExtraChildren, 
+                                    maxExtraAdults + maxExtraChildren, totalGuests));
+                        }
+                    } else {
+                        return createErrorResponse(String.format("Requested %d units can accommodate max %d guests, but %d guests provided", 
+                                requestedUnits, maxGuestsForRequestedUnits, totalGuests));
+                    }
                 }
             }
         }
@@ -760,23 +822,39 @@ public class AvailabilityServiceImpl implements AvailabilityService {
             }
         }
 
-        // Check guest capacity per unit
-        if (config.getUnitAdultCapacity() != null && config.getUnitChildCapacity() != null) {
-            int maxGuestsForRequestedUnits = (config.getUnitAdultCapacity() + config.getUnitChildCapacity()) * requestedUnits;
-            
-            if (totalGuests > maxGuestsForRequestedUnits) {
-                // Check if extra capacity is allowed
-                if (Boolean.TRUE.equals(config.getAllowExtraCapacity())) {
-                    int extraGuestsNeeded = totalGuests - maxGuestsForRequestedUnits;
-                    int maxExtraAdults = Optional.ofNullable(config.getExtraAdultCapacityLimit()).orElse(0) * requestedUnits;
-                    int maxExtraChildren = Optional.ofNullable(config.getExtraChildCapacityLimit()).orElse(0) * requestedUnits;
-                    
-                    if (extraGuestsNeeded > maxExtraAdults + maxExtraChildren) {
+        // Check guest capacity per unit based on requireChildInfo setting
+        if (config.getUnitAdultCapacity() != null) {
+            // If requireChildInfo is false, treat all guests as adults
+            if (Boolean.FALSE.equals(config.getRequireChildInfo())) {
+                int maxAdultsForRequestedUnits = config.getUnitAdultCapacity() * requestedUnits;
+                
+                if (totalGuests > maxAdultsForRequestedUnits) {
+                    // Check if extra capacity is allowed
+                    if (Boolean.TRUE.equals(config.getAllowExtraCapacity())) {
+                        int extraGuestsNeeded = totalGuests - maxAdultsForRequestedUnits;
+                        int maxExtraAdults = Optional.ofNullable(config.getExtraAdultCapacityLimit()).orElse(0) * requestedUnits;
+                        
+                        if (extraGuestsNeeded > maxExtraAdults) {
+                            AvailabilityResponse response = AvailabilityResponse.builder()
+                                    .available(false)
+                                    .message(String.format("Requested %d units can accommodate max %d guests (including %d extra), but %d guests provided", 
+                                            requestedUnits, maxAdultsForRequestedUnits + maxExtraAdults, maxExtraAdults, totalGuests))
+                                    .availableUnits(availableUnits)
+                                    .requestedUnits(requestedUnits)
+                                    .totalCapacity(totalUnits)
+                                    .build();
+                            
+                            return APIResponse.<AvailabilityResponse>builder()
+                                    .success(false)
+                                    .message(response.getMessage())
+                                    .data(response)
+                                    .build();
+                        }
+                    } else {
                         AvailabilityResponse response = AvailabilityResponse.builder()
                                 .available(false)
-                                .message(String.format("Requested %d units can accommodate max %d guests (including %d extra), but %d guests provided", 
-                                        requestedUnits, maxGuestsForRequestedUnits + maxExtraAdults + maxExtraChildren, 
-                                        maxExtraAdults + maxExtraChildren, totalGuests))
+                                .message(String.format("Requested %d units can accommodate max %d guests, but %d guests provided", 
+                                        requestedUnits, maxAdultsForRequestedUnits, totalGuests))
                                 .availableUnits(availableUnits)
                                 .requestedUnits(requestedUnits)
                                 .totalCapacity(totalUnits)
@@ -788,21 +866,139 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                                 .data(response)
                                 .build();
                     }
-                } else {
-                    AvailabilityResponse response = AvailabilityResponse.builder()
-                            .available(false)
-                            .message(String.format("Requested %d units can accommodate max %d guests, but %d guests provided", 
-                                    requestedUnits, maxGuestsForRequestedUnits, totalGuests))
-                            .availableUnits(availableUnits)
-                            .requestedUnits(requestedUnits)
-                            .totalCapacity(totalUnits)
-                            .build();
-                    
-                    return APIResponse.<AvailabilityResponse>builder()
-                            .success(false)
-                            .message(response.getMessage())
-                            .data(response)
-                            .build();
+                }
+            } 
+            // If requireChildInfo is true, validate adults and children separately
+            else if (Boolean.TRUE.equals(config.getRequireChildInfo()) && config.getUnitChildCapacity() != null) {
+                int maxAdultsForRequestedUnits = config.getUnitAdultCapacity() * requestedUnits;
+                int maxChildrenForRequestedUnits = config.getUnitChildCapacity() * requestedUnits;
+                
+                // Validate adult count
+                if (availabilityDto.getAdultCount() > maxAdultsForRequestedUnits) {
+                    // Check if extra adult capacity is allowed
+                    if (Boolean.TRUE.equals(config.getAllowExtraCapacity())) {
+                        int extraAdultsNeeded = availabilityDto.getAdultCount() - maxAdultsForRequestedUnits;
+                        int maxExtraAdults = Optional.ofNullable(config.getExtraAdultCapacityLimit()).orElse(0) * requestedUnits;
+                        
+                        if (extraAdultsNeeded > maxExtraAdults) {
+                            AvailabilityResponse response = AvailabilityResponse.builder()
+                                    .available(false)
+                                    .message(String.format("Requested %d units can accommodate max %d adults (including %d extra), but %d adults provided", 
+                                            requestedUnits, maxAdultsForRequestedUnits + maxExtraAdults, maxExtraAdults, availabilityDto.getAdultCount()))
+                                    .availableUnits(availableUnits)
+                                    .requestedUnits(requestedUnits)
+                                    .totalCapacity(totalUnits)
+                                    .build();
+                            
+                            return APIResponse.<AvailabilityResponse>builder()
+                                    .success(false)
+                                    .message(response.getMessage())
+                                    .data(response)
+                                    .build();
+                        }
+                    } else {
+                        AvailabilityResponse response = AvailabilityResponse.builder()
+                                .available(false)
+                                .message(String.format("Requested %d units can accommodate max %d adults, but %d adults provided", 
+                                        requestedUnits, maxAdultsForRequestedUnits, availabilityDto.getAdultCount()))
+                                .availableUnits(availableUnits)
+                                .requestedUnits(requestedUnits)
+                                .totalCapacity(totalUnits)
+                                .build();
+                        
+                        return APIResponse.<AvailabilityResponse>builder()
+                                .success(false)
+                                .message(response.getMessage())
+                                .data(response)
+                                .build();
+                    }
+                }
+                
+                // Validate child count
+                if (availabilityDto.getChildCount() > maxChildrenForRequestedUnits) {
+                    // Check if extra child capacity is allowed
+                    if (Boolean.TRUE.equals(config.getAllowExtraCapacity())) {
+                        int extraChildrenNeeded = availabilityDto.getChildCount() - maxChildrenForRequestedUnits;
+                        int maxExtraChildren = Optional.ofNullable(config.getExtraChildCapacityLimit()).orElse(0) * requestedUnits;
+                        
+                        if (extraChildrenNeeded > maxExtraChildren) {
+                            AvailabilityResponse response = AvailabilityResponse.builder()
+                                    .available(false)
+                                    .message(String.format("Requested %d units can accommodate max %d children (including %d extra), but %d children provided", 
+                                            requestedUnits, maxChildrenForRequestedUnits + maxExtraChildren, maxExtraChildren, availabilityDto.getChildCount()))
+                                    .availableUnits(availableUnits)
+                                    .requestedUnits(requestedUnits)
+                                    .totalCapacity(totalUnits)
+                                    .build();
+                            
+                            return APIResponse.<AvailabilityResponse>builder()
+                                    .success(false)
+                                    .message(response.getMessage())
+                                    .data(response)
+                                    .build();
+                        }
+                    } else {
+                        AvailabilityResponse response = AvailabilityResponse.builder()
+                                .available(false)
+                                .message(String.format("Requested %d units can accommodate max %d children, but %d children provided", 
+                                        requestedUnits, maxChildrenForRequestedUnits, availabilityDto.getChildCount()))
+                                .availableUnits(availableUnits)
+                                .requestedUnits(requestedUnits)
+                                .totalCapacity(totalUnits)
+                                .build();
+                        
+                        return APIResponse.<AvailabilityResponse>builder()
+                                .success(false)
+                                .message(response.getMessage())
+                                .data(response)
+                                .build();
+                    }
+                }
+            }
+            // If requireChildInfo is null or true but no child capacity is configured, fall back to combined validation
+            else if (config.getUnitChildCapacity() != null) {
+                int maxGuestsForRequestedUnits = (config.getUnitAdultCapacity() + config.getUnitChildCapacity()) * requestedUnits;
+                
+                if (totalGuests > maxGuestsForRequestedUnits) {
+                    // Check if extra capacity is allowed
+                    if (Boolean.TRUE.equals(config.getAllowExtraCapacity())) {
+                        int extraGuestsNeeded = totalGuests - maxGuestsForRequestedUnits;
+                        int maxExtraAdults = Optional.ofNullable(config.getExtraAdultCapacityLimit()).orElse(0) * requestedUnits;
+                        int maxExtraChildren = Optional.ofNullable(config.getExtraChildCapacityLimit()).orElse(0) * requestedUnits;
+                        
+                        if (extraGuestsNeeded > maxExtraAdults + maxExtraChildren) {
+                            AvailabilityResponse response = AvailabilityResponse.builder()
+                                    .available(false)
+                                    .message(String.format("Requested %d units can accommodate max %d guests (including %d extra), but %d guests provided", 
+                                            requestedUnits, maxGuestsForRequestedUnits + maxExtraAdults + maxExtraChildren, 
+                                            maxExtraAdults + maxExtraChildren, totalGuests))
+                                    .availableUnits(availableUnits)
+                                    .requestedUnits(requestedUnits)
+                                    .totalCapacity(totalUnits)
+                                    .build();
+                            
+                            return APIResponse.<AvailabilityResponse>builder()
+                                    .success(false)
+                                    .message(response.getMessage())
+                                    .data(response)
+                                    .build();
+                        }
+                    } else {
+                        AvailabilityResponse response = AvailabilityResponse.builder()
+                                .available(false)
+                                .message(String.format("Requested %d units can accommodate max %d guests, but %d guests provided", 
+                                        requestedUnits, maxGuestsForRequestedUnits, totalGuests))
+                                .availableUnits(availableUnits)
+                                .requestedUnits(requestedUnits)
+                                .totalCapacity(totalUnits)
+                                .build();
+                        
+                        return APIResponse.<AvailabilityResponse>builder()
+                                .success(false)
+                                .message(response.getMessage())
+                                .data(response)
+                                .build();
+                    }
                 }
             }
         }

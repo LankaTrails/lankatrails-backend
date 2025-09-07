@@ -290,7 +290,7 @@ public class TimeSlotServiceImpl implements TimeSlotService {
         Duration slotDuration = Duration.ofHours(minutesPerSlot / 60).plusMinutes(minutesPerSlot % 60);
         
         // Get buffer time from configuration (default to 0 if not specified)
-        Integer bufferTimeMinutes = config.getBufferTime() != null ? config.getBufferTime() : 0;
+        int bufferTimeMinutes = Optional.ofNullable(config.getBufferTime()).orElse(0);
         Duration bufferTime = Duration.ofMinutes(bufferTimeMinutes);
         
         log.info("Using buffer time: {} minutes", bufferTimeMinutes);
@@ -483,15 +483,28 @@ public class TimeSlotServiceImpl implements TimeSlotService {
             }
         }
 
-        // Check adult capacity
-        if (totalAdultCapacity > 0 && currentAdultCount + requestedAdults > totalAdultCapacity) {
-            return false; // Not enough adult capacity
-        }
+        // Check capacity based on requireChildInfo setting
+        if (Boolean.FALSE.equals(config.getRequireChildInfo())) {
+            // If requireChildInfo is false, treat all guests as adults
+            int totalGuestCapacity = totalAdultCapacity;
+            int totalCurrentGuests = currentAdultCount + currentChildCount;
+            int totalRequestedGuests = requestedAdults + requestedChildren;
+            
+            if (totalGuestCapacity > 0 && totalCurrentGuests + totalRequestedGuests > totalGuestCapacity) {
+                return false; // Not enough capacity for all guests treated as adults
+            }
+        } else {
+            // If requireChildInfo is true or null, validate adults and children separately
+            // Check adult capacity
+            if (totalAdultCapacity > 0 && currentAdultCount + requestedAdults > totalAdultCapacity) {
+                return false; // Not enough adult capacity
+            }
 
-        // Check child capacity
-        if (totalChildCapacity > 0) {
-            if (currentChildCount + requestedChildren > totalChildCapacity) {
-                return false; // Not enough child capacity
+            // Check child capacity
+            if (totalChildCapacity > 0) {
+                if (currentChildCount + requestedChildren > totalChildCapacity) {
+                    return false; // Not enough child capacity
+                }
             }
         }
 
