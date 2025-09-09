@@ -1,6 +1,8 @@
 package com.lankatrails.lankatrails_backend.controller;
 
 import com.lankatrails.lankatrails_backend.dtos.ChatRoomDto;
+import com.lankatrails.lankatrails_backend.dtos.DirectChatRoomDto;
+import com.lankatrails.lankatrails_backend.dtos.GroupChatRoomDto;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.service.ChatRoomService;
 import lombok.extern.slf4j.Slf4j;
@@ -19,11 +21,11 @@ public class ChatRoomController {
     ChatRoomService chatRoomService;
 
     @GetMapping("/direct/{userId}")
-    public ResponseEntity<APIResponse<ChatRoomDto>> createChatRoom(@PathVariable Long userId) {
+    public ResponseEntity<APIResponse<DirectChatRoomDto>> getDirectChatRoom(@PathVariable Long userId) {
         log.info("Creating direct chat room with user ID: {}", userId);
-        APIResponse<ChatRoomDto> response = chatRoomService.getDirectChatRoom(userId);
+        APIResponse<DirectChatRoomDto> response = chatRoomService.getDirectChatRoom(userId);
         log.info("Chat room created successfully: {}", response.getData());
-        return ResponseEntity.status(HttpStatus.FOUND)
+        return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
     }
 
@@ -37,10 +39,19 @@ public class ChatRoomController {
     }
 
     @GetMapping("/my-rooms")
-    public ResponseEntity<APIResponse<List<ChatRoomDto>>> getMyChatRooms() {
+    public ResponseEntity<APIResponse<List<DirectChatRoomDto>>> getMyChatRooms() {
         log.info("Fetching all chat rooms for the authenticated user");
-        APIResponse<List<ChatRoomDto>> response = chatRoomService.getMyChatRooms();
+        APIResponse<List<DirectChatRoomDto>> response = chatRoomService.getMyDirectChatRooms();
         log.info("Fetched {} chat rooms", response.getData().size());
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
+    }
+
+    @GetMapping("trip/{tripId}")
+    public ResponseEntity<APIResponse<GroupChatRoomDto>> getGroupChatRoomByTripId(@PathVariable Long tripId) {
+        log.info("Fetching group chat room for trip ID: {}", tripId);
+        APIResponse<GroupChatRoomDto> response = chatRoomService.getGroupChatRoomByTripId(tripId);
+        log.info("Fetched group chat room: {}", response.getData());
         return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
     }

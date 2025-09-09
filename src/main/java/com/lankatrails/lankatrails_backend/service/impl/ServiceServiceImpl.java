@@ -181,21 +181,20 @@ public class ServiceServiceImpl implements ServiceService {
         ));
 
         List<ProviderSearchDTO> groupedProviders = new ArrayList<>();
-        List<ServiceSearchDTO> singleServices = new ArrayList<>();
+        List<ServiceDTO> singleServices = new ArrayList<>();
 
         for (Map.Entry<String, List<Service>> entry : groupedMap.entrySet()) {
             List<Service> group = entry.getValue();
 
             if (group.size() == 1) {
-                // Single service — map to ServiceSearchDTO
+                // Single service — map to ServiceDTO
                 Service service = group.getFirst();
-                ServiceSearchDTO dto = new ServiceSearchDTO();
+                ServiceDTO dto = new ServiceDTO();
                 dto.setServiceId(service.getServiceId());
                 dto.setServiceName(service.getServiceName());
                 dto.setCategory(service.getCategory().getCategoryName());
 //                dto.setLocationBased(modelMapper.map(service.getLocationBased(), LocationDTO.class));
-                dto.setPrice(service.getPrice());
-                dto.setPriceType(service.getPriceType());
+                dto.setPrices(service.getPriceConfiguration().getPriceWithType());
                 dto.setMainImageUrl(service.getImages() != null && !service.getImages().isEmpty()
                         ? service.getImages().getFirst().getImageUrl()
                         : null);
@@ -247,14 +246,15 @@ public class ServiceServiceImpl implements ServiceService {
         providerDetails.setCategory(categoryRequired.getCategoryName());
         providerDetails.setServices(services.stream()
                 .map(service -> {
-                    ServiceSearchDTO serviceSearchDTO = new ServiceSearchDTO();
-                    serviceSearchDTO.setServiceId(service.getServiceId());
-                    serviceSearchDTO.setServiceName(service.getServiceName());
-                    serviceSearchDTO.setCategory(service.getCategory().getCategoryName());
-                    serviceSearchDTO.setMainImageUrl(service.getImages() != null && !service.getImages().isEmpty()
+                    ServiceDTO serviceDTO = new ServiceDTO();
+                    serviceDTO.setServiceId(service.getServiceId());
+                    serviceDTO.setServiceName(service.getServiceName());
+                    serviceDTO.setCategory(service.getCategory().getCategoryName());
+                    serviceDTO.setMainImageUrl(service.getImages() != null && !service.getImages().isEmpty()
                             ? service.getImages().getFirst().getImageUrl()
                             : null);
-                    return serviceSearchDTO;
+                    serviceDTO.setPrices(service.getPriceConfiguration().getPriceWithType());
+                    return serviceDTO;
                 })
                 .collect(Collectors.toList()));
         return APIResponse.<ProviderDetailsDTO>builder()
@@ -299,17 +299,15 @@ public class ServiceServiceImpl implements ServiceService {
         providerDetails.setCategory(categoryRequired.getCategoryName());
         providerDetails.setServices(services.stream()
                 .map(service -> {
-                    ServiceSearchDTO serviceSearchDTO = new ServiceSearchDTO();
-                    serviceSearchDTO.setServiceId(service.getServiceId());
-                    serviceSearchDTO.setServiceName(service.getServiceName());
-//                    serviceSearchDTO.setLocationBased(modelMapper.map(service.getLocationBased(), LocationDTO.class));
-                    serviceSearchDTO.setPrice(service.getPrice());
-                    serviceSearchDTO.setPriceType(service.getPriceType());
-                    serviceSearchDTO.setCategory(service.getCategory().getCategoryName());
-                    serviceSearchDTO.setMainImageUrl(service.getImages() != null && !service.getImages().isEmpty()
+                    ServiceDTO serviceDTO = new ServiceDTO();
+                    serviceDTO.setServiceId(service.getServiceId());
+                    serviceDTO.setServiceName(service.getServiceName());
+                    serviceDTO.setPrices(service.getPriceConfiguration().getPriceWithType());
+                    serviceDTO.setCategory(service.getCategory().getCategoryName());
+                    serviceDTO.setMainImageUrl(service.getImages() != null && !service.getImages().isEmpty()
                             ? service.getImages().getFirst().getImageUrl()
                             : null);
-                    return serviceSearchDTO;
+                    return serviceDTO;
                 })
                 .collect(Collectors.toList()));
         return APIResponse.<ProviderDetailsDTO>builder()

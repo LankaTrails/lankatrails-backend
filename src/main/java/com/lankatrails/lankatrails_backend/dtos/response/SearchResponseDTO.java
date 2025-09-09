@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.dtos.response;
 
+import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,5 +14,5 @@ import java.util.List;
 @NoArgsConstructor
 public class SearchResponseDTO {
     private List<ProviderSearchDTO> providers;
-    private List<ServiceSearchDTO> services;
+    private List<ServiceDTO> services;
 }

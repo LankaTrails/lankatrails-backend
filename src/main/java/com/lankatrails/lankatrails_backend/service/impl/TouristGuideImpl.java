@@ -1,19 +1,12 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.request.*;
-import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.TouristGuideResponseDTO;
-import com.lankatrails.lankatrails_backend.exception.APIException;
-import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
-import com.lankatrails.lankatrails_backend.model.*;
-import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
-import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
-import com.lankatrails.lankatrails_backend.repositories.*;
-import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
-import com.lankatrails.lankatrails_backend.service.ServicesForAll;
-import com.lankatrails.lankatrails_backend.service.TouristGuideService;
-import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -23,9 +16,45 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import com.lankatrails.lankatrails_backend.dtos.request.AvailableTimeDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.BookingConfigDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.BreakTimeDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.ImageRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.PriceConfigDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.TouristGuideRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.TouristGuideResponseDTO;
+import com.lankatrails.lankatrails_backend.exception.APIException;
+import com.lankatrails.lankatrails_backend.exception.BadRequestException;
+import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
+import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
+import com.lankatrails.lankatrails_backend.model.BookingConfiguration;
+import com.lankatrails.lankatrails_backend.model.Category;
+import com.lankatrails.lankatrails_backend.model.Image;
+import com.lankatrails.lankatrails_backend.model.Language;
+import com.lankatrails.lankatrails_backend.model.PolicySection;
+import com.lankatrails.lankatrails_backend.model.PriceConfiguration;
+import com.lankatrails.lankatrails_backend.model.Provider;
+import com.lankatrails.lankatrails_backend.model.TabsSection;
+import com.lankatrails.lankatrails_backend.model.TourGuideCategory;
+import com.lankatrails.lankatrails_backend.model.TouristGuide;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
+import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
+import com.lankatrails.lankatrails_backend.repositories.ImageRepository;
+import com.lankatrails.lankatrails_backend.repositories.LanguageRepository;
+import com.lankatrails.lankatrails_backend.repositories.PolicySectionRepository;
+import com.lankatrails.lankatrails_backend.repositories.ProviderRepository;
+import com.lankatrails.lankatrails_backend.repositories.TabsSectionRepository;
+import com.lankatrails.lankatrails_backend.repositories.TourGuideCategoryRepository;
+import com.lankatrails.lankatrails_backend.repositories.TouristGuideRepository;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
+import com.lankatrails.lankatrails_backend.service.ServicesForAll;
+import com.lankatrails.lankatrails_backend.service.TouristGuideService;
+import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 
 @Service
 public class TouristGuideImpl implements TouristGuideService {
@@ -89,7 +118,7 @@ public class TouristGuideImpl implements TouristGuideService {
 
         for (TouristGuide guide : guidesContent){
             TouristGuideRequestDTO tourGuideRequest = new TouristGuideRequestDTO();
-            if (guide.getStatus()){
+            if (guide.getStatus() == ServiceStatus.ACTIVE){
                 tourGuideRequest.setServiceId(guide.getServiceId());
                 tourGuideRequest.setServiceName(guide.getServiceName());
                 tourGuideRequest.setStatus(guide.getStatus());
@@ -128,6 +157,9 @@ public class TouristGuideImpl implements TouristGuideService {
         mappedObj.setProvider(provider);
 
         mappedObj.setLocations(servicesForAll.setServiceLocation(requestDTO));
+        mappedObj.setBookingConfiguration(servicesForAll.setBookingConfig(requestDTO.getBookingConfig()));
+        mappedObj.setPriceConfiguration(servicesForAll.setPriceConfig(requestDTO.getPriceConfig()));
+        mappedObj.setStatus(ServiceStatus.ACTIVE);
 
         Optional<TouristGuide> checkDb = touristGuideRepository.findByServiceName(mappedObj.getServiceName());
 
@@ -142,41 +174,20 @@ public class TouristGuideImpl implements TouristGuideService {
 
             // Set Tabs
             List<TabSectionRequest> tabsReq = requestDTO.getTabsSection();
-            if (tabsReq != null) {
-                for (TabSectionRequest tab : tabsReq) {
-                    TabsSection tabsSection = new TabsSection();
-                    tabsSection.setHeading(tab.getHeading());
-                    tabsSection.setContent(tab.getContent());
-                    tabsSection.setService(lastGuideAdded);
-                    tabsSectionRepository.save(tabsSection);
-                }
-            }
+            tabsImpl.addTabs(tabsReq, lastGuideAdded);
 
             // Set Policies
             List<PolicySectionRequest> policyReq = requestDTO.getPolicySection();
-            if (policyReq != null) {
-                for (PolicySectionRequest policy : policyReq) {
-                    PolicySection policySection = new PolicySection();
-                    policySection.setHeading(policy.getHeading());
-                    policySection.setPolicy(policy.getPolicy());
-                    policySection.setProvider(lastGuideAdded.getProvider());
-                    policySectionRepository.save(policySection);
-                }
-            }
+            lastGuideAdded.setPolicies(policyImpl.addPolicies(policyReq, category, lastGuideAdded));
 
             // Upload and associate images
-            Set<Image> savedImages = new HashSet<>();
-            for (MultipartFile file : images) {
-                String imageUrl = fileUploadService.storeFile(file, UploadCategory.SERVICE_PICTURE, "service");
-
-                Image image = new Image();
-                image.setImageUrl(imageUrl);
-                image.setService(lastGuideAdded);
-
-                savedImages.add(image);
+            imageService.uploadImagesForService(images, lastGuideAdded);
+            // Set the availability slots
+            List<AvailableTimeDTO> availabilitySlots = requestDTO.getAvailableTimeDTOS();
+            if (availabilitySlots == null ){
+                throw new BadRequestException("Availability Slots cannot be empty");
             }
-
-            imageRepository.saveAll(savedImages); // Persist images
+            servicesForAll.setAvailableTime(availabilitySlots, lastGuideAdded);
 
             //save the languages served
             List<String> languageList = requestDTO.getLanguages();
@@ -188,6 +199,7 @@ public class TouristGuideImpl implements TouristGuideService {
                 languages.add(language);
             });
             languageRepository.saveAll(languages);
+            touristGuideRepository.save(lastGuideAdded);
             
             // Prepare response
             TouristGuideRequestDTO responseDTO = new TouristGuideRequestDTO();
@@ -255,9 +267,9 @@ public class TouristGuideImpl implements TouristGuideService {
         //prepare the response
         TouristGuideRequestDTO prepareResponse=new TouristGuideRequestDTO();
         prepareResponse.setServiceId(id);
-        prepareResponse.setPrice(touristGuide.getPrice());
+        prepareResponse.setPriceConfig(modelMapper.map(touristGuide.getPriceConfiguration(),PriceConfigDTO.class));
+        prepareResponse.setBookingConfig(modelMapper.map(touristGuide.getBookingConfiguration(),BookingConfigDTO.class));
         prepareResponse.setImages(imgDTOs);
-        prepareResponse.setPriceType(touristGuide.getPriceType());
         prepareResponse.setTourGuideType(touristGuide.getTourGuideCategory().getCategoryName());
         prepareResponse.setServiceName(touristGuide.getServiceName());
         prepareResponse.setContactNo(touristGuide.getContactNo());
@@ -270,6 +282,18 @@ public class TouristGuideImpl implements TouristGuideService {
                         .stream()
                         .map(Language::getLanguage)
                         .collect(Collectors.toList())
+        );
+        prepareResponse.setStatus(touristGuide.getStatus());
+        prepareResponse.setAvailableTimeDTOS(touristGuide.getAvailableTimes().stream()
+                .map(availableTime -> {
+                    AvailableTimeDTO availableTimeDTO = modelMapper.map(availableTime, AvailableTimeDTO.class);
+                    List<BreakTimeDTO> breakTimeDTOS = availableTime.getBreakTimes().stream()
+                            .map(breakTime -> modelMapper.map(breakTime, BreakTimeDTO.class))
+                            .collect(Collectors.toList());
+                    availableTimeDTO.setBreakTimes(breakTimeDTOS);
+                    return availableTimeDTO;
+                })
+                .collect(Collectors.toList())
         );
 
 
@@ -292,82 +316,35 @@ public class TouristGuideImpl implements TouristGuideService {
         touristGuide.setServiceName(requestDTO.getServiceName());
         touristGuide.setContactNo(requestDTO.getContactNo());
         touristGuide.setStatus(requestDTO.getStatus());
-        touristGuide.setPrice(requestDTO.getPrice());
-        touristGuide.setPriceType(requestDTO.getPriceType());
         
         // Update locations
         if (requestDTO.getLocations() != null && !requestDTO.getLocations().isEmpty()) {
             touristGuide.setLocations(servicesForAll.setServiceLocation(requestDTO));
         }
 
+        // Update configurations
+        touristGuide.setBookingConfiguration(servicesForAll.setBookingConfig(requestDTO.getBookingConfig()));
+        touristGuide.setPriceConfiguration(servicesForAll.setPriceConfig(requestDTO.getPriceConfig()));
+
         //save the updated tour guide
-        touristGuideRepository.save(touristGuide);
+        TouristGuide updatedTourGuide = touristGuideRepository.save(touristGuide);
 
-        //update or add tabs
-        //get the tabs from the database
-        Set<TabsSection> tabs=touristGuide.getTabs();
-
-        //get the tabs from the request
-        List<TabSectionRequest> reqTabs=requestDTO.getTabsSection();
-
-        //create a map of existing tabs by ID for quick lookup
-        Map<Long,TabsSection> savedTabMap=tabs.stream()
-                .collect(Collectors.toMap(TabsSection::getId, Function.identity()));
-
-        //create a set to track updated or newly added tabs
-        Set<TabsSection> updatedTabs=new HashSet<>();
-
-        for(TabSectionRequest req:reqTabs){
-            TabsSection tab;
-            if (req.getId()!=null && savedTabMap.containsKey(req.getId())){
-                //update the existing tab
-                tab=savedTabMap.get(req.getId());
-                tab.setHeading(req.getHeading());
-                tab.setContent(req.getContent());
-            }else{
-                //create new tab
-                tab=new TabsSection();
-                tab.setHeading(req.getHeading());
-                tab.setContent(req.getContent());
-                tab.setService(touristGuide);
-            }
-            updatedTabs.add(tab);
+        // Set the availability slots
+        List<AvailableTimeDTO> availabilitySlots = requestDTO.getAvailableTimeDTOS();
+        if (availabilitySlots == null ){
+            throw new BadRequestException("Availability Slots cannot be empty");
         }
-        tabsSectionRepository.saveAll(updatedTabs);
+        servicesForAll.setAvailableTime(availabilitySlots, updatedTourGuide);
 
-        //update or add policies
-        Set<PolicySection> policies=touristGuide.getPolicies();
+        // Update tabs
+        tabsImpl.updateTabs(requestDTO.getTabsSection(), updatedTourGuide);
+        tabsImpl.deleteTabs(requestDTO.getDeletedTabs());
 
-        //get the policySection from the request
-        List<PolicySectionRequest> reqPolicies=requestDTO.getPolicySection();
-        //create a map from existing policy ids in the db for easy lookup
-        Map<Long,PolicySection> savedPoliciesMap=policies.stream()
-                .collect(Collectors.toMap(PolicySection::getId,Function.identity()));
-
-        //create a set to track updated policies or the newly added policies
-        Set<PolicySection> updatedPolicies=new HashSet<>();
-
-        for (PolicySectionRequest policy:reqPolicies){
-            PolicySection policySection;
-            if (policy.getId()!=null && savedPoliciesMap.containsKey(policy.getId())){
-                //update the existing tab
-                policySection=savedPoliciesMap.get(policy.getId());
-                policySection.setHeading(policy.getHeading());
-                policySection.setPolicy(policy.getPolicy());
-            }else{
-                //create new tab
-                policySection=new PolicySection();
-                policySection.setHeading(policy.getHeading());
-                policySection.setPolicy(policy.getPolicy());
-                policySection.setProvider(touristGuide.getProvider());
-            }
-            updatedPolicies.add(policySection);
-
-        }
+        // Update policies
+        policyImpl.updatePolicies(requestDTO.getPolicySection(), updatedTourGuide);
+        policyImpl.deletePolicies(requestDTO.getDeletedPolicies(), updatedTourGuide);
 
         TouristGuideRequestDTO responseDTO=modelMapper.map(touristGuideRepository.findById(id),TouristGuideRequestDTO.class);
-        responseDTO.setTabsSection(reqTabs);
-        responseDTO.setPolicySection(reqPolicies);
 
         List<TouristGuideRequestDTO> responseList=new ArrayList<>();
         responseList.add(responseDTO);
@@ -425,8 +402,8 @@ public class TouristGuideImpl implements TouristGuideService {
         // Update the tourist guide details
         touristGuide.setServiceName(requestDTO.getServiceName());
         touristGuide.setContactNo(requestDTO.getContactNo());
-        touristGuide.setPrice(requestDTO.getPrice());
-        touristGuide.setPriceType(requestDTO.getPriceType());
+        touristGuide.setPriceConfiguration(modelMapper.map(requestDTO.getPriceConfig(), PriceConfiguration.class));
+        touristGuide.setBookingConfiguration(modelMapper.map(requestDTO.getBookingConfig(), BookingConfiguration.class));
         touristGuide.setTourGuideCategory(tourGuideCategory);
 
         // handle languages
@@ -481,7 +458,7 @@ public class TouristGuideImpl implements TouristGuideService {
         TouristGuide touristGuide = touristGuideRepository.findById(Id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tourist Guide", Id));
 
-        touristGuide.setStatus(false);
+        touristGuide.setStatus(ServiceStatus.INACTIVE);
         touristGuideRepository.save(touristGuide);
         return APIResponse.<String>builder()
                 .success(true)

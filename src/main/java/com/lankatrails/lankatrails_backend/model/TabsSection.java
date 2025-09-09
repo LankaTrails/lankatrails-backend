@@ -14,7 +14,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class TabsSection {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Size(max = 20)

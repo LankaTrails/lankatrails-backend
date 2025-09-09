@@ -5,6 +5,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.lankatrails.lankatrails_backend.dtos.request.*;
+import com.lankatrails.lankatrails_backend.exception.*;
+import com.lankatrails.lankatrails_backend.exception.BadRequestException;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -14,16 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.lankatrails.lankatrails_backend.dtos.request.FoodBeverageRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.ImageRequestDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
-import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.FoodBeverageResponse;
-import com.lankatrails.lankatrails_backend.exception.APIException;
-import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
 import com.lankatrails.lankatrails_backend.model.Category;
 import com.lankatrails.lankatrails_backend.model.FoodAndBeverage;
 import com.lankatrails.lankatrails_backend.model.FoodAndBeverageCategory;
@@ -104,6 +100,9 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         mappedObj.setProvider(provider);
 
         mappedObj.setLocations(servicesForAll.setServiceLocation(foodBeverageRequest));
+        mappedObj.setBookingConfiguration(servicesForAll.setBookingConfig(foodBeverageRequest.getBookingConfig()));
+        mappedObj.setPriceConfiguration(servicesForAll.setPriceConfig(foodBeverageRequest.getPriceConfig()));
+        mappedObj.setStatus(ServiceStatus.ACTIVE);
 
         Optional<FoodAndBeverage> checkDb = foodBeverageRepository.findByServiceName(mappedObj.getServiceName());
         FoodAndBeverage lastServiceAdded;
@@ -122,11 +121,19 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
             tabsImpl.addTabs(tabsReq, lastServiceAdded);
 
             // Set Policies
-//            List<PolicySectionRequest> policyReq = foodBeverageRequest.getPolicySection();
-//            Boolean policyAdditionStatus = policyImpl.addPolicies(policyReq, lastServiceAdded, category);
+            List<PolicySectionRequest> policyReq = foodBeverageRequest.getPolicySection();
+            lastServiceAdded.setPolicies(policyImpl.addPolicies(policyReq, category, lastServiceAdded));
 
             // Upload and associate images
             imageService.uploadImagesForService(images, lastServiceAdded);
+
+            // Set the availability slots
+            List<AvailableTimeDTO> availabilitySlots = foodBeverageRequest.getAvailableTimeDTOS();
+            if (availabilitySlots == null ){
+                throw new BadRequestException("Availability Slots cannot be empty");
+            }
+            servicesForAll.setAvailableTime(availabilitySlots, lastServiceAdded);
+            foodBeverageRepository.save(lastServiceAdded);
 
         } else {
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());
@@ -154,7 +161,7 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
 
         for (FoodAndBeverage foodAndBeverage :foodBeveragePage){
             FoodBeverageRequest foodBeverageServiceRequest = new FoodBeverageRequest();
-            if (foodAndBeverage.getStatus()){
+            if (foodAndBeverage.getStatus() == ServiceStatus.ACTIVE){
                 foodBeverageServiceRequest.setServiceId(foodAndBeverage.getServiceId());
                 foodBeverageServiceRequest.setServiceName(foodAndBeverage.getServiceName());
                 foodBeverageServiceRequest.setStatus(foodAndBeverage.getStatus());
@@ -238,9 +245,21 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         prepareResponse.setTabsSection(tabs);
         prepareResponse.setPolicySection(policies);
         prepareResponse.setImages(imgDTOs);
-        prepareResponse.setPrice(foodAndBeverage.getPrice());
-        prepareResponse.setPriceType(foodAndBeverage.getPriceType());
+        prepareResponse.setPriceConfig(modelMapper.map(foodAndBeverage.getPriceConfiguration(), PriceConfigDTO.class));
+        prepareResponse.setBookingConfig(modelMapper.map(foodAndBeverage.getBookingConfiguration(), BookingConfigDTO.class));
         prepareResponse.setServiceId(Id);
+        prepareResponse.setStatus(foodAndBeverage.getStatus());
+        prepareResponse.setAvailableTimeDTOS(foodAndBeverage.getAvailableTimes().stream()
+                .map(availableTime -> {
+                    AvailableTimeDTO availableTimeDTO = modelMapper.map(availableTime, AvailableTimeDTO.class);
+                    List<BreakTimeDTO> breakTimeDTOS = availableTime.getBreakTimes().stream()
+                            .map(breakTime -> modelMapper.map(breakTime, BreakTimeDTO.class))
+                            .collect(Collectors.toList());
+                    availableTimeDTO.setBreakTimes(breakTimeDTOS);
+                    return availableTimeDTO;
+                })
+                .collect(Collectors.toList())
+        );
 
         return  APIResponse.<FoodBeverageRequest>builder()
                 .success(true)
@@ -306,15 +325,23 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         foodAndBeverageService.setLiveMusic(foodBeverageRequest.getLiveMusic());
         foodAndBeverageService.setCuisineType(foodBeverageRequest.getCuisineType());
         foodAndBeverageService.setContactNo(foodBeverageRequest.getContactNo());
-        foodAndBeverageService.setPrice(foodBeverageRequest.getPrice());
-        foodAndBeverageService.setPriceType(foodBeverageRequest.getPriceType());
         foodAndBeverageService.setFoodAndBeverageCategory(foodAndBeverageCategory);
 
         // Update the locations
         foodAndBeverageService.setLocations(servicesForAll.setServiceLocation(foodBeverageRequest));
+        // Update configurations
+        foodAndBeverageService.setBookingConfiguration(servicesForAll.setBookingConfig(foodBeverageRequest.getBookingConfig()));
+        foodAndBeverageService.setPriceConfiguration(servicesForAll.setPriceConfig(foodBeverageRequest.getPriceConfig()));
 
         // Save the updated service
         foodAndBeverageService = foodBeverageRepository.save(foodAndBeverageService);
+
+        // Set the availability slots
+        List<AvailableTimeDTO> availabilitySlots = foodBeverageRequest.getAvailableTimeDTOS();
+        if (availabilitySlots == null ){
+            throw new BadRequestException("Availability Slots cannot be empty");
+        }
+        servicesForAll.setAvailableTime(availabilitySlots, foodAndBeverageService);
 
         // Update the tabs
         tabsImpl.updateTabs(foodBeverageRequest.getTabsSection(), foodAndBeverageService);
@@ -348,7 +375,7 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         FoodAndBeverage foodAndBeverage = foodBeverageRepository.findById(Id)
                 .orElseThrow(() -> new ResourceNotFoundException("Food and Beverage", Id));
 
-        foodAndBeverage.setStatus(false);
+        foodAndBeverage.setStatus(ServiceStatus.INACTIVE);
         foodBeverageRepository.save(foodAndBeverage);
 
         return APIResponse.<String>builder()

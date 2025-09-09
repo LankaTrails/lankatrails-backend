@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -39,8 +40,8 @@ public class Tourist extends User {
         super.setStatus(UserStatus.ACTIVE);
     }
 
-    @ManyToMany(mappedBy = "tourists", fetch = FetchType.LAZY)
-    private Set<Trip> trips;
+    @OneToMany(mappedBy = "tourist", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<TripParticipant> tripParticipants;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "tourist_favourite_services",
@@ -55,31 +56,10 @@ public class Tourist extends User {
     private Set<Place> favouritePlaces;
 
     @OneToMany(mappedBy = "tourist")
-    private List<Booking> bookings = new ArrayList<>();
+    private Set<RateAndReview> reviews = new HashSet<>();
 
-    public @Size(max = 20) String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(@Size(max = 20) String firstName) {
-        this.firstName = firstName;
-    }
-
-    public @Size(max = 50) String getCountry() {
-        return country;
-    }
-
-    public void setCountry(@Size(max = 50) String country) {
-        this.country = country;
-    }
-
-    public @Size(max = 20) String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(@Size(max = 20) String lastName) {
-        this.lastName = lastName;
-    }
-
+    @OneToMany(mappedBy = "tourist", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    private List<DirectChatRoom> directChatRooms = new ArrayList<>();
 
 }

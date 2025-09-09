@@ -65,10 +65,6 @@ public class User {
     @Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private LocalDateTime updatedAt;
 
-    @ManyToMany(mappedBy = "participants")
-    @Column(name = "chat_rooms")
-    private List<ChatRoom> chatRooms;
-
     public Boolean getEmailVerified() {
         return emailVerified;
     }

@@ -23,18 +23,28 @@ public class ImageServiceImpl implements ImageService {
 
     @Override
     public void uploadImagesForService(List<MultipartFile> images, Service service) {
+        // Check if images list is null or empty
+        if (images == null || images.isEmpty()) {
+            return; // Exit early if no images to process
+        }
+
         List<Image> imageList = new ArrayList<>();
         for (MultipartFile file : images) {
-            String imageUrl = fileUploadService.storeFile(file, UploadCategory.SERVICE_PICTURE, "service");
+            // Additional null check for individual file
+            if (file != null && !file.isEmpty()) {
+                String imageUrl = fileUploadService.storeFile(file, UploadCategory.SERVICE_PICTURE, "service");
 
-            Image image = new Image();
-            image.setImageUrl(imageUrl);
-            image.setService(service);
+                Image image = new Image();
+                image.setImageUrl(imageUrl);
+                image.setService(service);
 
-            imageList.add(image); // Collect images
+                imageList.add(image); // Collect images
+            }
         }
-        // Persist images
-        imageRepository.saveAll(imageList);
+        // Persist images only if we have images to save
+        if (!imageList.isEmpty()) {
+            imageRepository.saveAll(imageList);
+        }
     }
 
     @Override

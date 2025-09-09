@@ -2,6 +2,7 @@ package com.lankatrails.lankatrails_backend.security.utils;
 
 import com.lankatrails.lankatrails_backend.exception.UserNotFoundException;
 import com.lankatrails.lankatrails_backend.model.User;
+import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import com.lankatrails.lankatrails_backend.repositories.UserRepository;
 import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,11 @@ public class AuthUtils {
     public Long loggedInUserId(){
         UserDetailsImpl userDetails = getLoggedInUserDetails();
         return (userDetails != null) ? userDetails.getId() : null;
+    }
+
+    public UserRole loggedInUserRole(){
+        UserDetailsImpl userDetails = getLoggedInUserDetails();
+        return (userDetails != null) ? userDetails.getRole(): null;
     }
 
 //    public User loggedInUser(){

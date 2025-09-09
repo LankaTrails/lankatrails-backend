@@ -1,15 +1,21 @@
 package com.lankatrails.lankatrails_backend.repositories;
 
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
 import com.lankatrails.lankatrails_backend.model.Category;
 import com.lankatrails.lankatrails_backend.model.Provider;
 import com.lankatrails.lankatrails_backend.model.Service;
-import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
-import java.util.List;
+import jakarta.persistence.LockModeType;
 
+@Repository
 public interface ServiceRepository extends JpaRepository<Service, Long> {
 
     // 1. Nearby services by distance (unchanged)
@@ -135,5 +141,9 @@ public interface ServiceRepository extends JpaRepository<Service, Long> {
     List<Service> findByProviderAndCategory(Provider provider, Category category);
     List<Service> findByCategoryAndProvider(Category category, Provider provider);
 
+    // Pessimistic locking to prevent race conditions during booking
+    @Query("SELECT s FROM Service s WHERE s.serviceId = :serviceId")
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<Service> findByIdWithLock(@Param("serviceId") Long serviceId);
 
 }

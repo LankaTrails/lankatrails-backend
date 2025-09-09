@@ -5,8 +5,9 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Set;
+import java.util.List;
 
 @Getter
 @Setter
@@ -26,7 +27,7 @@ public class TripRequestDTO {
     private LocationDTO startLocation;
 
     @NotNull(message = "At least one location is required")
-    private Set<LocationDTO> locations;
+    private List<LocationDTO> locations;
 
     private Integer numberOfAdults = 1;
     private Integer numberOfChildren = 0;
@@ -34,14 +35,14 @@ public class TripRequestDTO {
 //    @NotNull(message = "Trip status is required")
     private TripStatus tripStatus;
 
-    private Double totalBudget = 0.0;
-    private Double totalBudgetLimit = 0.0;
+    private BigDecimal totalBudget = BigDecimal.ZERO;
+    private BigDecimal totalBudgetLimit = BigDecimal.ZERO;
     private Double totalDistance = 0.0;
 
-    private Double accommodationLimit = 0.0;
-    private Double foodLimit = 0.0;
-    private Double transportLimit = 0.0;
-    private Double activityLimit = 0.0;
-    private Double shoppingLimit = 0.0;
-    private Double miscellaneousLimit = 0.0;
+    private BigDecimal accommodationLimit = BigDecimal.ZERO;
+    private BigDecimal foodLimit = BigDecimal.ZERO;
+    private BigDecimal transportLimit = BigDecimal.ZERO;
+    private BigDecimal activityLimit = BigDecimal.ZERO;
+    private BigDecimal shoppingLimit = BigDecimal.ZERO;
+    private BigDecimal miscellaneousLimit = BigDecimal.ZERO;
 }

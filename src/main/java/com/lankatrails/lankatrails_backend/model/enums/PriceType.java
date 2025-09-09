@@ -4,29 +4,19 @@ import lombok.Getter;
 
 @Getter
 public enum PriceType {
-    FIXED("Fixed"),
-    PER_PERSON("Per Person"),
-    PER_GROUP("Per Group"),
-    PER_KM("Per KM"),
-    PER_HOUR("Per Hour"),
-    PER_DAY("Per Day"),
-    PER_NIGHT("Per Night"),
-    PER_WEEK("Per Week"),
-    PER_MONTH("Per Month");
+    FIXED("Fixed"),               // Fixed price for the booking
+    PER_PERSON("Per Person"),     // Price per person
+    PER_UNIT("Per Unit"),         // Price per room/vehicle/unit
+    HYBRID("Hybrid"),             // Base price + per person/unit
+    PER_HOUR("Per Hour"),         // Price per hour
+    PER_DAY("Per Day"),           // Price per day
+    PER_NIGHT("Per Night"),       // Price per night
+    PER_KM("Per KM");             // Price per kilometer
 
-    private final String value;
+    private final String displayName;
 
-    PriceType(String value) {
-        this.value = value;
-    }
-
-    public static PriceType fromValue(String value) {
-        for (PriceType type : PriceType.values()) {
-            if (type.value.equalsIgnoreCase(value)) {
-                return type;
-            }
-        }
-        throw new IllegalArgumentException("Unknown PriceType: " + value);
+    PriceType(String displayName) {
+        this.displayName = displayName;
     }
 
 }

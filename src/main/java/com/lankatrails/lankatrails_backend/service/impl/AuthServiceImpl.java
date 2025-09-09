@@ -202,6 +202,7 @@ public class AuthServiceImpl implements AuthService {
             }
         }
 
+        request.getLocation().setLocationType(LocationType.POINT_OF_INTEREST);
         User user = userFactory.createUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         User savedUser = userRepository.save(user);

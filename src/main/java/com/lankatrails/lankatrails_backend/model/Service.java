@@ -1,7 +1,6 @@
 package com.lankatrails.lankatrails_backend.model;
 
-import com.lankatrails.lankatrails_backend.model.enums.BookingType;
-import com.lankatrails.lankatrails_backend.model.enums.PriceType;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,26 +23,19 @@ public class Service {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-
     private Long serviceId;
 
+    @Column(name = "service_name", nullable = false)
     private String serviceName;
 
+    @Column(name = "contact_no")
     private String contactNo;
 
-    private Boolean status;
-
-    private Double price;
-
-    private Long duration;
+    @Column(name = "status", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private ServiceStatus status;
 
     private Integer warnings;
-
-    @Enumerated(EnumType.STRING)
-    private PriceType priceType;
-
-    @Enumerated(EnumType.STRING)
-    private BookingType bookingType;
 
     @ManyToOne
     @JoinColumn(name = "provider_id")
@@ -57,7 +49,7 @@ public class Service {
     private Set<TabsSection> tabs=new HashSet<>();
 
 
-    @ManyToMany
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
           name = "service_policy",
           joinColumns = @JoinColumn(name = "service_id"),
@@ -84,16 +76,18 @@ public class Service {
     private Set<Tourist> tourists = new HashSet<>();
 
     @OneToMany(mappedBy = "service")
-    private List<AvailabilitySlot> availabilitySlots = new ArrayList<>();
+    private List<AvailableTime> availableTimes = new ArrayList<>();
 
+    @OneToOne
+    @JoinColumn(name = "booking_config_id", nullable = false)
+    private BookingConfiguration bookingConfiguration;
+
+    @OneToOne
+    @JoinColumn(name = "price_config_id", nullable = false)
+    private PriceConfiguration priceConfiguration;
     @OneToMany(mappedBy = "service")
-    private List<Booking> serviceBookings = new ArrayList<>();
+    private Set<RateAndReview> reviews = new HashSet<>();
 
     @OneToMany(mappedBy = "service")
     private List<Warning> warning;
-//    @OneToMany(mappedBy = "service")
-//    private List<ChatRoom> chatRooms = new ArrayList<>();
-
-
-
 }
