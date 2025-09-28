@@ -132,7 +132,7 @@ public class ComplaintServiceImpl implements ComplaintService {
         Tourist tourist = touristRepository.findByUserId(complaint.getTourist().getUserId())
                 .orElseThrow(()-> new ResourceNotFoundException("Tourist",complaint.getTourist().getUserId()));
 
-        List<Booking> bookings = bookingRepository.findByService_ServiceIdAndTourist_UserId(service.getServiceId(),tourist.getUserId());
+//        List<Booking> bookings = bookingRepository.findByService_ServiceIdAndTourist_UserId(service.getServiceId(),tourist.getUserId());
 
         Booking booking = bookingRepository.findById(complaint.getBooking().getBookingId())
                 .orElseThrow(()-> new ResourceNotFoundException("Booking",complaint.getBooking().getBookingId()));
