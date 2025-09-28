@@ -34,7 +34,7 @@ public class Trip {
     private LocalDate endDate;
 
     @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "start_location_id", referencedColumnName ="location_id" )
+    @JoinColumn(name = "start_location_id", referencedColumnName = "location_id")
     private Location startLocation;
 
     @ManyToMany(fetch = FetchType.LAZY)

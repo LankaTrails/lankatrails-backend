@@ -3,7 +3,6 @@ package com.lankatrails.lankatrails_backend.service.impl;
 import com.lankatrails.lankatrails_backend.dtos.ChatRoomDto;
 import com.lankatrails.lankatrails_backend.dtos.request.TripInvitationRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.TripResponseDTO;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.UserNotFoundException;
@@ -46,28 +45,23 @@ public class TripInvitationServiceImpl implements TripInvitationService {
 
     @Autowired
     private final TripService tripService;
-
-    @Autowired
-    private ModelMapper modelMapper;
-
-    @Autowired
-    private AuthUtils authUtils;
-
-    @Autowired
-    private TouristRepository touristRepository;
-
-    @Autowired
-    private ChatRoomService chatRoomService;
-
     @Autowired
     private final TripPrivilegeUtils tripPrivilegeUtils;
+    @Autowired
+    private ModelMapper modelMapper;
+    @Autowired
+    private AuthUtils authUtils;
+    @Autowired
+    private TouristRepository touristRepository;
+    @Autowired
+    private ChatRoomService chatRoomService;
 
     @Override
     @Transactional
     public APIResponse<String> createInvitation(TripInvitationRequest tripInvitationRequest) {
         // Validate trip existence
         Trip trip = tripRepository.findById(tripInvitationRequest.getTripId())
-                .orElseThrow(() -> new ResourceNotFoundException("Trip ID: " , tripInvitationRequest.getTripId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Trip ID: ", tripInvitationRequest.getTripId()));
 
         //Get the logged-in user Trip Role
         TripParticipant loggedInParticipant = trip.getParticipants().stream()

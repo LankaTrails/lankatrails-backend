@@ -7,7 +7,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class TouristRegistrationRequest extends RegistrationRequest{
+public class TouristRegistrationRequest extends RegistrationRequest {
     @Size(max = 20)
     private String firstName;
 

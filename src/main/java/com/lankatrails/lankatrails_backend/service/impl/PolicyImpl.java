@@ -34,6 +34,7 @@ public class PolicyImpl implements Policies {
     ProviderRepository providerRepository;
 
     private Boolean status;
+
     @Transactional
     public Set<PolicySection> addPolicies(List<PolicySectionRequest> requests, Category category, Service service) {
 
@@ -66,10 +67,10 @@ public class PolicyImpl implements Policies {
     @Override
     public List<PolicySectionRequest> getAllPolicies(Long Id) {
 
-        List<PolicySection> policiesSection=policySectionRepository.findByServices_ServiceId(Id);
-        List<PolicySectionRequest> policies =new ArrayList<>();
+        List<PolicySection> policiesSection = policySectionRepository.findByServices_ServiceId(Id);
+        List<PolicySectionRequest> policies = new ArrayList<>();
 
-        for (PolicySection policy : policiesSection){
+        for (PolicySection policy : policiesSection) {
             PolicySectionRequest policyReq = new PolicySectionRequest();
             policyReq.setId(policy.getId());
             policyReq.setHeading(policy.getHeading());
@@ -81,22 +82,22 @@ public class PolicyImpl implements Policies {
 
     @Override
     public Set<PolicySection> updatePolicies(Set<PolicySection> policies, List<PolicySectionRequest> reqPolicies, Transport transport) {
-        Map<Long,PolicySection> savedPoliciesMap=policies.stream()
+        Map<Long, PolicySection> savedPoliciesMap = policies.stream()
                 .collect(Collectors.toMap(PolicySection::getId, Function.identity()));
 
         //create a set to track updated policies or the newly added policies
-        Set<PolicySection> updatedPolicies=new HashSet<>();
+        Set<PolicySection> updatedPolicies = new HashSet<>();
 
-        for (PolicySectionRequest policy:reqPolicies){
+        for (PolicySectionRequest policy : reqPolicies) {
             PolicySection policySection;
-            if (policy.getId()!=null && savedPoliciesMap.containsKey(policy.getId())){
+            if (policy.getId() != null && savedPoliciesMap.containsKey(policy.getId())) {
                 //update the existing tab
-                policySection=savedPoliciesMap.get(policy.getId());
+                policySection = savedPoliciesMap.get(policy.getId());
                 policySection.setHeading(policy.getHeading());
                 policySection.setPolicy(policy.getPolicy());
-            }else{
+            } else {
                 //create new tab
-                policySection=new PolicySection();
+                policySection = new PolicySection();
                 policySection.setHeading(policy.getHeading());
                 policySection.setPolicy(policy.getPolicy());
                 policySection.setProvider(transport.getProvider());
@@ -109,17 +110,17 @@ public class PolicyImpl implements Policies {
 
     @Override
     public Boolean addPoliciesToTransport(List<PolicySectionRequest> policyReq, Transport lastTransportAdded) {
-        if (policyReq!=null){
-                for (PolicySectionRequest policy : policyReq){
-                    PolicySection policySection=new PolicySection();
-                    policySection.setHeading(policy.getHeading());
-                    policySection.setPolicy(policy.getPolicy());
-                    policySection.setProvider(lastTransportAdded.getProvider());
-                    policySectionRepository.save(policySection);
-                }
-                return true;
-        }else {
-                return false;
+        if (policyReq != null) {
+            for (PolicySectionRequest policy : policyReq) {
+                PolicySection policySection = new PolicySection();
+                policySection.setHeading(policy.getHeading());
+                policySection.setPolicy(policy.getPolicy());
+                policySection.setProvider(lastTransportAdded.getProvider());
+                policySectionRepository.save(policySection);
+            }
+            return true;
+        } else {
+            return false;
         }
 
     }
@@ -128,54 +129,27 @@ public class PolicyImpl implements Policies {
 //    @Transactional
     public APIResponse<String> providerAddPolicies
             (PolicySectionRequest policyReq) {
-            PolicySection mappedObj = modelMapper.map(policyReq,PolicySection.class);
-            PolicySection checkDb = policySectionRepository.findByHeading(mappedObj.getHeading());
-            if (checkDb == null){
-                PolicySection savedObj = policySectionRepository.save(mappedObj);
-                return APIResponse.<String>builder()
-                        .success(true)
-                        .message("Policies Added To The Provider")
-                        .data("")
-                        .build();
-            }else{
-               throw new PolicyExistsException(checkDb.getId());
-            }
-
+        PolicySection mappedObj = modelMapper.map(policyReq, PolicySection.class);
+        PolicySection checkDb = policySectionRepository.findByHeading(mappedObj.getHeading());
+        if (checkDb == null) {
+            PolicySection savedObj = policySectionRepository.save(mappedObj);
+            return APIResponse.<String>builder()
+                    .success(true)
+                    .message("Policies Added To The Provider")
+                    .data("")
+                    .build();
+        } else {
+            throw new PolicyExistsException(checkDb.getId());
+        }
 
 
     }
 
     @Override
     public List<PolicySectionRequest> getProviderPolicies(Long userId) {
-        List<PolicySection> policySection=policySectionRepository.findByProvider_UserIdAndCategoryIsNull(userId);
+        List<PolicySection> policySection = policySectionRepository.findByProvider_UserIdAndCategoryIsNull(userId);
         List<PolicySectionRequest> response = new ArrayList<>();
-        for (PolicySection policy : policySection){
-            PolicySectionRequest policyReq = new PolicySectionRequest();
-            policyReq.setHeading(policy.getHeading());
-            policyReq.setPolicy(policy.getPolicy());
-            policyReq.setId(policy.getId());
-            response.add(policyReq);
-        }
-        return response;
-    }
-    @Override
-    public List<PolicySectionRequest> getProviderAndServicePolicies(Long userId,Long categoryId) {
-        List<PolicySection> policySection=policySectionRepository.findByProviderIdAndCategoryIdOrNull(userId,categoryId);
-        List<PolicySectionRequest> response = new ArrayList<>();
-        for (PolicySection policy : policySection){
-            PolicySectionRequest policyReq = new PolicySectionRequest();
-            policyReq.setHeading(policy.getHeading());
-            policyReq.setPolicy(policy.getPolicy());
-            policyReq.setId(policy.getId());
-            response.add(policyReq);
-        }
-        return response;
-    }
-    @Override
-    public List<PolicySectionRequest> getServicePolicies(Long userId,Long categoryId) {
-        List<PolicySection> policySection=policySectionRepository.findByProvider_UserIdAndCategory_CategoryId(userId,categoryId);
-        List<PolicySectionRequest> response = new ArrayList<>();
-        for (PolicySection policy : policySection){
+        for (PolicySection policy : policySection) {
             PolicySectionRequest policyReq = new PolicySectionRequest();
             policyReq.setHeading(policy.getHeading());
             policyReq.setPolicy(policy.getPolicy());
@@ -186,9 +160,37 @@ public class PolicyImpl implements Policies {
     }
 
     @Override
-    public APIResponse<String> removePolicies(Long id){
+    public List<PolicySectionRequest> getProviderAndServicePolicies(Long userId, Long categoryId) {
+        List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(userId, categoryId);
+        List<PolicySectionRequest> response = new ArrayList<>();
+        for (PolicySection policy : policySection) {
+            PolicySectionRequest policyReq = new PolicySectionRequest();
+            policyReq.setHeading(policy.getHeading());
+            policyReq.setPolicy(policy.getPolicy());
+            policyReq.setId(policy.getId());
+            response.add(policyReq);
+        }
+        return response;
+    }
+
+    @Override
+    public List<PolicySectionRequest> getServicePolicies(Long userId, Long categoryId) {
+        List<PolicySection> policySection = policySectionRepository.findByProvider_UserIdAndCategory_CategoryId(userId, categoryId);
+        List<PolicySectionRequest> response = new ArrayList<>();
+        for (PolicySection policy : policySection) {
+            PolicySectionRequest policyReq = new PolicySectionRequest();
+            policyReq.setHeading(policy.getHeading());
+            policyReq.setPolicy(policy.getPolicy());
+            policyReq.setId(policy.getId());
+            response.add(policyReq);
+        }
+        return response;
+    }
+
+    @Override
+    public APIResponse<String> removePolicies(Long id) {
         policySectionRepository.findById(id)
-                .orElseThrow(()->new ResourceNotFoundException("Policy",id));
+                .orElseThrow(() -> new ResourceNotFoundException("Policy", id));
 //        policySectionRepository.findByPolicy_PolicyId(id);
         policySectionRepository.deleteById(id);
         return APIResponse.<String>builder()

@@ -4,7 +4,7 @@ import org.springframework.http.HttpStatus;
 
 import java.util.Map;
 
-public class LicenseExpiredException extends BaseException{
+public class LicenseExpiredException extends BaseException {
     public LicenseExpiredException(String expiryMessage) {
         super(
                 HttpStatus.FORBIDDEN,                      // Proper status code for duplicate resources

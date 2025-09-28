@@ -1,16 +1,11 @@
 package com.lankatrails.lankatrails_backend.dtos;
 
-import java.time.Instant;
-import java.util.Map;
-
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
 import com.lankatrails.lankatrails_backend.model.enums.ChatMessageType;
+import lombok.*;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import java.time.Instant;
+import java.util.Map;
 
 @Getter
 @Setter

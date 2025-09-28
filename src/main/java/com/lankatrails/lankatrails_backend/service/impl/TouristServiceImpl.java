@@ -110,7 +110,7 @@ public class TouristServiceImpl implements TouristService {
                     throw new IllegalParamsException("Service cannot be null");
                 }
                 Service existingService = serviceRepository.findById(favouriteItemDTO.getService().getServiceId())
-                        .orElseThrow(() -> new ResourceNotFoundException("ServiceID: " , favouriteItemDTO.getService().getServiceId()));
+                        .orElseThrow(() -> new ResourceNotFoundException("ServiceID: ", favouriteItemDTO.getService().getServiceId()));
                 tourist.getFavouriteServices().add(existingService);
                 log.info("Service added to favourites: {} for User: {}", existingService.getServiceName(), tourist.getUserId());
                 break;

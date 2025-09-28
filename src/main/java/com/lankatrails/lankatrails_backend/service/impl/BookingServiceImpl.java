@@ -1,48 +1,50 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
+import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
 import com.lankatrails.lankatrails_backend.dtos.BookingItemDto;
 import com.lankatrails.lankatrails_backend.dtos.ProviderDto;
+import com.lankatrails.lankatrails_backend.dtos.request.BookingRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.PaymentRequestDto;
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
-import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.model.*;
-import com.lankatrails.lankatrails_backend.model.enums.TripItemType;
-import com.lankatrails.lankatrails_backend.repositories.*;
-import com.lankatrails.lankatrails_backend.service.PaymentService;
-import com.stripe.model.PaymentIntent;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
-import com.lankatrails.lankatrails_backend.dtos.request.BookingRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.AvailabilityResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.BookingResponseDTO;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
+import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
+import com.lankatrails.lankatrails_backend.model.Booking;
+import com.lankatrails.lankatrails_backend.model.Service;
+import com.lankatrails.lankatrails_backend.model.TripItem;
+import com.lankatrails.lankatrails_backend.model.TripParticipant;
 import com.lankatrails.lankatrails_backend.model.enums.BookingStatus;
+import com.lankatrails.lankatrails_backend.model.enums.TripItemType;
 import com.lankatrails.lankatrails_backend.model.enums.TripPrivilege;
+import com.lankatrails.lankatrails_backend.repositories.BookingRepository;
+import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
+import com.lankatrails.lankatrails_backend.repositories.TripItemRepository;
+import com.lankatrails.lankatrails_backend.repositories.TripParticipantRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.AvailabilityService;
 import com.lankatrails.lankatrails_backend.service.BookingService;
+import com.lankatrails.lankatrails_backend.service.PaymentService;
 import com.lankatrails.lankatrails_backend.service.utils.TripPrivilegeUtils;
-
+import com.stripe.model.PaymentIntent;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @org.springframework.stereotype.Service
 @Slf4j
 public class BookingServiceImpl implements BookingService {
-    
+
     @Autowired
     BookingRepository bookingRepository;
 
@@ -170,10 +172,10 @@ public class BookingServiceImpl implements BookingService {
     //find the bookings a service has on a particular day
     @Override
     @Transactional(readOnly = true)
-    public APIResponse<BookingResponseDTO> getBookingsOnTheDay(AvailabilityDto availabilityDto,Long id){
-        List<Booking> bookings = bookingRepository.findBookingsOnADay(availabilityDto.getStartDateTime().toLocalDate(),id,BookingStatus.CONFIRMED);
+    public APIResponse<BookingResponseDTO> getBookingsOnTheDay(AvailabilityDto availabilityDto, Long id) {
+        List<Booking> bookings = bookingRepository.findBookingsOnADay(availabilityDto.getStartDateTime().toLocalDate(), id, BookingStatus.CONFIRMED);
         List<BookingRequestDTO> prepareResponse = new ArrayList<>();
-        for (Booking booking : bookings){
+        for (Booking booking : bookings) {
             //map each to BookingRequestDTO
             BookingRequestDTO setResponse = new BookingRequestDTO();
             setResponse.setStartDateTime(booking.getStartDateTime());
@@ -187,7 +189,7 @@ public class BookingServiceImpl implements BookingService {
         }
         BookingResponseDTO responseDTO = new BookingResponseDTO();
         responseDTO.setContent(prepareResponse);
-        return  APIResponse.<BookingResponseDTO>builder()
+        return APIResponse.<BookingResponseDTO>builder()
                 .success(true)
                 .message("")
                 .data(responseDTO)

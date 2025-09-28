@@ -2,11 +2,12 @@ package com.lankatrails.lankatrails_backend.model;
 
 import com.lankatrails.lankatrails_backend.model.enums.ChatRoomType;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)

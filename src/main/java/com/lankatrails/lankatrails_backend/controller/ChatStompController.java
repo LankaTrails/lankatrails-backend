@@ -1,7 +1,16 @@
 package com.lankatrails.lankatrails_backend.controller;
 
-import java.security.Principal;
-
+import com.lankatrails.lankatrails_backend.dtos.ChatMessageDto;
+import com.lankatrails.lankatrails_backend.dtos.ReadReceiptDto;
+import com.lankatrails.lankatrails_backend.dtos.response.WebSocketErrorResponse;
+import com.lankatrails.lankatrails_backend.exception.BadRequestException;
+import com.lankatrails.lankatrails_backend.exception.UnauthorizedException;
+import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
+import com.lankatrails.lankatrails_backend.service.ChatRoomService;
+import com.lankatrails.lankatrails_backend.service.ChatService;
+import com.lankatrails.lankatrails_backend.service.TypingService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -10,19 +19,7 @@ import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 
-import com.lankatrails.lankatrails_backend.dtos.ChatMessageDto;
-import com.lankatrails.lankatrails_backend.dtos.ReadReceiptDto;
-import com.lankatrails.lankatrails_backend.dtos.response.WebSocketErrorResponse;
-import com.lankatrails.lankatrails_backend.exception.BadRequestException;
-import com.lankatrails.lankatrails_backend.exception.UnauthorizedException;
-import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
-import com.lankatrails.lankatrails_backend.service.ChatService;
-import com.lankatrails.lankatrails_backend.service.ChatRoomService;
-import com.lankatrails.lankatrails_backend.service.TypingService;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PathVariable;
+import java.security.Principal;
 
 @Controller
 @RequiredArgsConstructor
@@ -93,7 +90,7 @@ public class ChatStompController {
         if (!chatRoomService.isUserInRoom(userId, roomId)) {
             throw new BadRequestException("User is not part of this chat room");
         }
-        
+
         typingService.stopTyping(roomId, userId, username);
         log.debug("User {} stopped typing in room {}", userId, roomId);
     }
@@ -101,8 +98,8 @@ public class ChatStompController {
     @MessageExceptionHandler(BadRequestException.class)
     @SendToUser("/queue/errors")
     public WebSocketErrorResponse handleBadRequestException(BadRequestException ex, Principal principal) {
-        log.warn("BadRequestException in WebSocket message for user {}: {}", 
-                 principal != null ? principal.getName() : "UNKNOWN", ex.getMessage());
+        log.warn("BadRequestException in WebSocket message for user {}: {}",
+                principal != null ? principal.getName() : "UNKNOWN", ex.getMessage());
         return WebSocketErrorResponse.create(
                 "BAD_REQUEST",
                 ex.getMessage(),
@@ -114,8 +111,8 @@ public class ChatStompController {
     @MessageExceptionHandler(UnauthorizedException.class)
     @SendToUser("/queue/errors")
     public WebSocketErrorResponse handleUnauthorizedException(UnauthorizedException ex, Principal principal) {
-        log.warn("UnauthorizedException in WebSocket message for user {}: {}", 
-                 principal != null ? principal.getName() : "UNKNOWN", ex.getMessage());
+        log.warn("UnauthorizedException in WebSocket message for user {}: {}",
+                principal != null ? principal.getName() : "UNKNOWN", ex.getMessage());
         return WebSocketErrorResponse.create(
                 "UNAUTHORIZED",
                 ex.getMessage(),
@@ -127,8 +124,8 @@ public class ChatStompController {
     @MessageExceptionHandler(Exception.class)
     @SendToUser("/queue/errors")
     public WebSocketErrorResponse handleGenericException(Exception ex, Principal principal) {
-        log.error("Unhandled exception in WebSocket message for user {}: {}", 
-                  principal != null ? principal.getName() : "UNKNOWN", ex.getMessage(), ex);
+        log.error("Unhandled exception in WebSocket message for user {}: {}",
+                principal != null ? principal.getName() : "UNKNOWN", ex.getMessage(), ex);
         return WebSocketErrorResponse.create(
                 "INTERNAL_ERROR",
                 ex.getMessage(),

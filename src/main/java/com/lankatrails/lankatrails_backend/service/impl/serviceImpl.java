@@ -13,8 +13,10 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
-
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @org.springframework.stereotype.Service
@@ -41,9 +43,9 @@ public class serviceImpl implements ServicesForAll {
     @Autowired
     ModelMapper modelMapper;
 
-    public Boolean removeService(Long id){
-        Service service=serviceRepository.findById(id)
-                .orElseThrow(()->new ResourceNotFoundException("Service",id));
+    public Boolean removeService(Long id) {
+        Service service = serviceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Service", id));
         service.setStatus(ServiceStatus.INACTIVE);
         return true;
 
@@ -62,7 +64,7 @@ public class serviceImpl implements ServicesForAll {
 //        }
 //    }
 
-    public Set<Location> setServiceLocation(ServiceRequest request){
+    public Set<Location> setServiceLocation(ServiceRequest request) {
         return request.getLocations().stream()
                 .map(locationDTO -> {
                     if (locationDTO.getLocationId() != null) {
@@ -128,7 +130,7 @@ public class serviceImpl implements ServicesForAll {
 
     @Override
     @Transactional
-    public BookingConfiguration setBookingConfig(BookingConfigDTO bookingConfigDTO){
+    public BookingConfiguration setBookingConfig(BookingConfigDTO bookingConfigDTO) {
         BookingConfiguration existingConfig = null;
         if (bookingConfigDTO.getBookingConfigId() != null) {
             existingConfig = bookingConfigurationRepository.findById(bookingConfigDTO.getBookingConfigId())
@@ -144,7 +146,7 @@ public class serviceImpl implements ServicesForAll {
 
     @Override
     @Transactional
-    public PriceConfiguration setPriceConfig(PriceConfigDTO priceConfigDTO){
+    public PriceConfiguration setPriceConfig(PriceConfigDTO priceConfigDTO) {
         PriceConfiguration existingConfig = null;
         if (priceConfigDTO.getPriceConfigId() != null) {
             existingConfig = priceConfigurationRepository.findById(priceConfigDTO.getPriceConfigId())

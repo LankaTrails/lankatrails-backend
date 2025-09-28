@@ -19,9 +19,9 @@ public class CreateServiceFactory {
             ActivityServiceRequest services,
             List<TabSectionRequest> tabsReq,
             List<PolicySectionRequest> policyReq
-    ){
+    ) {
 
-        ActivityServiceRequest prepareResponse=new ActivityServiceRequest();
+        ActivityServiceRequest prepareResponse = new ActivityServiceRequest();
         prepareResponse.setServiceName(services.getServiceName());
 //        prepareResponse.setLocationBased(services.getLocationBased());
         prepareResponse.setContactNo(services.getContactNo());
@@ -31,21 +31,22 @@ public class CreateServiceFactory {
         prepareResponse.setTabsSection(tabsReq);
         prepareResponse.setPolicySection(policyReq);
 
-        List<ActivityServiceRequest> responseList=new ArrayList<>();
+        List<ActivityServiceRequest> responseList = new ArrayList<>();
         responseList.add(prepareResponse);
 
-        ActivityServiceResponse response=new ActivityServiceResponse();
+        ActivityServiceResponse response = new ActivityServiceResponse();
         response.setContent(responseList);
 
         return response;
 
     }
+
     public TransportResponseDTO createTransportResponse(
-        TransportRequestDTO transportRequestDTO,
-        List<TabSectionRequest> tabsReq,
-        List<PolicySectionRequest> policyReq
-    ){
-        TransportRequestDTO prepareResponse=new TransportRequestDTO();
+            TransportRequestDTO transportRequestDTO,
+            List<TabSectionRequest> tabsReq,
+            List<PolicySectionRequest> policyReq
+    ) {
+        TransportRequestDTO prepareResponse = new TransportRequestDTO();
         prepareResponse.setServiceName(transportRequestDTO.getServiceName());
         prepareResponse.setPolicySection(transportRequestDTO.getPolicySection());
         prepareResponse.setTabsSection(transportRequestDTO.getTabsSection());
@@ -54,10 +55,10 @@ public class CreateServiceFactory {
 //        prepareResponse.setVehicleQty(transportRequestDTO.getVehicleQty());
 //        prepareResponse.setVehicleType(transportRequestDTO.getVehicleType());
 
-        List<TransportRequestDTO> responseList=new ArrayList<>();
+        List<TransportRequestDTO> responseList = new ArrayList<>();
         responseList.add(prepareResponse);
 
-        TransportResponseDTO response=new TransportResponseDTO();
+        TransportResponseDTO response = new TransportResponseDTO();
         response.setContent(responseList);
 
         return response;

@@ -2,7 +2,6 @@ package com.lankatrails.lankatrails_backend.repositories;
 
 import com.lankatrails.lankatrails_backend.model.Tourist;
 import com.lankatrails.lankatrails_backend.model.Trip;
-import com.lankatrails.lankatrails_backend.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

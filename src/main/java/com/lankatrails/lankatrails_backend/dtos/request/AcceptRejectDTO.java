@@ -12,7 +12,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AcceptRejectDTO {
-//    private Long licenseId;
+    //    private Long licenseId;
     private Long providerId;
     private Category category;
     private ApprovalStatus status;

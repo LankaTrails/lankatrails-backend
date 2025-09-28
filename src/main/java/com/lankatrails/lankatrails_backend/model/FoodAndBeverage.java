@@ -10,7 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class FoodAndBeverage extends Service{
+public class FoodAndBeverage extends Service {
 
     @Column(name = "vegetarian_options")
     private Boolean vegetarianOptions;

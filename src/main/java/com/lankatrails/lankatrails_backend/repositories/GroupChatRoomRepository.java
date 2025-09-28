@@ -7,5 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface GroupChatRoomRepository extends JpaRepository<GroupChatRoom, Long> {
     Boolean existsByTrip_TripId(Long tripId);
+
     GroupChatRoom findByTrip_TripId(Long tripId);
 }

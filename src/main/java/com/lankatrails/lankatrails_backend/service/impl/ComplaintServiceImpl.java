@@ -51,9 +51,9 @@ public class ComplaintServiceImpl implements ComplaintService {
     @Transactional
     public APIResponse<String> addNewComplaint(ComplaintDTO complaintDTO) {
         Service service = serviceRepository.findById(complaintDTO.getServiceId())
-                .orElseThrow(()->new ResourceNotFoundException("Service",complaintDTO.getServiceId()));
-        Tourist tourist =touristRepository.findByUserId(authUtils.loggedInUserId())
-                .orElseThrow(()-> new ResourceNotFoundException("Tourist",authUtils.loggedInUserId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Service", complaintDTO.getServiceId()));
+        Tourist tourist = touristRepository.findByUserId(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Tourist", authUtils.loggedInUserId()));
 
         //Prepare the complaint
         Complaint complaint = new Complaint();
@@ -65,7 +65,7 @@ public class ComplaintServiceImpl implements ComplaintService {
         //save the complaint
         Complaint savedComplaint = complaintRepository.save(complaint);
         //prepare the complaint images
-        for(ComplaintImgDTO complaintImg : complaintDTO.getComplaintImgs()){
+        for (ComplaintImgDTO complaintImg : complaintDTO.getComplaintImgs()) {
             ComplaintImage img = new ComplaintImage();
             img.setImageUrl(complaintImg.getImageUrl());
             img.setComplaint(savedComplaint);
@@ -84,15 +84,15 @@ public class ComplaintServiceImpl implements ComplaintService {
     @Override
     @Transactional
     public APIResponse<ComplaintInfoResponse> getAllComplaints() {
-        List<Complaint> complaints = complaintRepository.findByComplaintStatusOrComplaintStatus(ComplaintStatus.PENDING,ComplaintStatus.IN_PROGRESS);
-        if (!complaints.isEmpty()){
+        List<Complaint> complaints = complaintRepository.findByComplaintStatusOrComplaintStatus(ComplaintStatus.PENDING, ComplaintStatus.IN_PROGRESS);
+        if (!complaints.isEmpty()) {
             List<ComplaintInfoDTO> responseList = new ArrayList<>();
-            for (Complaint complaint : complaints){
+            for (Complaint complaint : complaints) {
                 Service service = serviceRepository.findById(complaint.getService().getServiceId())
-                        .orElseThrow(()->new ResourceNotFoundException("Service",complaint.getService().getServiceId()));
+                        .orElseThrow(() -> new ResourceNotFoundException("Service", complaint.getService().getServiceId()));
 
                 Tourist tourist = touristRepository.findByUserId(complaint.getTourist().getUserId())
-                        .orElseThrow(()->new ResourceNotFoundException("Tourist", complaint.getTourist().getUserId()));
+                        .orElseThrow(() -> new ResourceNotFoundException("Tourist", complaint.getTourist().getUserId()));
                 ComplaintInfoDTO complaintInfoDTO = new ComplaintInfoDTO();
                 complaintInfoDTO.setBusinessName(service.getServiceName());
                 complaintInfoDTO.setComplaintStatus(complaint.getComplaintStatus());
@@ -111,7 +111,7 @@ public class ComplaintServiceImpl implements ComplaintService {
                     .message("Loaded all the status pending complaints")
                     .data(complaintInfoResponse)
                     .build();
-        }else{
+        } else {
             return APIResponse.<ComplaintInfoResponse>builder()
                     .success(true)
                     .message("No pending complaints to resolve")
@@ -124,18 +124,18 @@ public class ComplaintServiceImpl implements ComplaintService {
     @Override
     @Transactional
     public APIResponse<ComplaintViewDTO> viewOneComplaint(Long id) {
-        Complaint complaint= complaintRepository.findById(id)
-                .orElseThrow(()->new ResourceNotFoundException("Complaint",id));
+        Complaint complaint = complaintRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Complaint", id));
         Service service = serviceRepository.findById(complaint.getService().getServiceId())
-                .orElseThrow(()-> new ResourceNotFoundException("Service",complaint.getService().getServiceId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Service", complaint.getService().getServiceId()));
 
         Tourist tourist = touristRepository.findByUserId(complaint.getTourist().getUserId())
-                .orElseThrow(()-> new ResourceNotFoundException("Tourist",complaint.getTourist().getUserId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Tourist", complaint.getTourist().getUserId()));
 
 //        List<Booking> bookings = bookingRepository.findByService_ServiceIdAndTourist_UserId(service.getServiceId(),tourist.getUserId());
 
         Booking booking = bookingRepository.findById(complaint.getBooking().getBookingId())
-                .orElseThrow(()-> new ResourceNotFoundException("Booking",complaint.getBooking().getBookingId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Booking", complaint.getBooking().getBookingId()));
 
         List<Complaint> noOfComplaints = complaintRepository.findByService_ServiceId(service.getServiceId());
 
@@ -169,15 +169,15 @@ public class ComplaintServiceImpl implements ComplaintService {
     @Override
     public APIResponse<String> handleComplaint(ComplaintHandleRequestDTO complaintHandleRequestDTO) {
         Service service = serviceRepository.findById(complaintHandleRequestDTO.getServiceId())
-                .orElseThrow(()->new ResourceNotFoundException("Service", complaintHandleRequestDTO.getServiceId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Service", complaintHandleRequestDTO.getServiceId()));
         Tourist tourist = touristRepository.findByUserId(complaintHandleRequestDTO.getUserId())
-                .orElseThrow(()-> new ResourceNotFoundException("Tourist", complaintHandleRequestDTO.getUserId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Tourist", complaintHandleRequestDTO.getUserId()));
         Complaint complaint = complaintRepository.findById(complaintHandleRequestDTO.getComplaintId())
-                .orElseThrow(()->new ResourceNotFoundException("Complaint", complaintHandleRequestDTO.getComplaintId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Complaint", complaintHandleRequestDTO.getComplaintId()));
 
         complaint.setComplaintStatus(ComplaintStatus.RESOLVED);
 
-        if (complaintHandleRequestDTO.getComplaintType()== ComplaintType.PROVIDER_FAULT && complaintHandleRequestDTO.getWarningStatus()){
+        if (complaintHandleRequestDTO.getComplaintType() == ComplaintType.PROVIDER_FAULT && complaintHandleRequestDTO.getWarningStatus()) {
             //increase the no of warnings if it is a provider's fault
             service.setWarnings(service.getWarnings() + 1);
             //save the warning
@@ -187,24 +187,24 @@ public class ComplaintServiceImpl implements ComplaintService {
             warningRepository.save(warning);
         }
 
-        if(complaintHandleRequestDTO.getComplaintResult() == ComplaintResult.REFUND_FROM_PROVIDER){
+        if (complaintHandleRequestDTO.getComplaintResult() == ComplaintResult.REFUND_FROM_PROVIDER) {
             //get the resolved criteria set
             ComplaintResolve complaintResolve = complaintResolveRepository.findById(complaintHandleRequestDTO.getResolveId())
-                    .orElseThrow(()->new ResourceNotFoundException("Complaint Resolve", complaintHandleRequestDTO.getServiceId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Complaint Resolve", complaintHandleRequestDTO.getServiceId()));
             //Set the resolved category
             complaint.setComplaintResolve(complaintResolve);
             //refund the provider's money
-        }else if (complaintHandleRequestDTO.getComplaintResult() == ComplaintResult.REFUND_FROM_COMPANY){
+        } else if (complaintHandleRequestDTO.getComplaintResult() == ComplaintResult.REFUND_FROM_COMPANY) {
             //get the resolved criteria set
             ComplaintResolve complaintResolve = complaintResolveRepository.findById(complaintHandleRequestDTO.getResolveId())
-                    .orElseThrow(()->new ResourceNotFoundException("Complaint Resolve", complaintHandleRequestDTO.getServiceId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Complaint Resolve", complaintHandleRequestDTO.getServiceId()));
             //Set the resolved category
             complaint.setComplaintResolve(complaintResolve);
             //refund the entire amount from the company
-        }else if (complaintHandleRequestDTO.getComplaintResult() == ComplaintResult.REJECT){
+        } else if (complaintHandleRequestDTO.getComplaintResult() == ComplaintResult.REJECT) {
             //get the rejected criteria set
             ComplaintReject complaintReject = complaintRejectRepository.findById(complaintHandleRequestDTO.getRejectId())
-                    .orElseThrow(()->new ResourceNotFoundException("Complaint Resolve", complaintHandleRequestDTO.getServiceId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Complaint Resolve", complaintHandleRequestDTO.getServiceId()));
             //Set why rejected
             complaint.setComplaintReject(complaintReject);
             //No need of refund
@@ -219,7 +219,7 @@ public class ComplaintServiceImpl implements ComplaintService {
     @Transactional
     public APIResponse<String> updateProgress(Long id, ComplaintViewDTO complaintViewDTO) {
         Complaint complaint = complaintRepository.findById(id)
-                .orElseThrow(()-> new ResourceNotFoundException("Complaint",id));
+                .orElseThrow(() -> new ResourceNotFoundException("Complaint", id));
         complaint.setComplaintStatus(ComplaintStatus.IN_PROGRESS);
         complaint.setInvestigationStartedDate(complaintViewDTO.getInvestigationStartedDate());
         complaintRepository.save(complaint);
@@ -232,12 +232,12 @@ public class ComplaintServiceImpl implements ComplaintService {
 
     @Override
     public APIResponse<String> updateComplaintResult(Long id, ComplaintViewDTO complaintViewDTO) {
-       Complaint complaint =  complaintRepository.findById(id)
-                .orElseThrow(()->new ResourceNotFoundException("Complaint",id));
+        Complaint complaint = complaintRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Complaint", id));
 
 
 //       complaint.setComplaintResult(complaintViewDTO.);
-       complaintRepository.save(complaint);
+        complaintRepository.save(complaint);
         return APIResponse.<String>builder()
                 .success(true)
                 .message("Successfully Updated the Complaint Result")

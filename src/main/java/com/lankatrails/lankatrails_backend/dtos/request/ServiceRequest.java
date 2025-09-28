@@ -1,6 +1,5 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
-import com.lankatrails.lankatrails_backend.model.enums.PriceType;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -24,7 +23,8 @@ public abstract class ServiceRequest {
     @NotBlank(message = "Service name is blank")
     private String serviceName;
 
-    @NotBlank(message = "Contact number is blank")@Pattern(
+    @NotBlank(message = "Contact number is blank")
+    @Pattern(
             regexp = "^(\\+94|0)(7[0-9]{8}|[1-9][0-9]{8})$",
             message = "Invalid contact number format"
     )

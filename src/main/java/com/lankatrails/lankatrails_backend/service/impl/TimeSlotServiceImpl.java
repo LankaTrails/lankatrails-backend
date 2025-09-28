@@ -1,5 +1,24 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
+import com.lankatrails.lankatrails_backend.dtos.request.TimeSlotsRequestDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.TimeSlotsResponseDTO;
+import com.lankatrails.lankatrails_backend.exception.BadRequestException;
+import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
+import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.enums.BookingStatus;
+import com.lankatrails.lankatrails_backend.model.enums.BookingType;
+import com.lankatrails.lankatrails_backend.repositories.AvailableTimeRepository;
+import com.lankatrails.lankatrails_backend.repositories.BookingRepository;
+import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
+import com.lankatrails.lankatrails_backend.repositories.TouristGuideRepository;
+import com.lankatrails.lankatrails_backend.service.TimeSlotService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -8,31 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
-import com.lankatrails.lankatrails_backend.dtos.request.TimeSlotsRequestDTO;
-import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.TimeSlotsResponseDTO;
-import com.lankatrails.lankatrails_backend.exception.BadRequestException;
-import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.model.AvailableTime;
-import com.lankatrails.lankatrails_backend.model.Booking;
-import com.lankatrails.lankatrails_backend.model.BookingConfiguration;
-import com.lankatrails.lankatrails_backend.model.BreakTime;
-import com.lankatrails.lankatrails_backend.model.TouristGuide;
-import com.lankatrails.lankatrails_backend.model.enums.BookingStatus;
-import com.lankatrails.lankatrails_backend.model.enums.BookingType;
-import com.lankatrails.lankatrails_backend.repositories.AvailableTimeRepository;
-import com.lankatrails.lankatrails_backend.repositories.BookingRepository;
-import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
-import com.lankatrails.lankatrails_backend.repositories.TouristGuideRepository;
-import com.lankatrails.lankatrails_backend.service.TimeSlotService;
-
-import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -61,7 +55,7 @@ public class TimeSlotServiceImpl implements TimeSlotService {
      */
     private APIResponse<List<String>> generateTimeSlotsWithBreakTimes(LocalTime openTime, LocalTime closeTime, Integer minutesPerSlot, List<BreakTime> breakTimes, Integer bufferTimeMinutes) {
         log.info("Minutes per slot: {}", minutesPerSlot);
-        
+
         // 1. Validate input
         if (minutesPerSlot <= 0) {
             throw new RuntimeException("Minutes per slot duration should be greater than 0");
@@ -83,19 +77,19 @@ public class TimeSlotServiceImpl implements TimeSlotService {
                 && safetyCounter++ < MAX_SLOTS && current.isBefore(closeTime)) {
 
             LocalTime end = current.plus(slotDuration);
-            
+
             // Check if this slot overlaps with any break time
             if (!overlapsWithBreakTime(current, end, breakTimes)) {
                 log.info("Adding slot: {} - {}", current, end);
                 slots.add(String.format("%02d:%02d - %02d:%02d",
                         current.getHour(), current.getMinute(),
                         end.getHour(), end.getMinute()));
-                
+
                 // Move to next potential slot start time = current slot end + buffer time
                 current = end.plus(bufferTime);
             } else {
                 log.debug("Skipping slot {} - {} due to break time overlap", current, end);
-                
+
                 // When overlapping with break time, find the earliest break end time that affects this slot
                 LocalTime earliestBreakEnd = findEarliestBreakEndTime(current, end, breakTimes);
                 if (earliestBreakEnd != null) {
@@ -186,7 +180,7 @@ public class TimeSlotServiceImpl implements TimeSlotService {
     @Transactional(readOnly = true)
     public APIResponse<TimeSlotsResponseDTO> getAllFreeTimeSlots(AvailabilityDto availabilityDto, Long serviceId) {
         log.info("Getting free time slots for service ID: {} on date: {}", serviceId, availabilityDto.getStartDateTime().toLocalDate());
-        
+
         // Find the service and check booking configuration
         com.lankatrails.lankatrails_backend.model.Service service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Service", serviceId));
@@ -207,7 +201,7 @@ public class TimeSlotServiceImpl implements TimeSlotService {
 
         // Get the requested date
         LocalDate requestedDate = availabilityDto.getStartDateTime().toLocalDate();
-        
+
         // Get availability for the requested day
         List<AvailableTime> availableTimeList = availableTimeRepository.findByService_ServiceId(serviceId);
         if (availableTimeList.isEmpty()) {
@@ -260,7 +254,7 @@ public class TimeSlotServiceImpl implements TimeSlotService {
 
         // Filter out slots that would exceed capacity if this booking was added
         List<TimeSlotsRequestDTO> availableSlots = new ArrayList<>();
-        
+
         for (TimeSlotsRequestDTO slot : allPossibleSlots) {
             if (isSlotAvailableForBooking(slot, existingBookings, config, availabilityDto)) {
                 availableSlots.add(slot);
@@ -282,39 +276,39 @@ public class TimeSlotServiceImpl implements TimeSlotService {
      */
     private List<TimeSlotsRequestDTO> generateTimeSlotsAsObjects(LocalTime openTime, LocalTime closeTime, Integer minutesPerSlot, AvailableTime availableTime, BookingConfiguration config) {
         log.info("Generating time slots from {} to {} with {} minute duration", openTime, closeTime, minutesPerSlot);
-        
+
         if (minutesPerSlot <= 0) {
             throw new RuntimeException("Minutes per slot duration should be greater than 0");
         }
 
         Duration slotDuration = Duration.ofHours(minutesPerSlot / 60).plusMinutes(minutesPerSlot % 60);
-        
+
         // Get buffer time from configuration (default to 0 if not specified)
         int bufferTimeMinutes = Optional.ofNullable(config.getBufferTime()).orElse(0);
         Duration bufferTime = Duration.ofMinutes(bufferTimeMinutes);
-        
+
         log.info("Using buffer time: {} minutes", bufferTimeMinutes);
-        
+
         List<TimeSlotsRequestDTO> slots = new ArrayList<>();
         LocalTime current = openTime;
         int safetyCounter = 0;
         final int MAX_SLOTS = 48; // Maximum for 30-minute slots in 24 hours
 
-        while (!current.plus(slotDuration).isAfter(closeTime) 
+        while (!current.plus(slotDuration).isAfter(closeTime)
                 && safetyCounter++ < MAX_SLOTS && current.isBefore(closeTime)) {
 
             LocalTime end = current.plus(slotDuration);
-            
+
             // Check if this slot overlaps with any break time
             if (!overlapsWithBreakTime(current, end, availableTime.getBreakTimes())) {
                 slots.add(new TimeSlotsRequestDTO(current, end));
                 log.debug("Added slot: {} - {}", current, end);
-                
+
                 // Move to next potential slot start time = current slot end + buffer time
                 current = end.plus(bufferTime);
             } else {
                 log.debug("Skipping slot {} - {} due to break time overlap", current, end);
-                
+
                 // When overlapping with break time, find the earliest break end time that affects this slot
                 LocalTime earliestBreakEnd = findEarliestBreakEndTime(current, end, availableTime.getBreakTimes());
                 if (earliestBreakEnd != null) {
@@ -343,33 +337,34 @@ public class TimeSlotServiceImpl implements TimeSlotService {
         if (breakTimes == null || breakTimes.isEmpty()) {
             return false;
         }
-        
+
         for (BreakTime breakTime : breakTimes) {
             LocalTime breakStart = breakTime.getBreakStart();
             LocalTime breakEnd = breakTime.getBreakEnd();
-            
+
             if (breakStart == null || breakEnd == null) {
                 continue; // Skip invalid break times
             }
-            
+
             // Two intervals [a,b] and [c,d] overlap if: max(a,c) < min(b,d)
             // Or equivalently: !(b <= c || d <= a)
             // In our case: !(slotEnd <= breakStart || breakEnd <= slotStart)
-            if (!(slotEnd.isBefore(breakStart) || slotEnd.equals(breakStart) || 
-                  breakEnd.isBefore(slotStart) || breakEnd.equals(slotStart))) {
-                log.debug("Slot [{} - {}] overlaps with break time [{} - {}]", 
-                         slotStart, slotEnd, breakStart, breakEnd);
+            if (!(slotEnd.isBefore(breakStart) || slotEnd.equals(breakStart) ||
+                    breakEnd.isBefore(slotStart) || breakEnd.equals(slotStart))) {
+                log.debug("Slot [{} - {}] overlaps with break time [{} - {}]",
+                        slotStart, slotEnd, breakStart, breakEnd);
                 return true; // There is an overlap
             }
         }
-        
+
         return false; // No overlap with any break time
     }
 
     /**
      * Helper method to find the earliest break end time that affects a given time slot
-     * @param slotStart the start time of the slot
-     * @param slotEnd the end time of the slot
+     *
+     * @param slotStart  the start time of the slot
+     * @param slotEnd    the end time of the slot
      * @param breakTimes list of break times
      * @return the earliest break end time that overlaps with the slot, or null if none
      */
@@ -377,27 +372,27 @@ public class TimeSlotServiceImpl implements TimeSlotService {
         if (breakTimes == null || breakTimes.isEmpty()) {
             return null;
         }
-        
+
         LocalTime earliestBreakEnd = null;
-        
+
         for (BreakTime breakTime : breakTimes) {
             LocalTime breakStart = breakTime.getBreakStart();
             LocalTime breakEnd = breakTime.getBreakEnd();
-            
+
             if (breakStart == null || breakEnd == null) {
                 continue; // Skip invalid break times
             }
-            
+
             // Check if this break time overlaps with the slot
-            if (!(slotEnd.isBefore(breakStart) || slotEnd.equals(breakStart) || 
-                  breakEnd.isBefore(slotStart) || breakEnd.equals(slotStart))) {
+            if (!(slotEnd.isBefore(breakStart) || slotEnd.equals(breakStart) ||
+                    breakEnd.isBefore(slotStart) || breakEnd.equals(slotStart))) {
                 // This break overlaps with the slot
                 if (earliestBreakEnd == null || breakEnd.isBefore(earliestBreakEnd)) {
                     earliestBreakEnd = breakEnd;
                 }
             }
         }
-        
+
         return earliestBreakEnd;
     }
 
@@ -405,21 +400,21 @@ public class TimeSlotServiceImpl implements TimeSlotService {
      * Helper method to check if a time slot is available for the requested booking
      * considering capacity constraints
      */
-    private boolean isSlotAvailableForBooking(TimeSlotsRequestDTO slot, 
-                                            List<Booking> existingBookings, 
-                                            BookingConfiguration config, 
-                                            AvailabilityDto availabilityDto) {
-        
+    private boolean isSlotAvailableForBooking(TimeSlotsRequestDTO slot,
+                                              List<Booking> existingBookings,
+                                              BookingConfiguration config,
+                                              AvailabilityDto availabilityDto) {
+
         // Find overlapping bookings with this slot
         List<Booking> overlappingBookings = existingBookings.stream()
                 .filter(booking -> {
                     LocalTime bookingStart = booking.getStartDateTime().toLocalTime();
                     LocalTime bookingEnd = booking.getEndDateTime().toLocalTime();
-                    
+
                     // Check if there's any overlap between the slot and the booking
                     // Allow touching times (end = start), only real overlaps should count
-                    return !(slot.getSlotEndTime().isBefore(bookingStart) || slot.getSlotEndTime().equals(bookingStart) || 
-                             slot.getSlotStartTime().isAfter(bookingEnd) || slot.getSlotStartTime().equals(bookingEnd));
+                    return !(slot.getSlotEndTime().isBefore(bookingStart) || slot.getSlotEndTime().equals(bookingStart) ||
+                            slot.getSlotStartTime().isAfter(bookingEnd) || slot.getSlotStartTime().equals(bookingEnd));
                 })
                 .collect(Collectors.toList());
 
@@ -430,7 +425,7 @@ public class TimeSlotServiceImpl implements TimeSlotService {
                     return adults != null ? adults : 0;
                 })
                 .sum();
-        
+
         int currentChildCount = overlappingBookings.stream()
                 .mapToInt(booking -> {
                     Integer children = booking.getTripItem().getNumberOfChildren();
@@ -448,11 +443,11 @@ public class TimeSlotServiceImpl implements TimeSlotService {
         // Calculate total capacity based on configuration
         int totalAdultCapacity = 0;
         int totalChildCapacity = 0;
-        
+
         if (config.getTotalUnits() != null && config.getUnitAdultCapacity() != null) {
             totalAdultCapacity = config.getTotalUnits() * config.getUnitAdultCapacity();
         }
-        
+
         if (config.getTotalUnits() != null && config.getUnitChildCapacity() != null) {
             totalChildCapacity = config.getTotalUnits() * config.getUnitChildCapacity();
         }
@@ -471,7 +466,7 @@ public class TimeSlotServiceImpl implements TimeSlotService {
         Integer adultCountInteger = availabilityDto.getAdultCount();
         Integer childCountInteger = availabilityDto.getChildCount();
         Integer unitCountInteger = availabilityDto.getNoOfUnits();
-        
+
         int requestedAdults = adultCountInteger != null ? adultCountInteger : 0;
         int requestedChildren = childCountInteger != null ? childCountInteger : 0;
         int requestedUnits = unitCountInteger != null ? unitCountInteger : 1;
@@ -489,7 +484,7 @@ public class TimeSlotServiceImpl implements TimeSlotService {
             int totalGuestCapacity = totalAdultCapacity;
             int totalCurrentGuests = currentAdultCount + currentChildCount;
             int totalRequestedGuests = requestedAdults + requestedChildren;
-            
+
             if (totalGuestCapacity > 0 && totalCurrentGuests + totalRequestedGuests > totalGuestCapacity) {
                 return false; // Not enough capacity for all guests treated as adults
             }

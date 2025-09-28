@@ -1,27 +1,26 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
-
+import com.lankatrails.lankatrails_backend.dtos.ChatRoomDto;
 import com.lankatrails.lankatrails_backend.dtos.DirectChatRoomDto;
 import com.lankatrails.lankatrails_backend.dtos.GroupChatRoomDto;
 import com.lankatrails.lankatrails_backend.dtos.TouristDto;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.exception.BadRequestException;
+import com.lankatrails.lankatrails_backend.exception.UserNotFoundException;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.ChatRoomType;
 import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
+import com.lankatrails.lankatrails_backend.service.ChatRoomService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.lankatrails.lankatrails_backend.dtos.ChatRoomDto;
-import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.exception.BadRequestException;
-import com.lankatrails.lankatrails_backend.exception.UserNotFoundException;
-import com.lankatrails.lankatrails_backend.service.ChatRoomService;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ChatRoomServiceImpl implements ChatRoomService {
@@ -185,7 +184,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
         if (chatRoom instanceof DirectChatRoom directChatRoom) {
             return directChatRoom.getProvider().getUserId().equals(userId) ||
-                   directChatRoom.getTourist().getUserId().equals(userId);
+                    directChatRoom.getTourist().getUserId().equals(userId);
         } else if (chatRoom instanceof GroupChatRoom groupChatRoom) {
             return groupChatRoom.getParticipants().stream()
                     .anyMatch(participant -> participant.getTourist().getUserId().equals(userId));

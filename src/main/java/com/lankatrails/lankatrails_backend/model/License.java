@@ -1,6 +1,5 @@
 package com.lankatrails.lankatrails_backend.model;
 
-import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

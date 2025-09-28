@@ -4,7 +4,7 @@ import org.springframework.http.HttpStatus;
 
 import java.util.Map;
 
-public class UserPendingApprovalException extends BaseException{
+public class UserPendingApprovalException extends BaseException {
     public UserPendingApprovalException(String email) {
         super(
                 HttpStatus.FORBIDDEN, // 403 Forbidden is appropriate for unverified email

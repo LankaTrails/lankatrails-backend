@@ -1,10 +1,8 @@
 package com.lankatrails.lankatrails_backend.controller;
 
 import com.lankatrails.lankatrails_backend.dtos.request.ProviderDetailsRequest;
-import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceSearchRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.GroupedServiceDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.ProviderDetailsDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.SearchResponseDTO;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
@@ -14,8 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/service")
@@ -45,7 +41,7 @@ public class ServiceController {
     @PostMapping("/provider")
     public ResponseEntity<APIResponse<ProviderDetailsDTO>> getServicesByProviderAndCategory(
             @Valid @RequestBody ProviderDetailsRequest request
-            ) {
+    ) {
         APIResponse<ProviderDetailsDTO> response = serviceService.getServicesByProviderAndCategory(request);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(response);

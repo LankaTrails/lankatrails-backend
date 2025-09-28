@@ -1,40 +1,33 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.config.RabbitConfig;
 import com.lankatrails.lankatrails_backend.dtos.ChatFilesDto;
+import com.lankatrails.lankatrails_backend.dtos.ChatMessageDto;
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.exception.UnauthorizedException;
 import com.lankatrails.lankatrails_backend.model.ChatFiles;
+import com.lankatrails.lankatrails_backend.model.ChatMessage;
 import com.lankatrails.lankatrails_backend.model.ChatRoom;
 import com.lankatrails.lankatrails_backend.model.enums.ChatMessageType;
 import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
 import com.lankatrails.lankatrails_backend.repositories.ChatRoomRepository;
 import com.lankatrails.lankatrails_backend.repositories.DirectChatRoomRepository;
-import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
-import com.lankatrails.lankatrails_backend.service.ServicesForAll;
-import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.stereotype.Service;
-
-import com.lankatrails.lankatrails_backend.config.RabbitConfig;
-import com.lankatrails.lankatrails_backend.dtos.ChatMessageDto;
-import com.lankatrails.lankatrails_backend.exception.BadRequestException;
-import com.lankatrails.lankatrails_backend.model.ChatMessage;
 import com.lankatrails.lankatrails_backend.repositories.MessageRepository;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ChatRoomService;
 import com.lankatrails.lankatrails_backend.service.ChatService;
-
+import com.lankatrails.lankatrails_backend.service.ServicesForAll;
+import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -167,7 +160,7 @@ public class ChatServiceImpl implements ChatService {
         }
 
         ChatMessage message = messageOpt.get();
-        
+
         // Check if user is part of the chat room
         if (!chatRoomService.isUserInRoom(userId, message.getChatRoomId())) {
             throw new BadRequestException("User is not part of this chat room");
@@ -257,14 +250,14 @@ public class ChatServiceImpl implements ChatService {
                 .serviceCard(serviceCards.get(msg.getServiceCardId()))
                 .sentAt(msg.getSentAt())
                 .readBy(msg.getReadBy()) // Include read receipts
-                .files(msg.getFiles() != null 
-                    ? ChatFilesDto.builder()
+                .files(msg.getFiles() != null
+                        ? ChatFilesDto.builder()
                         .id(msg.getFiles().getId())
                         .fileName(msg.getFiles().getFileName())
                         .fileType(msg.getFiles().getFileType())
                         .fileUrl(msg.getFiles().getFileUrl())
                         .build()
-                    : null)
+                        : null)
                 .build();
     }
 }

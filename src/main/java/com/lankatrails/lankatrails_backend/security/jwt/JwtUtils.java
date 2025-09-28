@@ -1,29 +1,26 @@
 package com.lankatrails.lankatrails_backend.security.jwt;
 
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
-import java.util.Date;
-import java.util.UUID;
-
-import javax.crypto.SecretKey;
-
+import com.lankatrails.lankatrails_backend.exception.UnauthorizedException;
+import com.lankatrails.lankatrails_backend.model.User;
+import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.WebUtils;
 
-import com.lankatrails.lankatrails_backend.exception.UnauthorizedException;
-import com.lankatrails.lankatrails_backend.model.User;
-import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
-
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
+import javax.crypto.SecretKey;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.util.Date;
+import java.util.UUID;
 
 @Component
 @Slf4j

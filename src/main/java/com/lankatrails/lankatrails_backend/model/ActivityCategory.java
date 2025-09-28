@@ -1,7 +1,6 @@
 package com.lankatrails.lankatrails_backend.model;
 
 import com.lankatrails.lankatrails_backend.model.enums.ActivityType;
-import com.lankatrails.lankatrails_backend.model.enums.VehicleType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

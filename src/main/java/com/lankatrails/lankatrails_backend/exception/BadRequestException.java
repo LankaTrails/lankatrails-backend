@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class BadRequestException extends BaseException{
+public class BadRequestException extends BaseException {
     public BadRequestException(String message, String resourceName, Long resourceId) {
         super(
                 HttpStatus.BAD_REQUEST,

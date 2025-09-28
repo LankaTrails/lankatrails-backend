@@ -11,4 +11,4 @@ public class RateAndReviewRequest {
     private LocalDateTime createdDate;
     private Long rate;
     private String review;
-  }
+}

@@ -4,7 +4,7 @@ import org.springframework.http.HttpStatus;
 
 import java.util.Map;
 
-public class ServiceAlreadyExistsException extends BaseException{
+public class ServiceAlreadyExistsException extends BaseException {
     public ServiceAlreadyExistsException(Long id) {
         super(
                 HttpStatus.CONFLICT,                      // Proper status code for duplicate resources

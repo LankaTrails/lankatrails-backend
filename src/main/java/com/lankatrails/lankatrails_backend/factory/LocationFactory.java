@@ -20,7 +20,7 @@ public class LocationFactory {
                 .postalCode(locationDTO.getPostalCode())
                 .latitude(locationDTO.getLatitude())
                 .longitude(locationDTO.getLongitude())
-                .locationType(locationDTO.getLocationType() != null ? locationDTO.getLocationType()  : LocationType.POINT_OF_INTEREST)
+                .locationType(locationDTO.getLocationType() != null ? locationDTO.getLocationType() : LocationType.POINT_OF_INTEREST)
                 .build();
     }
 }

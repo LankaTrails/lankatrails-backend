@@ -3,7 +3,6 @@ package com.lankatrails.lankatrails_backend.config;
 import com.lankatrails.lankatrails_backend.security.jwt.AuthTokenFilter;
 import com.lankatrails.lankatrails_backend.security.jwt.JwtUtils;
 import com.lankatrails.lankatrails_backend.security.service.UserDetailsServiceImpl;
-import jakarta.servlet.Filter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -24,10 +23,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 
 import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -55,16 +52,16 @@ public class WebSecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .headers(headers -> headers
-                        .httpStrictTransportSecurity(hsts -> hsts
-                                .includeSubDomains(true)
-                                .preload(true)
-                                .maxAgeInSeconds(63072000)
-                        )
-                        .contentSecurityPolicy(csp -> csp
-                                .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline'")
+                                .httpStrictTransportSecurity(hsts -> hsts
+                                        .includeSubDomains(true)
+                                        .preload(true)
+                                        .maxAgeInSeconds(63072000)
+                                )
+                                .contentSecurityPolicy(csp -> csp
+                                                .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline'")
 //                                .policyDirectives("default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;") // Use this for more restrictive CSP
-                        )
-                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
+                                )
+                                .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()

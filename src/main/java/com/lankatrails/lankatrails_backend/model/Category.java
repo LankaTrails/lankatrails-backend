@@ -27,17 +27,16 @@ public class Category {
     @Column(length = 20, name = "name", nullable = false, unique = true, columnDefinition = "VARCHAR(20)")
     private ServiceCategory categoryName;
 
-    @OneToMany(mappedBy = "category",cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
     private Set<Service> services = new HashSet<>();
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
     private Set<License> licenses = new HashSet<>();
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
+    private Set<PolicySection> policies;
 
     public Category(ServiceCategory categoryName) {
         this.categoryName = categoryName;
     }
-
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
-    private Set<PolicySection> policies;
 
 }

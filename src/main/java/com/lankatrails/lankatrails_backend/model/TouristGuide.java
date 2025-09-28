@@ -1,14 +1,13 @@
 package com.lankatrails.lankatrails_backend.model;
 
 
-import java.time.Duration;
-import java.util.HashSet;
-import java.util.Set;
-
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "tourist_guide")

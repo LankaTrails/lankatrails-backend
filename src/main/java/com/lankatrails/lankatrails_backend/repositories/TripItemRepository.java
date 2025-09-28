@@ -1,6 +1,5 @@
 package com.lankatrails.lankatrails_backend.repositories;
 
-import com.lankatrails.lankatrails_backend.model.Trip;
 import com.lankatrails.lankatrails_backend.model.TripItem;
 import com.lankatrails.lankatrails_backend.model.enums.TripItemType;
 import org.springframework.data.jpa.repository.JpaRepository;

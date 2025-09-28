@@ -14,7 +14,7 @@ public class ActivityService extends Service {
 
     @ManyToOne
     @JoinColumn(name = "activityCategory_id")
-    private  ActivityCategory activityCategory;
+    private ActivityCategory activityCategory;
 
     @Column(name = "activity_details", length = 2000)
     private String activityDetails;

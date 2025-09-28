@@ -1,7 +1,6 @@
 package com.lankatrails.lankatrails_backend.security.service;
 
 import com.lankatrails.lankatrails_backend.repositories.UserRepository;
-import jakarta.persistence.Table;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

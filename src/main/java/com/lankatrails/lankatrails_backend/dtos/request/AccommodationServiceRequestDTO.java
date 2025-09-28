@@ -10,7 +10,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AccommodationServiceRequestDTO extends ServiceRequest{
+public class AccommodationServiceRequestDTO extends ServiceRequest {
     private AccommodationType accommodationType;
     private Boolean freeWifi;
     private Boolean parkingAvailable;

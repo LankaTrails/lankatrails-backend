@@ -11,6 +11,7 @@ public enum ServiceCategory {
     FOOD_BEVERAGE("Food & Beverage");
 
     private final String displayName;
+
     ServiceCategory(String displayName) {
         this.displayName = displayName;
     }

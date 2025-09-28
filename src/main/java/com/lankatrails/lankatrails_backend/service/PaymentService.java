@@ -5,5 +5,6 @@ import com.stripe.model.PaymentIntent;
 
 public interface PaymentService {
     PaymentIntent createPaymentIntent(Long bookingId);
+
     APIResponse<String> confirmPayment(String paymentIntentId);
 }

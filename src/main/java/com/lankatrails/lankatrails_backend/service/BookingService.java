@@ -11,7 +11,10 @@ import java.util.List;
 
 public interface BookingService {
     APIResponse<AvailabilityResponse> checkAvailability(AvailabilityDto availabilityDto);
+
     APIResponse<PaymentRequestDto> addNewBooking(Long tripItemId);
+
     APIResponse<BookingResponseDTO> getBookingsOnTheDay(AvailabilityDto availabilityDto, Long id);
+
     APIResponse<List<BookingItemDto>> getAllBookingForTrip(Long tripId);
 }

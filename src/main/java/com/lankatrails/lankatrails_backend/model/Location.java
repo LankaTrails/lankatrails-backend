@@ -8,7 +8,6 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Point;
 
-import java.awt.*;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -59,7 +58,7 @@ public class Location {
     @Column(name = "location_type")
     private LocationType locationType; // e.g., DISTRICT, CITY, GUIDE_AREA, ATTRACTION, POINT_OF_INTEREST
 
-    @ManyToMany(mappedBy = "locations",cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ManyToMany(mappedBy = "locations", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Service> services = new HashSet<>();
 
     @ManyToMany(mappedBy = "locations", fetch = FetchType.LAZY)

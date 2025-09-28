@@ -12,7 +12,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TransportRequestDTO extends ServiceRequest{
+public class TransportRequestDTO extends ServiceRequest {
     private VehicleType vehicleCategory;
     private Boolean driverIncluded;
     private Boolean airConditioned;

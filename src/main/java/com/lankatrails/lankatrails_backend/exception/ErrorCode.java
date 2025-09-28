@@ -21,9 +21,9 @@ public enum ErrorCode {
     RESOURCE_NOT_FOUND("RESOURCE_001", "Resource not found"),
     EMAIL_ALREADY_EXISTS("RESOURCE_002", "Email already in use"),
     BAD_REQUEST("RESOURCE_003", "Bad request"),
-    SERVICE_ALREADY_EXISTS("RESOURCE_004","Service already in use"),
-    POLICY_HEADING_ALREADY_EXISTS("RESOURCE_005","Policy heading already exists"),
-    LICENSE_EXPIRED("RESOURCE_006","License has Expired"),
+    SERVICE_ALREADY_EXISTS("RESOURCE_004", "Service already in use"),
+    POLICY_HEADING_ALREADY_EXISTS("RESOURCE_005", "Policy heading already exists"),
+    LICENSE_EXPIRED("RESOURCE_006", "License has Expired"),
     // System Errors
     INTERNAL_ERROR("SYSTEM_001", "Internal server error"),
 
@@ -38,4 +38,4 @@ public enum ErrorCode {
         this.description = description;
     }
 
-    }
+}

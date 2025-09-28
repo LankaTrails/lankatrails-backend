@@ -1,7 +1,6 @@
 package com.lankatrails.lankatrails_backend.security.utils;
 
 import com.lankatrails.lankatrails_backend.exception.UserNotFoundException;
-import com.lankatrails.lankatrails_backend.model.User;
 import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import com.lankatrails.lankatrails_backend.repositories.UserRepository;
 import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
@@ -20,22 +19,22 @@ public class AuthUtils {
         if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
             return (UserDetailsImpl) authentication.getPrincipal();
         }
-        throw new UserNotFoundException("User Not Found!" );
+        throw new UserNotFoundException("User Not Found!");
     }
 
-    public String loggedInEmail(){
+    public String loggedInEmail() {
         UserDetailsImpl userDetails = getLoggedInUserDetails();
         return (userDetails != null) ? userDetails.getEmail() : null;
     }
 
-    public Long loggedInUserId(){
+    public Long loggedInUserId() {
         UserDetailsImpl userDetails = getLoggedInUserDetails();
         return (userDetails != null) ? userDetails.getId() : null;
     }
 
-    public UserRole loggedInUserRole(){
+    public UserRole loggedInUserRole() {
         UserDetailsImpl userDetails = getLoggedInUserDetails();
-        return (userDetails != null) ? userDetails.getRole(): null;
+        return (userDetails != null) ? userDetails.getRole() : null;
     }
 
 //    public User loggedInUser(){

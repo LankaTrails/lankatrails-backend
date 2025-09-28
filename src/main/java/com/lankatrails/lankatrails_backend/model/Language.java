@@ -17,7 +17,7 @@ public class Language {
 
     private String language;
 
-    @ManyToOne(cascade=CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "touristGuide_id")
     private TouristGuide touristGuide;
 }

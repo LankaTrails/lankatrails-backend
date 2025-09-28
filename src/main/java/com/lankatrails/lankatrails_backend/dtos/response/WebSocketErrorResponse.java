@@ -1,11 +1,11 @@
 package com.lankatrails.lankatrails_backend.dtos.response;
 
-import java.time.Instant;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.time.Instant;
 
 @Getter
 @Builder

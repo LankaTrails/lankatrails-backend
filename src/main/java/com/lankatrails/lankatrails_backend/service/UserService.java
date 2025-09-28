@@ -9,5 +9,5 @@ import org.springframework.web.multipart.MultipartFile;
 public interface UserService {
     APIResponse<UserProfileDto> updateUserProfile(UserProfileDto userProfileDto, MultipartFile profilePic, HttpServletRequest request);
 
-    APIResponse<ProfilePicResponse>  addProfilePicture(Long userId, MultipartFile profilePicture);
+    APIResponse<ProfilePicResponse> addProfilePicture(Long userId, MultipartFile profilePicture);
 }

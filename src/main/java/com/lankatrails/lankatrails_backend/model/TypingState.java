@@ -15,7 +15,7 @@ public class TypingState {
     private Long roomId;
     private Instant lastActivity;
     private boolean isTyping;
-    
+
     public boolean isExpired(long timeoutSeconds) {
         return Instant.now().isAfter(lastActivity.plusSeconds(timeoutSeconds));
     }

@@ -1,11 +1,5 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
-
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
@@ -22,9 +16,13 @@ import com.lankatrails.lankatrails_backend.repositories.TripItemRepository;
 import com.lankatrails.lankatrails_backend.repositories.TripRepository;
 import com.lankatrails.lankatrails_backend.service.BookingService;
 import com.lankatrails.lankatrails_backend.service.TripItemService;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Slf4j
 @org.springframework.stereotype.Service
@@ -100,8 +98,8 @@ public class TripItemServiceImpl implements TripItemService {
                 if (requestedUnits <= 0) {
                     return createErrorResponse("Number of units must be at least 1");
                 }
-                
-                AvailabilityDto availabilityDto =  AvailabilityDto.builder()
+
+                AvailabilityDto availabilityDto = AvailabilityDto.builder()
                         .startDateTime(tripItemDTO.getStartTime())
                         .endDateTime(tripItemDTO.getEndTime())
                         .adultCount(tripItemDTO.getNumberOfAdults())
@@ -116,7 +114,7 @@ public class TripItemServiceImpl implements TripItemService {
                 if (!availabilityResponse.isSuccess() || !availabilityResponse.getData().isAvailable()) {
                     return createErrorResponse(availabilityResponse.getMessage());
                 }
-                
+
                 // Set the service and number of units on the trip item
                 tripItem.setService(service);
                 tripItem.setNoOfUnits(requestedUnits);

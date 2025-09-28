@@ -1,6 +1,5 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
-import com.lankatrails.lankatrails_backend.model.Service;
 import com.lankatrails.lankatrails_backend.model.enums.ComplaintStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

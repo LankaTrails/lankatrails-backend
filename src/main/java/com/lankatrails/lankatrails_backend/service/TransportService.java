@@ -10,11 +10,17 @@ import java.util.List;
 
 public interface TransportService {
     APIResponse<TransportResponseDTO> getAll(Integer pageNumber, Integer pageSize);
+
     APIResponse<TransportRequestDTO> getById(Long Id);
+
     TransportResponseDTO updateTransport(Long Id, TransportRequestDTO transportRequestDTO);
+
     APIResponse<String> addNewTransport(TransportRequestDTO transportRequestDTO, List<MultipartFile> images);
+
     APIResponse<String> deleteTransport(Long Id);
+
     APIResponse<String> addNewPolicy(PolicySection policies);
+
     APIResponse<String> updateTransport(Long id, TransportRequestDTO transportRequestDTO, List<MultipartFile> images);
 
 

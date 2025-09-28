@@ -1,7 +1,6 @@
 package com.lankatrails.lankatrails_backend.model.enums;
 
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
 public enum FoodAndBeverageType {
@@ -16,7 +15,8 @@ public enum FoodAndBeverageType {
     FOOD_COURT("Food Court"),
     STREET_FOOD("Street Food"),
     DISTILLERY("Distillery"),
-    BUFFET("Buffet"),;
+    BUFFET("Buffet"),
+    ;
 
     private final String displayName;
 

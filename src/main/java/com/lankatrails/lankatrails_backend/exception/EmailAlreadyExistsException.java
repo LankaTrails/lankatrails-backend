@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.exception;
 
 import org.springframework.http.HttpStatus;
+
 import java.util.Map;
 
 public class EmailAlreadyExistsException extends BaseException {

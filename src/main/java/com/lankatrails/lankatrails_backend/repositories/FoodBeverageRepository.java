@@ -7,7 +7,8 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface FoodBeverageRepository extends JpaRepository<FoodAndBeverage,Long> {
+public interface FoodBeverageRepository extends JpaRepository<FoodAndBeverage, Long> {
     Optional<FoodAndBeverage> findByServiceName(String serviceName);
+
     Optional<FoodAndBeverage> findByServiceId(Long id);
 }

@@ -7,7 +7,6 @@ import com.lankatrails.lankatrails_backend.service.ChatRoomService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.Message;
@@ -29,10 +28,10 @@ import java.util.Map;
 @Slf4j
 public class StompAuthChannelInterceptor implements ChannelInterceptor {
 
+    private static final String USER_AUTHENTICATION_KEY = "userAuthentication";
     private final AuthTokenFilter authTokenFilter;
     private final ChatRoomService chatRoomService; // ASSUMPTION: This service exists.
     private final AuthUtils authUtils; // ASSUMPTION: This utility is refactored and efficient.
-    private static final String USER_AUTHENTICATION_KEY = "userAuthentication";
 
     // Use constructor injection. @Lazy is used to break a potential circular dependency
     // between WebSecurityConfig -> WebSocketConfig -> StompAuthChannelInterceptor -> AuthTokenFilter -> WebSecurityConfig

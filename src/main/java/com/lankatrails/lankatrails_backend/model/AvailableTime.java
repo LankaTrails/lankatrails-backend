@@ -16,7 +16,7 @@ import java.util.List;
 @Builder
 public class AvailableTime {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long availableTimeId;
 
     @Column(name = "day_of_week")

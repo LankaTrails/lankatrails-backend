@@ -69,11 +69,11 @@ public class ProviderServiceImpl implements ProviderService {
 
     @Override
     public APIResponse<String> licenseRenewal(List<LicenseDTO> licenseDTO, List<MultipartFile> licenseFiles) {
-        Provider provider = providerRepository.findByUserId(authUtils.loggedInUserId()).orElseThrow(()->new ResourceNotFoundException("Provider",authUtils.loggedInUserId()));
+        Provider provider = providerRepository.findByUserId(authUtils.loggedInUserId()).orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
         //Add all the licenses to the license repository
-        if(!licenseDTO.isEmpty()){
-            for (LicenseDTO license : licenseDTO){
-                Category category = categoryRepository.findByCategoryName(license.getCategory()).orElseThrow(()->new ResourceNotFoundException("Category",license.getCategory().getDisplayName()));
+        if (!licenseDTO.isEmpty()) {
+            for (LicenseDTO license : licenseDTO) {
+                Category category = categoryRepository.findByCategoryName(license.getCategory()).orElseThrow(() -> new ResourceNotFoundException("Category", license.getCategory().getDisplayName()));
                 License setLicense = new License();
                 setLicense.setLicenseNumber(license.getLicenseNumber());
                 setLicense.setExpiryDate(license.getExpiryDate());
@@ -82,15 +82,15 @@ public class ProviderServiceImpl implements ProviderService {
                 setLicense.setProvider(provider);
 
                 //Update the status of the provider's respective category to RENEWAL
-                if(category.getCategoryName() == ServiceCategory.ACCOMMODATION){
+                if (category.getCategoryName() == ServiceCategory.ACCOMMODATION) {
                     provider.setAccommodationApprovalStatus(ApprovalStatus.RENEWAL);
-                }else if(category.getCategoryName() == ServiceCategory.TOUR_GUIDE){
+                } else if (category.getCategoryName() == ServiceCategory.TOUR_GUIDE) {
                     provider.setTourGuideApprovalStatus(ApprovalStatus.RENEWAL);
-                }else if (category.getCategoryName() == ServiceCategory.TRANSPORT){
+                } else if (category.getCategoryName() == ServiceCategory.TRANSPORT) {
                     provider.setTransportApprovalStatus(ApprovalStatus.RENEWAL);
-                }else if (category.getCategoryName() == ServiceCategory.FOOD_BEVERAGE){
+                } else if (category.getCategoryName() == ServiceCategory.FOOD_BEVERAGE) {
                     provider.setFoodApprovalStatus(ApprovalStatus.RENEWAL);
-                }else if (category.getCategoryName() == ServiceCategory.ACTIVITY){
+                } else if (category.getCategoryName() == ServiceCategory.ACTIVITY) {
                     provider.setActivityApprovalStatus(ApprovalStatus.RENEWAL);
                 }
                 //save the license
@@ -105,7 +105,7 @@ public class ProviderServiceImpl implements ProviderService {
                     .data("")
                     .build();
 
-        }else{
+        } else {
             return APIResponse.<String>builder()
                     .success(false)
                     .message("No licenses added")

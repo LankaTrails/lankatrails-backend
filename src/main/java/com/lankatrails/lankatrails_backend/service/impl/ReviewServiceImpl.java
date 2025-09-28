@@ -54,12 +54,12 @@ public class ReviewServiceImpl implements ReviewService {
                 throw new BadRequestException("You have already reviewed this service");
             }
 
-            if (reviewRequest.getReview() == null ) {
+            if (reviewRequest.getReview() == null) {
                 throw new BadRequestException("Review cannot be empty");
             }
 
             if (reviewRequest.getRate() == null) {
-                throw  new BadRequestException("Rating is required");
+                throw new BadRequestException("Rating is required");
             } else if (reviewRequest.getRate() < 1 || reviewRequest.getRate() > 5) {
                 throw new BadRequestException("Rating must be between 1 and 5");
             }
@@ -208,7 +208,7 @@ public class ReviewServiceImpl implements ReviewService {
             Double C = reviewRepository.findGlobalAverageRating();                // overall avg
             long m = 10L; // threshold
 
-            double weightedRating = ( (double) v / (v + m) ) * R + ( (double) m / (v + m) ) * C;
+            double weightedRating = ((double) v / (v + m)) * R + ((double) m / (v + m)) * C;
 
             RateAndReviewResponse response = RateAndReviewResponse.builder()
                     .averageRating(weightedRating)

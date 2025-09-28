@@ -25,12 +25,12 @@ public class TabsImpl implements Tabs {
     ModelMapper modelMapper;
 
     @Override
-    public void addTabs(List<TabSectionRequest> tabsReq, Service lastServiceAdded){
-        if (!tabsReq.isEmpty()){
-            for (TabSectionRequest tab : tabsReq){
-                if (StringUtils.hasText(tab.getHeading()) && StringUtils.hasText(tab.getContent())){
-                    System.out.println("testingTabOutput"+tab.getContent()+"  "+tab.getContent());
-                    TabsSection tabsSection=new TabsSection();
+    public void addTabs(List<TabSectionRequest> tabsReq, Service lastServiceAdded) {
+        if (!tabsReq.isEmpty()) {
+            for (TabSectionRequest tab : tabsReq) {
+                if (StringUtils.hasText(tab.getHeading()) && StringUtils.hasText(tab.getContent())) {
+                    System.out.println("testingTabOutput" + tab.getContent() + "  " + tab.getContent());
+                    TabsSection tabsSection = new TabsSection();
                     tabsSection.setHeading(tab.getHeading());
                     tabsSection.setContent(tab.getContent());
                     tabsSection.setService(lastServiceAdded);
@@ -45,10 +45,10 @@ public class TabsImpl implements Tabs {
     @Override
     public List<TabSectionRequest> getAllTabs(Long Id) {
 
-        List<TabsSection> tabsSection=tabsSectionRepository.findByService_ServiceId(Id);
-        List<TabSectionRequest> tabs=new ArrayList<>();
+        List<TabsSection> tabsSection = tabsSectionRepository.findByService_ServiceId(Id);
+        List<TabSectionRequest> tabs = new ArrayList<>();
 
-        for (TabsSection tab :tabsSection){
+        for (TabsSection tab : tabsSection) {
             TabSectionRequest tabReq = new TabSectionRequest();
             tabReq.setId(tab.getId());
             tabReq.setHeading(tab.getHeading());
@@ -59,9 +59,9 @@ public class TabsImpl implements Tabs {
     }
 
     @Override
-    public void updateTabs(List<TabSectionRequest> tabsReq, Service lastServiceAdded){
-        if (!tabsReq.isEmpty()){
-            for (TabSectionRequest tab : tabsReq){
+    public void updateTabs(List<TabSectionRequest> tabsReq, Service lastServiceAdded) {
+        if (!tabsReq.isEmpty()) {
+            for (TabSectionRequest tab : tabsReq) {
                 if (tab.getId() != null) {
                     // If the tab has an ID, update the existing tab
                     TabsSection existingTab = tabsSectionRepository.findById(tab.getId())
@@ -85,22 +85,22 @@ public class TabsImpl implements Tabs {
     @Override
     public Set<TabsSection> updateTabs(Set<TabsSection> tabs, List<TabSectionRequest> reqTabs, Transport transport) {
         //create a map of existing tabs by ID for quick lookup
-        Map<Long,TabsSection> savedTabMap=tabs.stream()
+        Map<Long, TabsSection> savedTabMap = tabs.stream()
                 .collect(Collectors.toMap(TabsSection::getId, Function.identity()));
 
         //create a set to track updated or newly added tabs
-        Set<TabsSection> updatedTabs=new HashSet<>();
+        Set<TabsSection> updatedTabs = new HashSet<>();
 
-        for (TabSectionRequest req:reqTabs){
+        for (TabSectionRequest req : reqTabs) {
             TabsSection tab;
-            if (req.getId()!=null && savedTabMap.containsKey(req.getId())){
+            if (req.getId() != null && savedTabMap.containsKey(req.getId())) {
                 //update the existing tab
-                tab=savedTabMap.get(req.getId());
+                tab = savedTabMap.get(req.getId());
                 tab.setHeading(req.getHeading());
                 tab.setContent(req.getContent());
-            }else{
+            } else {
                 //create new tab
-                tab=new TabsSection();
+                tab = new TabsSection();
                 tab.setHeading(req.getHeading());
                 tab.setContent(req.getContent());
                 tab.setService(transport);
@@ -112,19 +112,18 @@ public class TabsImpl implements Tabs {
     }
 
 
-
     @Override
     public Boolean addTabsToTransport(List<TabSectionRequest> tabsReq, Transport lastTransportAdded) {
-        if (tabsReq!=null){
-            for (TabSectionRequest tab : tabsReq){
-                TabsSection tabsSection=new TabsSection();
+        if (tabsReq != null) {
+            for (TabSectionRequest tab : tabsReq) {
+                TabsSection tabsSection = new TabsSection();
                 tabsSection.setHeading(tab.getHeading());
                 tabsSection.setContent(tab.getContent());
                 tabsSection.setService(lastTransportAdded);
                 tabsSectionRepository.save(tabsSection);
             }
             return true;
-        }else {
+        } else {
             return false;
         }
     }

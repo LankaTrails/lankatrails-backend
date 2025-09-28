@@ -8,5 +8,6 @@ import java.util.List;
 
 public interface ImageService {
     void uploadImagesForService(List<MultipartFile> images, Service service);
+
     void deleteImages(List<ImageRequestDTO> imageRequestDTOs);
 }

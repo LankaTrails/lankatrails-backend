@@ -12,7 +12,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public abstract class RegistrationRequest {
-//    @ValidEmail
+    //    @ValidEmail
     @NotBlank
     @Email
     @Size(max = 50)

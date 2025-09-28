@@ -5,13 +5,17 @@ import com.lankatrails.lankatrails_backend.dtos.request.ComplaintHandleRequestDT
 import com.lankatrails.lankatrails_backend.dtos.request.ComplaintViewDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ComplaintInfoResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.ComplaintViewResponse;
 
 public interface ComplaintService {
     APIResponse<String> addNewComplaint(ComplaintDTO complaintDTO);
+
     APIResponse<ComplaintInfoResponse> getAllComplaints();
+
     APIResponse<ComplaintViewDTO> viewOneComplaint(Long id);
+
     APIResponse<String> handleComplaint(ComplaintHandleRequestDTO complaintHandleRequestDTO);
-    APIResponse<String> updateProgress(Long id,ComplaintViewDTO complaintViewDTO);
+
+    APIResponse<String> updateProgress(Long id, ComplaintViewDTO complaintViewDTO);
+
     APIResponse<String> updateComplaintResult(Long id, ComplaintViewDTO complaintViewDTO);
 }

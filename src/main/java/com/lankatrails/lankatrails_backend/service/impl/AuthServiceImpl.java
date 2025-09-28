@@ -3,7 +3,7 @@ package com.lankatrails.lankatrails_backend.service.impl;
 import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.dtos.response.*;
 import com.lankatrails.lankatrails_backend.exception.*;
-import com.lankatrails.lankatrails_backend.factory.*;
+import com.lankatrails.lankatrails_backend.factory.UserFactory;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.*;
 import com.lankatrails.lankatrails_backend.repositories.*;
@@ -30,7 +30,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -99,7 +102,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public APIResponse<RegistrationResponse> registerTourist(TouristRegistrationRequest request ) {
+    public APIResponse<RegistrationResponse> registerTourist(TouristRegistrationRequest request) {
         log.info("Attempting tourist registration for email: {}", request.getEmail());
 
         if (userRepository.existsByEmail(request.getEmail().toLowerCase())) {
@@ -543,7 +546,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public APIResponse<ApproveLicenseResponse> approveProviderService() {
         Provider provider = providerRepository.findByUserId(authUtills.loggedInUserId())
-                .orElseThrow(()->new ResourceNotFoundException("Provider",authUtills.loggedInUserId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtills.loggedInUserId()));
 
         return null;
     }
@@ -552,7 +555,7 @@ public class AuthServiceImpl implements AuthService {
     //Load the licenses and the provider details
     public APIResponse<ProviderViewInfoResponse> loadAllRequestedProviders(Long providerId) {
         Provider provider = providerRepository.findByUserId(providerId)
-                .orElseThrow(()->new ResourceNotFoundException("Provider",providerId));
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", providerId));
 
         //set the necessary provider details
         ProviderViewInfoDTO providerViewInfoDTO = new ProviderViewInfoDTO();
@@ -573,15 +576,15 @@ public class AuthServiceImpl implements AuthService {
         List<LicenseDTO> transport = new ArrayList<>();
         List<LicenseDTO> tourGuide = new ArrayList<>();
         ApproveLicenseDTO prepareResponse = new ApproveLicenseDTO();
-        if (provider.getActivityApprovalStatus() == ApprovalStatus.PENDING){
+        if (provider.getActivityApprovalStatus() == ApprovalStatus.PENDING) {
             //load all the unapproved license details of the activity
-            List<License> licenses = licenseRepository.findByProvider_UserIdAndCategory_CategoryId(providerId,2);
-            if (!licenses.isEmpty()){
-                for (License license : licenses){
+            List<License> licenses = licenseRepository.findByProvider_UserIdAndCategory_CategoryId(providerId, 2);
+            if (!licenses.isEmpty()) {
+                for (License license : licenses) {
                     LicenseDTO licenseDTO = new LicenseDTO();
-                    if (license.getExpiryDate().isBefore(LocalDate.now())){
+                    if (license.getExpiryDate().isBefore(LocalDate.now())) {
                         throw new LicenseExpiredException("License Has Expired");
-                    }else{
+                    } else {
                         //set license data to the DTO
                         licenseDTO.setExpiryDate(license.getExpiryDate());
                         licenseDTO.setLicenseNumber(license.getLicenseNumber());
@@ -597,13 +600,13 @@ public class AuthServiceImpl implements AuthService {
 
         } else if (provider.getAccommodationApprovalStatus() == ApprovalStatus.PENDING) {
             //load all the unapproved license details of the accommodation
-            List<License> licenses = licenseRepository.findByProvider_UserIdAndCategory_CategoryId(providerId,1);
-            if (!licenses.isEmpty()){
-                for (License license : licenses){
+            List<License> licenses = licenseRepository.findByProvider_UserIdAndCategory_CategoryId(providerId, 1);
+            if (!licenses.isEmpty()) {
+                for (License license : licenses) {
                     LicenseDTO licenseDTO = new LicenseDTO();
-                    if (license.getExpiryDate().isBefore(LocalDate.now())){
+                    if (license.getExpiryDate().isBefore(LocalDate.now())) {
                         throw new LicenseExpiredException("License Has Expired");
-                    }else{
+                    } else {
                         //set license data to the DTO
                         licenseDTO.setExpiryDate(license.getExpiryDate());
                         licenseDTO.setLicenseNumber(license.getLicenseNumber());
@@ -619,13 +622,13 @@ public class AuthServiceImpl implements AuthService {
 
         } else if (provider.getFoodApprovalStatus() == ApprovalStatus.PENDING) {
             //load all the unapproved license details of the food and beverage services
-            List<License> licenses = licenseRepository.findByProvider_UserIdAndCategory_CategoryId(providerId,5);
-            if (!licenses.isEmpty()){
-                for (License license : licenses){
+            List<License> licenses = licenseRepository.findByProvider_UserIdAndCategory_CategoryId(providerId, 5);
+            if (!licenses.isEmpty()) {
+                for (License license : licenses) {
                     LicenseDTO licenseDTO = new LicenseDTO();
-                    if (license.getExpiryDate().isBefore(LocalDate.now())){
+                    if (license.getExpiryDate().isBefore(LocalDate.now())) {
                         throw new LicenseExpiredException("License Has Expired");
-                    }else{
+                    } else {
                         //set license data to the DTO
                         licenseDTO.setExpiryDate(license.getExpiryDate());
                         licenseDTO.setLicenseNumber(license.getLicenseNumber());
@@ -638,15 +641,15 @@ public class AuthServiceImpl implements AuthService {
                 //set to the response
                 prepareResponse.setFoodBeverage(foodBeverage);
             }
-        } else if ( provider.getTransportApprovalStatus() == ApprovalStatus.PENDING) {
+        } else if (provider.getTransportApprovalStatus() == ApprovalStatus.PENDING) {
             //load all the unapproved license details of the transportation
-            List<License> licenses = licenseRepository.findByProvider_UserIdAndCategory_CategoryId(providerId,4);
-            if (!licenses.isEmpty()){
-                for (License license : licenses){
+            List<License> licenses = licenseRepository.findByProvider_UserIdAndCategory_CategoryId(providerId, 4);
+            if (!licenses.isEmpty()) {
+                for (License license : licenses) {
                     LicenseDTO licenseDTO = new LicenseDTO();
-                    if (license.getExpiryDate().isBefore(LocalDate.now())){
+                    if (license.getExpiryDate().isBefore(LocalDate.now())) {
                         throw new LicenseExpiredException("License Has Expired");
-                    }else{
+                    } else {
                         //set license data to the DTO
                         licenseDTO.setExpiryDate(license.getExpiryDate());
                         licenseDTO.setLicenseNumber(license.getLicenseNumber());
@@ -662,13 +665,13 @@ public class AuthServiceImpl implements AuthService {
 
         } else if (provider.getTourGuideApprovalStatus() == ApprovalStatus.PENDING) {
             //load all the unapproved license details of the tourist guide
-            List<License> licenses = licenseRepository.findByProvider_UserIdAndCategory_CategoryId(providerId,3);
-            if (!licenses.isEmpty()){
-                for (License license : licenses){
+            List<License> licenses = licenseRepository.findByProvider_UserIdAndCategory_CategoryId(providerId, 3);
+            if (!licenses.isEmpty()) {
+                for (License license : licenses) {
                     LicenseDTO licenseDTO = new LicenseDTO();
-                    if (license.getExpiryDate().isBefore(LocalDate.now())){
+                    if (license.getExpiryDate().isBefore(LocalDate.now())) {
                         throw new LicenseExpiredException("License Has Expired");
-                    }else{
+                    } else {
                         //set license data to the DTO
                         licenseDTO.setExpiryDate(license.getExpiryDate());
                         licenseDTO.setLicenseNumber(license.getLicenseNumber());
@@ -708,16 +711,16 @@ public class AuthServiceImpl implements AuthService {
                 ApprovalStatus.PENDING,
                 ApprovalStatus.PENDING
         );
-        if (providers.isEmpty()){
+        if (providers.isEmpty()) {
             return APIResponse.<ProviderInfoResponse>builder()
                     .success(true)
                     .message("No pending provider service approvals")
                     .data(new ProviderInfoResponse())
                     .build();
-        }else{
+        } else {
             ProviderInfoResponse response = new ProviderInfoResponse();
             List<ProviderInfoDTO> responseList = new ArrayList<>();
-            for (Provider provider : providers){
+            for (Provider provider : providers) {
                 ProviderInfoDTO providerInfoDTO = new ProviderInfoDTO();
                 providerInfoDTO.setBusinessName(provider.getBusinessName());
                 providerInfoDTO.setBusinessType(provider.getBusinessType());
@@ -741,21 +744,21 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public APIResponse<String> approveOrRejectRequest(AcceptRejectDTO acceptRejectDTO) {
         Provider provider = providerRepository.findByUserId(acceptRejectDTO.getProviderId())
-                .orElseThrow(()-> new ResourceNotFoundException("Provider",acceptRejectDTO.getProviderId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", acceptRejectDTO.getProviderId()));
 
         //set the acceptance or rejection status
         Category category = acceptRejectDTO.getCategory();
-        log.info("Approve or Reject"+category.getCategoryName().toString());
-        if(category.getCategoryName() == ServiceCategory.ACCOMMODATION){
-                provider.setAccommodationApprovalStatus(acceptRejectDTO.getStatus());
-        }else if(category.getCategoryName() == ServiceCategory.TOUR_GUIDE){
-                provider.setTourGuideApprovalStatus(acceptRejectDTO.getStatus());
-        }else if (category.getCategoryName() == ServiceCategory.TRANSPORT){
-                provider.setTransportApprovalStatus(acceptRejectDTO.getStatus());
-        }else if (category.getCategoryName() == ServiceCategory.FOOD_BEVERAGE){
-                provider.setFoodApprovalStatus(acceptRejectDTO.getStatus());
-        }else if (category.getCategoryName() == ServiceCategory.ACTIVITY){
-                provider.setActivityApprovalStatus(acceptRejectDTO.getStatus());
+        log.info("Approve or Reject" + category.getCategoryName().toString());
+        if (category.getCategoryName() == ServiceCategory.ACCOMMODATION) {
+            provider.setAccommodationApprovalStatus(acceptRejectDTO.getStatus());
+        } else if (category.getCategoryName() == ServiceCategory.TOUR_GUIDE) {
+            provider.setTourGuideApprovalStatus(acceptRejectDTO.getStatus());
+        } else if (category.getCategoryName() == ServiceCategory.TRANSPORT) {
+            provider.setTransportApprovalStatus(acceptRejectDTO.getStatus());
+        } else if (category.getCategoryName() == ServiceCategory.FOOD_BEVERAGE) {
+            provider.setFoodApprovalStatus(acceptRejectDTO.getStatus());
+        } else if (category.getCategoryName() == ServiceCategory.ACTIVITY) {
+            provider.setActivityApprovalStatus(acceptRejectDTO.getStatus());
         }
         //update the provider record
         providerRepository.save(provider);

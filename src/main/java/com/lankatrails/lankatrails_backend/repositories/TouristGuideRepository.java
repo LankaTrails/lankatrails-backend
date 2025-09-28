@@ -7,7 +7,8 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface TouristGuideRepository extends JpaRepository<TouristGuide,Long> {
+public interface TouristGuideRepository extends JpaRepository<TouristGuide, Long> {
     Optional<TouristGuide> findByServiceName(String serviceName);
+
     Optional<TouristGuide> findByServiceId(Long Id);
 }

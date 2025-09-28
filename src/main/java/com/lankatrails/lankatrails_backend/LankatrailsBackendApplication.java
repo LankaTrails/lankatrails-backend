@@ -8,9 +8,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class LankatrailsBackendApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(LankatrailsBackendApplication.class, args);
-		System.out.println("Lankatrails Backend Application is running!");
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(LankatrailsBackendApplication.class, args);
+        System.out.println("Lankatrails Backend Application is running!");
+    }
 
 }

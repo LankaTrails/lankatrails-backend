@@ -32,7 +32,7 @@ public class TripRequestDTO {
     private Integer numberOfAdults = 1;
     private Integer numberOfChildren = 0;
 
-//    @NotNull(message = "Trip status is required")
+    //    @NotNull(message = "Trip status is required")
     private TripStatus tripStatus;
 
     private BigDecimal totalBudget = BigDecimal.ZERO;

@@ -9,5 +9,6 @@ import java.util.List;
 
 public interface ProviderService {
     APIResponse<BusinessDetailDTO> getBusinessDetails();
-    APIResponse<String> licenseRenewal(List<LicenseDTO> licenseDTO,List<MultipartFile> licenseFiles);
+
+    APIResponse<String> licenseRenewal(List<LicenseDTO> licenseDTO, List<MultipartFile> licenseFiles);
 }

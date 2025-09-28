@@ -1,6 +1,5 @@
 package com.lankatrails.lankatrails_backend.model;
 
-import com.lankatrails.lankatrails_backend.model.enums.AccommodationType;
 import com.lankatrails.lankatrails_backend.model.enums.FoodAndBeverageType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

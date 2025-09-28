@@ -12,6 +12,6 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TouristGuideResponseDTO extends  ServiceResponseDTO{
+public class TouristGuideResponseDTO extends ServiceResponseDTO {
     private List<TouristGuideRequestDTO> content;
 }

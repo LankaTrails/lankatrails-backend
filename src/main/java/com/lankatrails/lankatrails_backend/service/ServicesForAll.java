@@ -5,7 +5,6 @@ import com.lankatrails.lankatrails_backend.model.BookingConfiguration;
 import com.lankatrails.lankatrails_backend.model.Location;
 import com.lankatrails.lankatrails_backend.model.PriceConfiguration;
 import com.lankatrails.lankatrails_backend.model.Service;
-import com.lankatrails.lankatrails_backend.repositories.PriceConfigurationRepository;
 
 import java.util.List;
 import java.util.Map;

@@ -2,7 +2,6 @@ package com.lankatrails.lankatrails_backend.security.service;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.lankatrails.lankatrails_backend.model.User;
-import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
@@ -16,23 +15,17 @@ import java.util.List;
 public class UserDetailsImpl implements UserDetails {
     @Serial
     private static final long serialVersionUID = 1L;
-
+    private final Collection<? extends GrantedAuthority> authorities;
     @Getter
     private Long id;
-
     @Getter
     private String email;
-
     @JsonIgnore
     private String password;
-
     @Getter
     private Boolean emailVerified;
-
     @Getter
     private UserRole role;
-
-    private final Collection<? extends GrantedAuthority> authorities;
 
     public UserDetailsImpl(Long id, String email, String password, Boolean emailVerified, UserRole role,
                            Collection<? extends GrantedAuthority> authorities) {

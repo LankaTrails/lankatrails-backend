@@ -1,6 +1,5 @@
 package com.lankatrails.lankatrails_backend.exception;
 
-import com.fasterxml.jackson.databind.ser.Serializers;
 import org.springframework.http.HttpStatus;
 
 public class BadCredentialsException extends BaseException {
@@ -8,7 +7,8 @@ public class BadCredentialsException extends BaseException {
     public BadCredentialsException(String message) {
         super(HttpStatus.UNAUTHORIZED, ErrorCode.BAD_CREDENTIALS, message, "Invalid email or password");
     }
-    public BadCredentialsException(String message,String userMessage) {
+
+    public BadCredentialsException(String message, String userMessage) {
         super(HttpStatus.UNAUTHORIZED, ErrorCode.BAD_CREDENTIALS, message, userMessage);
     }
 

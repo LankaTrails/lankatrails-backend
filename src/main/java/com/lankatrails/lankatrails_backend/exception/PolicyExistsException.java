@@ -4,7 +4,7 @@ import org.springframework.http.HttpStatus;
 
 import java.util.Map;
 
-public class PolicyExistsException extends BaseException{
+public class PolicyExistsException extends BaseException {
     public PolicyExistsException(Long id) {
         super(
                 HttpStatus.CONFLICT,                      // Proper status code for duplicate resources

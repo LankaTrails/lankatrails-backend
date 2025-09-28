@@ -12,43 +12,43 @@ public class TripPrivilegeUtils {
 
     // Default privileges for each trip role
     public static final Map<TripRole, Set<TripPrivilege>> DEFAULT_PRIVILEGES = Map.of(
-        TripRole.ADMIN, Set.of(
-            TripPrivilege.EDIT_TRIP_DETAILS,
-            TripPrivilege.DELETE_TRIP,
-            TripPrivilege.ADD_TRIP_ITEMS,
-            TripPrivilege.EDIT_TRIP_ITEMS,
-            TripPrivilege.DELETE_TRIP_ITEMS,
-            TripPrivilege.SET_BUDGET_LIMITS,
-            TripPrivilege.ADD_EXPENSES,
-            TripPrivilege.EDIT_EXPENSES,
-            TripPrivilege.DELETE_EXPENSES,
-            TripPrivilege.INVITE_MEMBERS,
-            TripPrivilege.REMOVE_MEMBERS,
-            TripPrivilege.MANAGE_ROLES,
-            TripPrivilege.MANAGE_PARTICIPANTS,
-            TripPrivilege.SEND_MESSAGES,
-            TripPrivilege.DELETE_MESSAGES,
-            TripPrivilege.ADD_BOOKINGS,
-            TripPrivilege.CANCEL_BOOKINGS
-        ),
-        TripRole.EDITOR, Set.of(
-                TripPrivilege.SET_BUDGET_LIMITS,
-            TripPrivilege.EDIT_TRIP_DETAILS,
-            TripPrivilege.ADD_TRIP_ITEMS,
-            TripPrivilege.EDIT_TRIP_ITEMS,
-            TripPrivilege.DELETE_TRIP_ITEMS,
-            TripPrivilege.ADD_EXPENSES,
-            TripPrivilege.EDIT_EXPENSES,
-            TripPrivilege.SEND_MESSAGES,
-            TripPrivilege.DELETE_MESSAGES
-        ),
-        TripRole.MEMBER, Set.of(
-            TripPrivilege.SEND_MESSAGES,
-            TripPrivilege.DELETE_MESSAGES,
-            TripPrivilege.ADD_EXPENSES,
-            TripPrivilege.EDIT_EXPENSES
-        ),
-        TripRole.VIEWER, Set.of()
+            TripRole.ADMIN, Set.of(
+                    TripPrivilege.EDIT_TRIP_DETAILS,
+                    TripPrivilege.DELETE_TRIP,
+                    TripPrivilege.ADD_TRIP_ITEMS,
+                    TripPrivilege.EDIT_TRIP_ITEMS,
+                    TripPrivilege.DELETE_TRIP_ITEMS,
+                    TripPrivilege.SET_BUDGET_LIMITS,
+                    TripPrivilege.ADD_EXPENSES,
+                    TripPrivilege.EDIT_EXPENSES,
+                    TripPrivilege.DELETE_EXPENSES,
+                    TripPrivilege.INVITE_MEMBERS,
+                    TripPrivilege.REMOVE_MEMBERS,
+                    TripPrivilege.MANAGE_ROLES,
+                    TripPrivilege.MANAGE_PARTICIPANTS,
+                    TripPrivilege.SEND_MESSAGES,
+                    TripPrivilege.DELETE_MESSAGES,
+                    TripPrivilege.ADD_BOOKINGS,
+                    TripPrivilege.CANCEL_BOOKINGS
+            ),
+            TripRole.EDITOR, Set.of(
+                    TripPrivilege.SET_BUDGET_LIMITS,
+                    TripPrivilege.EDIT_TRIP_DETAILS,
+                    TripPrivilege.ADD_TRIP_ITEMS,
+                    TripPrivilege.EDIT_TRIP_ITEMS,
+                    TripPrivilege.DELETE_TRIP_ITEMS,
+                    TripPrivilege.ADD_EXPENSES,
+                    TripPrivilege.EDIT_EXPENSES,
+                    TripPrivilege.SEND_MESSAGES,
+                    TripPrivilege.DELETE_MESSAGES
+            ),
+            TripRole.MEMBER, Set.of(
+                    TripPrivilege.SEND_MESSAGES,
+                    TripPrivilege.DELETE_MESSAGES,
+                    TripPrivilege.ADD_EXPENSES,
+                    TripPrivilege.EDIT_EXPENSES
+            ),
+            TripRole.VIEWER, Set.of()
     );
 
     // Get default privileges for a specific trip role

@@ -63,23 +63,23 @@ public class UserServiceimpl implements UserService {
 
             case UserRole.ROLE_PROVIDER:
                 //cast to ProviderProfileDto if needed
-                 ProviderProfileDto providerProfileDto = (ProviderProfileDto) userProfileDto;
-                 Provider provider = providerRepository.findById(userProfileDto.getId())
-                         .orElseThrow(() -> new UserNotFoundException("Provider not found with id: " + userProfileDto.getId()));
+                ProviderProfileDto providerProfileDto = (ProviderProfileDto) userProfileDto;
+                Provider provider = providerRepository.findById(userProfileDto.getId())
+                        .orElseThrow(() -> new UserNotFoundException("Provider not found with id: " + userProfileDto.getId()));
 
-                    provider.setBusinessName(providerProfileDto.getBusinessName());
-                    provider.setBusinessDescription(providerProfileDto.getBusinessDescription());
+                provider.setBusinessName(providerProfileDto.getBusinessName());
+                provider.setBusinessDescription(providerProfileDto.getBusinessDescription());
 
-                    //save the updated provider profile
-                    providerRepository.save(provider);
-                    return APIResponse.<UserProfileDto>builder()
-                            .success(true)
-                            .message("Provider profile updated successfully")
-                            .data(providerProfileDto)
-                            .build();
+                //save the updated provider profile
+                providerRepository.save(provider);
+                return APIResponse.<UserProfileDto>builder()
+                        .success(true)
+                        .message("Provider profile updated successfully")
+                        .data(providerProfileDto)
+                        .build();
 
             default:
-                throw new UnauthorizedException( "Invalid user role: " + userProfileDto.getRole());
+                throw new UnauthorizedException("Invalid user role: " + userProfileDto.getRole());
         }
 
     }

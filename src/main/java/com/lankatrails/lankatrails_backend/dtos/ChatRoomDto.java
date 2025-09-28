@@ -4,7 +4,6 @@ import com.lankatrails.lankatrails_backend.model.enums.ChatRoomType;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Getter
 @Setter

@@ -12,6 +12,6 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class FoodBeverageResponse extends ServiceResponseDTO{
+public class FoodBeverageResponse extends ServiceResponseDTO {
     private List<FoodBeverageRequest> content;
 }

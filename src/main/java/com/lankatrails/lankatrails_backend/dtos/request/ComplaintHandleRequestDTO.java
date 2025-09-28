@@ -25,5 +25,4 @@ public class ComplaintHandleRequestDTO {
     private String warningReason;
 
 
-
 }

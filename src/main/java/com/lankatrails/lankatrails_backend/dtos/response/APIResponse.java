@@ -1,7 +1,6 @@
 package com.lankatrails.lankatrails_backend.dtos.response;
 
 import lombok.*;
-import org.springframework.http.HttpStatus;
 
 @Getter
 @Setter

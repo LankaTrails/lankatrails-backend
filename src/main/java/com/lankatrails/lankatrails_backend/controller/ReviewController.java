@@ -10,8 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/reviews")
 public class ReviewController {
@@ -31,7 +29,7 @@ public class ReviewController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-   // Get all reviews for a specific service
+    // Get all reviews for a specific service
     @GetMapping("/{serviceId}")
     public ResponseEntity<APIResponse<RateAndReviewResponse>> getReviewsByService(
             @PathVariable Long serviceId) {

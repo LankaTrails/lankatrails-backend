@@ -7,8 +7,9 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface AccommodationRepository extends JpaRepository<Accommodation,Long> {
+public interface AccommodationRepository extends JpaRepository<Accommodation, Long> {
     Optional<Accommodation> findByServiceName(String serviceName);
+
     Optional<Accommodation> findByServiceId(Long id);
 
 }

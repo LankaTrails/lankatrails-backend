@@ -4,7 +4,10 @@ import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.ProviderDetailsRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceSearchRequestDTO;
-import com.lankatrails.lankatrails_backend.dtos.response.*;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.ProviderDetailsDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.ProviderSearchDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.SearchResponseDTO;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.*;
@@ -75,7 +78,8 @@ public class ServiceServiceImpl implements ServiceService {
 //                    dto.setServiceId(service.getServiceId());
 //                    dto.setServiceName(service.getServiceName());
 //                    dto.setCategory(service.getCategory().getCategoryName());
-////                    dto.setLocationBased(modelMapper.map(service.getLocationBased(), LocationDTO.class));
+
+    /// /                    dto.setLocationBased(modelMapper.map(service.getLocationBased(), LocationDTO.class));
 //                    dto.setMainImageUrl(service.getImages().getFirst().getImageUrl());
 //                    return dto;
 //                })
@@ -86,7 +90,6 @@ public class ServiceServiceImpl implements ServiceService {
 //                .message("Services found")
 //                .data(serviceDTOs).build();
 //    }
-
     @Override
     public APIResponse<String> addServiceImages(Long serviceId, MultipartFile[] serviceImages) {
         if (serviceImages == null || serviceImages.length == 0) {
@@ -175,9 +178,9 @@ public class ServiceServiceImpl implements ServiceService {
 
         // Step 3: Group by (provider + city + category)
         Map<String, List<Service>> groupedMap = filtered.collect(Collectors.groupingBy(service ->
-                service.getProvider().getUserId() + "|" +
+                        service.getProvider().getUserId() + "|" +
 //                        service.getLocationBased().getCity() + "|" +
-                        service.getCategory().getCategoryName()
+                                service.getCategory().getCategoryName()
         ));
 
         List<ProviderSearchDTO> groupedProviders = new ArrayList<>();

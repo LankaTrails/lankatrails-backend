@@ -1,8 +1,15 @@
 package com.lankatrails.lankatrails_backend.factory;
 
-import com.lankatrails.lankatrails_backend.model.*;
-import com.lankatrails.lankatrails_backend.model.enums.*;
-import com.lankatrails.lankatrails_backend.dtos.request.*;
+import com.lankatrails.lankatrails_backend.dtos.request.ProviderRegistrationRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.TouristRegistrationRequest;
+import com.lankatrails.lankatrails_backend.model.Category;
+import com.lankatrails.lankatrails_backend.model.Provider;
+import com.lankatrails.lankatrails_backend.model.Tourist;
+import com.lankatrails.lankatrails_backend.model.User;
+import com.lankatrails.lankatrails_backend.model.enums.ApprovalStatus;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
+import com.lankatrails.lankatrails_backend.model.enums.UserRole;
+import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
 import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

@@ -1,11 +1,9 @@
 package com.lankatrails.lankatrails_backend.repositories;
 
 import com.lankatrails.lankatrails_backend.model.Admin;
-import com.lankatrails.lankatrails_backend.model.Provider;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 
 @Repository

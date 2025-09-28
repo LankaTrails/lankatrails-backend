@@ -1,6 +1,9 @@
 package com.lankatrails.lankatrails_backend.model;
 
-import com.lankatrails.lankatrails_backend.model.enums.*;
+import com.lankatrails.lankatrails_backend.model.enums.ApprovalStatus;
+import com.lankatrails.lankatrails_backend.model.enums.BusinessType;
+import com.lankatrails.lankatrails_backend.model.enums.UserRole;
+import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.*;

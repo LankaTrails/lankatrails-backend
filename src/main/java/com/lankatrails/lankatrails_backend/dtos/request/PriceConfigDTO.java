@@ -1,14 +1,9 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
-import java.math.BigDecimal;
-
 import com.lankatrails.lankatrails_backend.model.enums.PriceType;
+import lombok.*;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import java.math.BigDecimal;
 
 @Getter
 @Setter

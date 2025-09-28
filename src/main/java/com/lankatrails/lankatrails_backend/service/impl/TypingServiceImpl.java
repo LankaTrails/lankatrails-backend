@@ -15,7 +15,7 @@ public class TypingServiceImpl implements TypingService {
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
-    
+
     @Override
     public void startTyping(Long roomId, Long userId, String username) {
         log.debug("User {} started typing in room {}", userId, roomId);
@@ -36,7 +36,7 @@ public class TypingServiceImpl implements TypingService {
                 typingStateDto
         );
     }
-    
+
     @Override
     public void stopTyping(Long roomId, Long userId, String username) {
         log.debug("User {} stopped typing in room {}", userId, roomId);

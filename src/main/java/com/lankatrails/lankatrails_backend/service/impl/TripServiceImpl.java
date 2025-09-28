@@ -74,7 +74,7 @@ public class TripServiceImpl implements TripService {
         }
 
         // Validate existing trips in the same period
-         List<Trip> existingTrips = tripRepository.findOverlappingTripsForTourist(leadTourist, tripRequestDTO.getStartDate(), tripRequestDTO.getEndDate());
+        List<Trip> existingTrips = tripRepository.findOverlappingTripsForTourist(leadTourist, tripRequestDTO.getStartDate(), tripRequestDTO.getEndDate());
         if (!existingTrips.isEmpty()) {
             throw new BadRequestException("You already have a trip scheduled during this period");
         }
