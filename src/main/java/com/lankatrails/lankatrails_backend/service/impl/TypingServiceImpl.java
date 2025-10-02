@@ -5,12 +5,14 @@ import com.lankatrails.lankatrails_backend.service.TypingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 
 @Service
 @Slf4j
+@Profile("!test")
 public class TypingServiceImpl implements TypingService {
 
     @Autowired

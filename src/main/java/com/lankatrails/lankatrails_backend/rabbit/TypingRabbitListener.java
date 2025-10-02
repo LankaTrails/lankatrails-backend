@@ -5,9 +5,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Profile;
 
 @Component
 @RequiredArgsConstructor
+@Profile("!test")
 public class TypingRabbitListener {
 
     private final SimpMessagingTemplate messagingTemplate;

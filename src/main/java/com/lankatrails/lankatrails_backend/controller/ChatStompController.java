@@ -11,6 +11,7 @@ import com.lankatrails.lankatrails_backend.service.ChatService;
 import com.lankatrails.lankatrails_backend.service.TypingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -24,6 +25,7 @@ import java.security.Principal;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
+@Profile("!test")
 public class ChatStompController {
 
     private final ChatService chatService;

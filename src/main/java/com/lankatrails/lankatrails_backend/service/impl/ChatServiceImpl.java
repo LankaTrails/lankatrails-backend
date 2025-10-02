@@ -22,6 +22,7 @@ import com.lankatrails.lankatrails_backend.service.ServicesForAll;
 import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Profile("!test")
 public class ChatServiceImpl implements ChatService {
     private final MessageRepository messageRepository;
     private final RabbitTemplate rabbitTemplate;
