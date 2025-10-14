@@ -1,12 +1,5 @@
 package com.lankatrails.lankatrails_backend.service.utils;
 
-import com.lankatrails.lankatrails_backend.exception.FileUploadException;
-import com.lankatrails.lankatrails_backend.model.Image;
-import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,12 +7,23 @@ import java.nio.file.Paths;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.lankatrails.lankatrails_backend.config.FileUploadConfig;
+import com.lankatrails.lankatrails_backend.exception.FileUploadException;
+import com.lankatrails.lankatrails_backend.model.Image;
+import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class FileUploadService {
 
-    //    private static final String UPLOAD_ROOT = "E:\\LankaTrails\\lankatrails-backend\\uploads";
-    private static final String UPLOAD_ROOT = "D:\\LankaTrails\\lankatrails\\lankatrails-backend\\uploads";
+    private final FileUploadConfig fileUploadConfig;
 
     public String storeFile(MultipartFile file, UploadCategory category, String prefix) {
         if (file == null || file.isEmpty()) {
@@ -28,7 +32,7 @@ public class FileUploadService {
 
         try {
             // Build directory path
-            Path dirPath = Paths.get(UPLOAD_ROOT, category.getDirectory());
+            Path dirPath = Paths.get(fileUploadConfig.getRootPath(), category.getDirectory());
             Files.createDirectories(dirPath);
 
             // Extract extension
@@ -96,7 +100,7 @@ public class FileUploadService {
             String normalizedPath = fileUrl.replaceFirst("^/uploads/", "");
 
             // This ensures we only keep the filename if there's a directory prefix
-            Path filePath = Paths.get(UPLOAD_ROOT, normalizedPath).normalize();
+            Path filePath = Paths.get(fileUploadConfig.getRootPath(), normalizedPath).normalize();
 
             log.info("Resolved file path: {}", filePath.toAbsolutePath());
 

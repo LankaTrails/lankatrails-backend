@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-initial-schema
+      author: lankatrails-team
+      comment: Initial database schema for LankaTrails
+      changes:
+        - sql:
+            comment: "This changeset will be populated with your existing database schema"
+            sql: |
+              -- Initial schema will be generated from existing entities
+              -- Run: mvn liquibase:generateChangeLog to create this automatically
+              -- For now, this is a placeholder for initial schema creation
+              SELECT 1;

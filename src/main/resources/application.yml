@@ -1,0 +1,67 @@
+spring:
+  application:
+    name: ${APP_NAME:lankatrails-backend}
+  
+  # Servlet configuration
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE:10MB}
+      max-request-size: ${MAX_REQUEST_SIZE:10MB}
+  
+  # JPA/Hibernate base configuration
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  
+  # WebSocket configuration
+  websocket:
+    message-size-limit: ${WEBSOCKET_MESSAGE_SIZE_LIMIT:2MB}
+    buffer-size-limit: ${WEBSOCKET_BUFFER_SIZE_LIMIT:4MB}
+  
+  # RabbitMQ base configuration
+  rabbitmq:
+    virtual-host: ${RABBITMQ_VIRTUAL_HOST:/}
+    stomp-port: ${RABBITMQ_STOMP_PORT:61613}
+    listener:
+      simple:
+        acknowledge-mode: ${RABBITMQ_ACK_MODE:auto}
+        prefetch: ${RABBITMQ_PREFETCH:10}
+
+# Server configuration
+server:
+  port: ${SERVER_PORT:8080}
+
+# Application-specific configuration
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:19006,http://localhost:8081,http://localhost:8082,http://localhost:5500}
+  jwtSecret: ${JWT_SECRET}
+  jwtExpirationMs: ${JWT_EXPIRATION_MS:3600000}
+  emailVerificationTokenExpirationMs: ${EMAIL_VERIFICATION_TOKEN_EXPIRATION_MS:900000}
+  jwtCookieName: ${JWT_COOKIE_NAME:lankatrails_jwt}
+  refreshTokenCookieName: ${REFRESH_TOKEN_COOKIE_NAME:lankatrails_refresh_token}
+
+# Management/Actuator base configuration
+management:
+  endpoints:
+    web:
+      base-path: ${MANAGEMENT_BASE_PATH:/actuator}
+
+# Stripe configuration
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+
+# Google Maps API
+google:
+  maps:
+    api-key: ${GOOGLE_MAPS_API_KEY}
+
+# File Upload Configuration
+file:
+  upload:
+    root-path: ${FILE_UPLOAD_ROOT_PATH}

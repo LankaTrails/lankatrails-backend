@@ -1,43 +1,50 @@
 package com.lankatrails.lankatrails_backend.security.jwt;
 
-import com.lankatrails.lankatrails_backend.exception.UnauthorizedException;
-import com.lankatrails.lankatrails_backend.model.User;
-import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseCookie;
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-import org.springframework.web.util.WebUtils;
-
-import javax.crypto.SecretKey;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.UUID;
 
+import javax.crypto.SecretKey;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+import org.springframework.web.util.WebUtils;
+
+import com.lankatrails.lankatrails_backend.exception.UnauthorizedException;
+import com.lankatrails.lankatrails_backend.model.User;
+import com.lankatrails.lankatrails_backend.security.service.UserDetailsImpl;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
+
 @Component
 @Slf4j
 public class JwtUtils {
-    @Value("${spring.app.jwtSecret}")
+    @Value("${app.jwtSecret}")
     private String jwtSecret;
 
-    @Value("${spring.app.jwtExpirationMs}")
+    @Value("${app.jwtExpirationMs}")
     private int jwtExpirationMs;
 
-    @Value("${spring.app.emailVerificationTokenExpirationMs}")
+    @Value("${app.emailVerificationTokenExpirationMs}")
     private int emailVerificationTokenExpirationMs;
 
-    @Value("${spring.app.jwtCookieName}")
+    @Value("${app.jwtCookieName}")
     private String jwtCookie;
 
-    @Value("${spring.app.refreshTokenCookieName}")
+    @Value("${app.refreshTokenCookieName}")
     private String refreshTokenCookie;
 
     public String generateToken(UserDetailsImpl userDetails) {

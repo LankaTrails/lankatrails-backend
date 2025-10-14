@@ -1,0 +1,104 @@
+spring:
+  # H2 Database Configuration for testing
+  datasource:
+    url: jdbc:h2:mem:lankatrails_test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  
+  # H2 Console for testing (optional)
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+  
+  # JPA/Hibernate Configuration for testing
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+        show_sql: false
+        dialect: org.hibernate.dialect.H2Dialect
+  
+  # Disable Redis for testing (use simple cache)
+  cache:
+    type: simple
+  
+  # Disable external services for testing
+  data:
+    redis:
+      host: localhost
+      port: 6379
+    mongodb:
+      uri: mongodb://localhost:27017/lankatrails_test
+      database: lankatrails_test
+  
+  # Disable RabbitMQ for testing
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  
+  # Disable mail for testing
+  mail:
+    host: localhost
+    port: 25
+    username: test
+    password: test
+  
+  # Disable development tools for testing
+  devtools:
+    restart:
+      enabled: false
+    livereload:
+      enabled: false
+
+# Test logging configuration (less verbose)
+logging:
+  level:
+    root: INFO
+    org:
+      springframework: INFO
+      springframework.security: INFO
+      hibernate:
+        SQL: INFO
+        type:
+          descriptor:
+            sql:
+              BasicBinder: INFO
+    com:
+      lankatrails: INFO
+
+# Management/Actuator for testing
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+    env:
+      enabled: false
+    beans:
+      enabled: false
+  security:
+    enabled: true
+
+# Test-specific application properties
+app:
+  cors:
+    allowed-origins: http://localhost:8080,http://localhost:3000
+
+# File Upload Configuration for testing (using temp directory)
+file:
+  upload:
+    root-path: ${FILE_UPLOAD_ROOT_PATH:${java.io.tmpdir}/lankatrails-test/uploads}

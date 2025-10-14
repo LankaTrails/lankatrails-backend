@@ -1,0 +1,115 @@
+spring:
+  # Database Configuration - PostgreSQL for development
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:lankatrails}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:admin@123}
+  
+  # JPA/Hibernate Configuration for development
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: create-drop  # Recreate schema for development
+    show-sql: ${HIBERNATE_SHOW_SQL:true}
+    properties:
+      hibernate:
+        format_sql: ${HIBERNATE_FORMAT_SQL:true}
+        use_sql_comments: ${HIBERNATE_USE_SQL_COMMENTS:true}
+  
+  # Disable Liquibase for development (use JPA ddl-auto instead)
+  liquibase:
+    enabled: false
+  
+  # Redis and MongoDB Configuration for development
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD}
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/lankatrails}
+      database: ${MONGODB_DATABASE:lankatrails}
+  
+  cache:
+    type: ${CACHE_TYPE:redis}
+    redis:
+      key-prefix: ${REDIS_CACHE_KEY_PREFIX:lankatrails:}
+      time-to-live: ${REDIS_CACHE_TTL:3600}
+  
+  # RabbitMQ Configuration for development
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+  
+  # Mail Configuration for development
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    from: ${MAIL_FROM}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:true}
+  
+  # Development tools
+  devtools:
+    restart:
+      enabled: ${DEVTOOLS_RESTART_ENABLED:true}
+    livereload:
+      enabled: ${DEVTOOLS_LIVERELOAD_ENABLED:true}
+
+# Development logging configuration
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:DEBUG}
+    org:
+      springframework: ${LOG_LEVEL_SPRING:DEBUG}
+      springframework.security: ${LOG_LEVEL_SPRING_SECURITY:DEBUG}
+      hibernate:
+        SQL: ${LOG_LEVEL_HIBERNATE_SQL:DEBUG}
+        type:
+          descriptor:
+            sql:
+              BasicBinder: ${LOG_LEVEL_HIBERNATE_BINDER:TRACE}
+    com:
+      lankatrails: ${LOG_LEVEL_LANKATRAILS:DEBUG}
+
+# Management/Actuator for development
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_EXPOSURE:*}
+  endpoint:
+    health:
+      show-details: ${MANAGEMENT_HEALTH_SHOW_DETAILS:always}
+    env:
+      enabled: ${MANAGEMENT_ENV_ENABLED:true}
+    beans:
+      enabled: ${MANAGEMENT_BEANS_ENABLED:true}
+  security:
+    enabled: ${MANAGEMENT_SECURITY_ENABLED:false}
+
+# Application-specific configuration for development
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:19006,http://localhost:8081,http://localhost:8082,http://localhost:5500}
+  jwtSecret: ${JWT_SECRET:mySecretKey-for-development-change-in-production-123456789}
+  jwtExpirationMs: ${JWT_EXPIRATION_MS:3600000}
+  emailVerificationTokenExpirationMs: ${EMAIL_VERIFICATION_TOKEN_EXPIRATION_MS:900000}
+  jwtCookieName: ${JWT_COOKIE_NAME:lankatrails_jwt}
+  refreshTokenCookieName: ${REFRESH_TOKEN_COOKIE_NAME:lankatrails_refresh_token}
+
+# File Upload Configuration for development
+file:
+  upload:
+    root-path: ${FILE_UPLOAD_ROOT_PATH}

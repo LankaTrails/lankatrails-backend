@@ -86,7 +86,7 @@
         <dependency>
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-spatial</artifactId>
-            <version>6.5.2.Final</version> <!-- ✅ Match Hibernate version in Spring Boot 3.5.0 -->
+            <!-- Version managed by Spring Boot -->
         </dependency>
 
 
@@ -102,6 +102,12 @@
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <!-- Database Migrations -->
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
         </dependency>
 
         <!-- JWT -->
@@ -280,6 +286,19 @@
                             <artifactId>lombok</artifactId>
                         </exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+            
+            <!-- Liquibase Maven Plugin -->
+            <plugin>
+                <groupId>org.liquibase</groupId>
+                <artifactId>liquibase-maven-plugin</artifactId>
+                <configuration>
+                    <changeLogFile>src/main/resources/db/changelog/db.changelog-master.xml</changeLogFile>
+                    <url>jdbc:postgresql://localhost:5432/lankatrails</url>
+                    <username>postgres</username>
+                    <password>admin@123</password>
+                    <driver>org.postgresql.Driver</driver>
                 </configuration>
             </plugin>
         </plugins>

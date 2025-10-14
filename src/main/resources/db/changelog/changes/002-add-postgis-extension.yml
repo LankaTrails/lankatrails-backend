@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-add-postgis-extension
+      author: lankatrails-team
+      comment: Add PostGIS extension for spatial data support
+      changes:
+        - sql:
+            comment: "Enable PostGIS extension"
+            sql: |
+              CREATE EXTENSION IF NOT EXISTS postgis;
+              CREATE EXTENSION IF NOT EXISTS postgis_topology;

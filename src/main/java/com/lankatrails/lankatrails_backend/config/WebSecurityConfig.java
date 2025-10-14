@@ -1,9 +1,7 @@
 package com.lankatrails.lankatrails_backend.config;
 
-import com.lankatrails.lankatrails_backend.security.jwt.AuthTokenFilter;
-import com.lankatrails.lankatrails_backend.security.jwt.JwtUtils;
-import com.lankatrails.lankatrails_backend.security.service.UserDetailsServiceImpl;
-import lombok.RequiredArgsConstructor;
+import java.util.Arrays;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,7 +22,11 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
+import com.lankatrails.lankatrails_backend.security.jwt.AuthTokenFilter;
+import com.lankatrails.lankatrails_backend.security.jwt.JwtUtils;
+import com.lankatrails.lankatrails_backend.security.service.UserDetailsServiceImpl;
+
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
@@ -77,6 +79,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/webhook/stripe/**").permitAll()
                         .requestMatchers("/api/reviews/**").permitAll()
                         .requestMatchers("/ws/**").permitAll() // Allow WebSocket connections
+                        .requestMatchers("/actuator/**").permitAll() // Allow actuator endpoints for health checks
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(authTokenFilter(), UsernamePasswordAuthenticationFilter.class);

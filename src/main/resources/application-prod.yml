@@ -1,0 +1,113 @@
+spring:
+  # Database Configuration - PostgreSQL for production
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  
+  # JPA/Hibernate Configuration for production
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none  # Use Liquibase for migrations
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+        show_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  
+  # Liquibase Configuration for production
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yml
+    enabled: true
+  
+  # Redis Configuration for production
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD}
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
+    mongodb:
+      uri: ${MONGODB_URI}
+      database: ${MONGODB_DATABASE}
+  
+  cache:
+    type: ${CACHE_TYPE:redis}
+    redis:
+      key-prefix: ${REDIS_CACHE_KEY_PREFIX:lankatrails:}
+      time-to-live: ${REDIS_CACHE_TTL:3600}
+  
+  # RabbitMQ Configuration for production
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+  
+  # Mail Configuration for production
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    from: ${MAIL_FROM}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:true}
+  
+  # Disable development tools for production
+  devtools:
+    restart:
+      enabled: false
+    livereload:
+      enabled: false
+
+# Production logging configuration (less verbose, optimized)
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:WARN}
+    org:
+      springframework: ${LOG_LEVEL_SPRING:INFO}
+      springframework.security: ${LOG_LEVEL_SPRING_SECURITY:INFO}
+      hibernate:
+        SQL: ${LOG_LEVEL_HIBERNATE_SQL:WARN}
+        type:
+          descriptor:
+            sql:
+              BasicBinder: ${LOG_LEVEL_HIBERNATE_BINDER:WARN}
+    com:
+      lankatrails: ${LOG_LEVEL_LANKATRAILS:INFO}
+
+# Management/Actuator for production (secure)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_EXPOSURE:health,info,metrics}
+  endpoint:
+    health:
+      show-details: ${MANAGEMENT_HEALTH_SHOW_DETAILS:when-authorized}
+    env:
+      enabled: ${MANAGEMENT_ENV_ENABLED:false}
+    beans:
+      enabled: ${MANAGEMENT_BEANS_ENABLED:false}
+  security:
+    enabled: ${MANAGEMENT_SECURITY_ENABLED:true}
+
+# Production-specific application properties
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
+
+# File Upload Configuration for production
+file:
+  upload:
+    root-path: ${FILE_UPLOAD_ROOT_PATH}

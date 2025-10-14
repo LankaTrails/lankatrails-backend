@@ -1,12 +1,35 @@
 package com.lankatrails.lankatrails_backend.config;
 
-import com.lankatrails.lankatrails_backend.model.*;
-import com.lankatrails.lankatrails_backend.model.enums.*;
-import com.lankatrails.lankatrails_backend.repositories.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import com.lankatrails.lankatrails_backend.model.AccommodationCategory;
+import com.lankatrails.lankatrails_backend.model.ActivityCategory;
+import com.lankatrails.lankatrails_backend.model.Admin;
+import com.lankatrails.lankatrails_backend.model.Category;
+import com.lankatrails.lankatrails_backend.model.FoodAndBeverageCategory;
+import com.lankatrails.lankatrails_backend.model.TourGuideCategory;
+import com.lankatrails.lankatrails_backend.model.TripTag;
+import com.lankatrails.lankatrails_backend.model.VehicleCategory;
+import com.lankatrails.lankatrails_backend.model.enums.AccommodationType;
+import com.lankatrails.lankatrails_backend.model.enums.ActivityType;
+import com.lankatrails.lankatrails_backend.model.enums.FoodAndBeverageType;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
+import com.lankatrails.lankatrails_backend.model.enums.TourGuideType;
+import com.lankatrails.lankatrails_backend.model.enums.TripTagType;
+import com.lankatrails.lankatrails_backend.model.enums.UserRole;
+import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
+import com.lankatrails.lankatrails_backend.model.enums.VehicleType;
+import com.lankatrails.lankatrails_backend.repositories.AccommodationCategoryRepository;
+import com.lankatrails.lankatrails_backend.repositories.ActivityCategoryRepository;
+import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
+import com.lankatrails.lankatrails_backend.repositories.FoodAndBeverageCategoryRepository;
+import com.lankatrails.lankatrails_backend.repositories.TourGuideCategoryRepository;
+import com.lankatrails.lankatrails_backend.repositories.TripTagRepository;
+import com.lankatrails.lankatrails_backend.repositories.UserRepository;
+import com.lankatrails.lankatrails_backend.repositories.VehicleCategoryRepository;
 
 @Configuration
 public class InitialDataConfig {
@@ -42,6 +65,7 @@ public class InitialDataConfig {
             admin.setLastName("Administrator");
             admin.setRole(UserRole.ROLE_ADMIN);
             admin.setStatus(UserStatus.ACTIVE);
+            admin.setEmailVerified(true);
 
             userRepository.save(admin);
             System.out.println("Initial admin user created");

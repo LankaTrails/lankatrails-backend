@@ -60,4 +60,10 @@ build/
 #uploads
 /uploads
 
+# Environment files (contain sensitive information)
 .env
+docker/.env
+docker/.env.dev
+docker/.env.prod
+docker/.env.staging
+docker/.env.local
