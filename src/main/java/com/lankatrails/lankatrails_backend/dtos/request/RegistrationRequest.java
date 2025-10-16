@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.dtos.request;
 
 
+import com.lankatrails.lankatrails_backend.dtos.UserPreferencesDTO;
 import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -12,7 +13,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public abstract class RegistrationRequest {
-//    @ValidEmail
+    //    @ValidEmail
     @NotBlank
     @Email
     @Size(max = 50)
@@ -30,6 +31,8 @@ public abstract class RegistrationRequest {
     private UserRole userRole;
 
     private String profilePictureUrl;
+
+    private UserPreferencesDTO userPreferences = new UserPreferencesDTO();
 
 
     public @NotBlank @Size(max = 50) String getEmail() {
