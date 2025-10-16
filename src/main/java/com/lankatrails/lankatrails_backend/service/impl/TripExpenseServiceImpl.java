@@ -2,10 +2,7 @@ package com.lankatrails.lankatrails_backend.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-
-import com.lankatrails.lankatrails_backend.dtos.TripParticipantDto;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.lankatrails.lankatrails_backend.dtos.ChatRoomDto;
 import com.lankatrails.lankatrails_backend.dtos.ExpenseDTO;
 import com.lankatrails.lankatrails_backend.dtos.ExpenseShareDto;
+import com.lankatrails.lankatrails_backend.dtos.TripParticipantDto;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ExpenseResponseDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.TripResponseDTO;
@@ -457,25 +455,66 @@ public class TripExpenseServiceImpl implements TripExpenseService {
         log.info("Fetching expenses for trip with ID: {}", tripId);
 
         // Validate trip exists
-        Trip trip = tripRepository.findByTripId(tripId)
-                .orElseThrow(() -> new BadRequestException("Trip not found for the given id"));
+        if (!tripRepository.existsById(tripId)) {
+            throw new BadRequestException("Trip not found for the given id");
+        }
 
-
-        // Get expenses for the trip
-//        List<TripExpense> expenses = tripExpenseRepository.findByTripId(tripId);
+        // Get expenses for the trip using correct repository method
+        List<TripExpense> expenses = tripExpenseRepository.findByTrip_TripId(tripId);
+        log.info("Found {} expenses for trip ID: {}", expenses.size(), tripId);
 
         // Convert to response DTOs
         List<ExpenseResponseDTO> responseDTOs = new ArrayList<>();
-//        for (TripExpense expense : expenses) {
-//            ExpenseResponseDTO responseDTO = new ExpenseResponseDTO();
-//            responseDTO.setExpenseId(expense.getExpenseId());
-//            responseDTO.setExpenseName(expense.getExpenseName());
-//            responseDTO.setAmount(expense.getAmount());
-//            responseDTO.setBudgetCategory(expense.getBudgetCategory().name());
-//            responseDTO.setTripId(expense.getTrip().getTripId());
-//            responseDTOs.add(responseDTO);
-//        }
+        for (TripExpense expense : expenses) {
+            ExpenseResponseDTO responseDTO = new ExpenseResponseDTO();
+            responseDTO.setExpenseId(expense.getExpenseId());
+            responseDTO.setExpenseName(expense.getExpenseName());
+            responseDTO.setTotalExpenseAmount(expense.getTotalExpenseAmount()); // Set total expense amount
+            responseDTO.setBudgetCategory(expense.getBudgetCategory().name());
+            responseDTO.setTripId(expense.getTrip().getTripId());
+            responseDTO.setExpenseDateTime(expense.getExpenseDateTime()); // Set the expense date/time
+            
+            // Set created by participant
+            TripParticipant createdBy = expense.getCreatedByParticipant();
+            if (createdBy != null) {
+                TripParticipantDto createdByDto = new TripParticipantDto();
+                createdByDto.setParticipantId(createdBy.getParticipantId());
+                createdByDto.setFirstName(createdBy.getTourist().getFirstName());
+                createdByDto.setLastName(createdBy.getTourist().getLastName());
+                createdByDto.setProfileImageUrl(createdBy.getTourist().getProfilePictureUrl());
+                createdByDto.setRole(createdBy.getTripRole().name());
+                responseDTO.setCreatedByParticipant(createdByDto);
+            }
+            
+            // Set expense shares
+            List<ExpenseShareDto> sharesDtos = new ArrayList<>();
+            if (expense.getShares() != null) {
+                for (TripExpenseShare share : expense.getShares()) {
+                    ExpenseShareDto shareDto = new ExpenseShareDto();
+                    shareDto.setAmount(share.getAmount());
+                    
+                    // Set participant info for the share
+                    TripParticipantDto participantDto = new TripParticipantDto();
+                    participantDto.setParticipantId(share.getTripParticipant().getParticipantId());
+                    participantDto.setFirstName(share.getTripParticipant().getTourist().getFirstName());
+                    participantDto.setLastName(share.getTripParticipant().getTourist().getLastName());
+                    participantDto.setProfileImageUrl(share.getTripParticipant().getTourist().getProfilePictureUrl());
+                    participantDto.setRole(share.getTripParticipant().getTripRole().name());
+                    shareDto.setParticipant(participantDto);
+                    
+                    sharesDtos.add(shareDto);
+                }
+            }
+            responseDTO.setShares(sharesDtos);
+            
+            responseDTOs.add(responseDTO);
+            log.info("Converted expense: ID={}, Name={}, TotalAmount={}, DateTime={}, CreatedBy={}, SharesCount={}", 
+                    expense.getExpenseId(), expense.getExpenseName(), expense.getTotalExpenseAmount(),
+                    expense.getExpenseDateTime(), createdBy != null ? createdBy.getTourist().getFirstName() : "null",
+                    sharesDtos.size());
+        }
 
+        log.info("Successfully converted {} expenses to response DTOs", responseDTOs.size());
         return new APIResponse<>(true, "Expenses fetched successfully", responseDTOs);
     }
 }

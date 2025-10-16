@@ -70,6 +70,8 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/tourist/**").hasRole("TOURIST")
                         .requestMatchers("/api/trip/**").hasRole("TOURIST")
+                        .requestMatchers("/api/trips/**").hasRole("TOURIST")  // Added trips endpoint
+                        .requestMatchers("/api/trips-budget/**").hasRole("TOURIST")  // Added budget endpoints
                         .requestMatchers("/api/service/**").permitAll()
                         .requestMatchers("/api/provider/**").permitAll()
                         .requestMatchers("/api/admin/**").permitAll()
