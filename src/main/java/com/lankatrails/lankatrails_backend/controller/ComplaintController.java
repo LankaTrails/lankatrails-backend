@@ -62,5 +62,26 @@ public class ComplaintController {
         return  new ResponseEntity<>(response,HttpStatus.OK);
     }
 
+    //Update the complaint
+    @PutMapping("/admin/complaint-refund/{complaintId}")
+    public ResponseEntity<APIResponse<String>> updateRefundStatus(@PathVariable Long complaintId, @RequestBody ComplaintViewDTO complaintViewDTO){
+        APIResponse<String> response = complaintService.updateRefundStatus(complaintId,complaintViewDTO);
+        return new ResponseEntity<>(response,HttpStatus.OK);
+    }
+
+    //send admin feedback email to provider
+    @PutMapping("/admin/complaint-provider-feedback/{complaintId}")
+    public ResponseEntity<APIResponse<String>> updateFeedbackToProvider(@PathVariable Long complaintId, @RequestBody ComplaintViewDTO complaintViewDTO){
+        APIResponse<String> response = complaintService.sendProviderFeedbackEmail(complaintId,complaintViewDTO);
+        return  new ResponseEntity<>(response,HttpStatus.OK);
+    }
+
+    //send admin feedback email to tourist
+    @PutMapping("/admin/complaint-tourist-feedback/{complaintId}")
+    public ResponseEntity<APIResponse<String>> updateFeedbackToTourist(@PathVariable Long complaintId, @RequestBody ComplaintViewDTO complaintViewDTO){
+        APIResponse<String> response = complaintService.sendTouristFeedbackEmail(complaintId,complaintViewDTO);
+        return  new ResponseEntity<>(response,HttpStatus.OK);
+    }
+
 
 }

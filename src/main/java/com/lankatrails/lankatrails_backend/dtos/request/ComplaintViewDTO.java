@@ -3,14 +3,13 @@ package com.lankatrails.lankatrails_backend.dtos.request;
 import com.lankatrails.lankatrails_backend.dtos.response.ApproveLicenseResponse;
 import com.lankatrails.lankatrails_backend.model.Booking;
 import com.lankatrails.lankatrails_backend.model.Category;
-import com.lankatrails.lankatrails_backend.model.enums.BusinessType;
-import com.lankatrails.lankatrails_backend.model.enums.ComplaintResult;
-import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
+import com.lankatrails.lankatrails_backend.model.enums.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -32,6 +31,13 @@ public class ComplaintViewDTO {
     private LocalDateTime complaintDateTime;
     private BookingRequestDTO booking;
     private String investigationStartedDate;
-    private String complaintResult;
+    private ComplaintResult complaintResult;
+    private List<String> complaintImgs;
+    private String paidAmount;
+    private RefundStatus refundStatus;
+    private String refundReason;
+    private ComplaintStatus complaintStatus;
+    private String adminToTourist;
+    private String adminToProvider;
 
 }
