@@ -17,10 +17,10 @@ import com.lankatrails.lankatrails_backend.service.utils.BudgetValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -29,20 +29,11 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class TripBudgetServiceImpl implements TripBudgetService {
-    @Autowired
-    private TripRepository tripRepository;
-
-    @Autowired
-    private ModelMapper modelMapper;
-
-    @Autowired
-    private AuthUtils authUtils;
-
-    @Autowired
-    private BudgetValidator budgetValidator;
-
-    @Autowired
-    private TripBudgetCategoryRepository tripBudgetCategoryRepository;
+    private final TripRepository tripRepository;
+    private final ModelMapper modelMapper;
+    private final AuthUtils authUtils;
+    private final BudgetValidator budgetValidator;
+    private final TripBudgetCategoryRepository tripBudgetCategoryRepository;
 
     @Override
     @Transactional
@@ -71,7 +62,9 @@ public class TripBudgetServiceImpl implements TripBudgetService {
             budgetValidator.validateAgainstSpent(category.getSpentAmount(), dto.getLimitAmount());
 
             // Validate totals (replace old with new)
-            double newCategoryTotal = getTotalCategoryLimit(trip) - category.getLimitAmount() + dto.getLimitAmount();
+            BigDecimal newCategoryTotal = getTotalCategoryLimit(trip)
+                    .subtract(category.getLimitAmount())
+                    .add(dto.getLimitAmount());
             budgetValidator.validateAgainstTotalBudget(trip, newCategoryTotal);
 
             // Update
@@ -82,11 +75,11 @@ public class TripBudgetServiceImpl implements TripBudgetService {
         } else {
             // ---------------- CREATE FLOW ----------------
             // Check spent (derive only if not already stored)
-            Double spentAmount = getTotalSpentAmountByCategory(trip, dto.getBudgetCategory());
+            BigDecimal spentAmount = BigDecimal.valueOf(getTotalSpentAmountByCategory(trip, dto.getBudgetCategory()));
             budgetValidator.validateAgainstSpent(spentAmount, dto.getLimitAmount());
 
             // Validate totals (add new limit)
-            double newCategoryTotal = getTotalCategoryLimit(trip) + dto.getLimitAmount();
+            BigDecimal newCategoryTotal = getTotalCategoryLimit(trip).add(dto.getLimitAmount());
             budgetValidator.validateAgainstTotalBudget(trip, newCategoryTotal);
 
             // Create new category
@@ -137,8 +130,8 @@ public class TripBudgetServiceImpl implements TripBudgetService {
         // Prepare DTO
         TripBudgetDto budgetDto = new TripBudgetDto();
         budgetDto.setTripId(tripId);
-        budgetDto.setTotalSpentAmount(trip.getTotalSpentAmount());
-        budgetDto.setTotalBudgetLimit(trip.getTotalBudgetLimit());
+        budgetDto.setTotalSpentAmount(getTotalSpentAmount(trip).doubleValue());
+        budgetDto.setTotalBudgetLimit(trip.getTotalBudgetLimit().doubleValue());
         budgetDto.setTripBudgetCategories(trip.getTripBudgetCategories().stream()
                 .map(category -> modelMapper.map(category, TripBudgetCategoryDto.class))
                 .collect(Collectors.toSet()));
@@ -155,16 +148,19 @@ public class TripBudgetServiceImpl implements TripBudgetService {
         Trip trip = tripRepository.findById(tripBudgetDto.getTripId())
                 .orElseThrow(() -> new IllegalArgumentException("Trip not found with ID: " + tripBudgetDto.getTripId()));
 
+        // Convert Double to BigDecimal for validation
+        BigDecimal totalBudgetLimit = BigDecimal.valueOf(tripBudgetDto.getTotalBudgetLimit());
+
         // Validation order
-        budgetValidator.validateLimitAmount(tripBudgetDto.getTotalBudgetLimit());
+        budgetValidator.validateLimitAmount(totalBudgetLimit);
         budgetValidator.validateUserPrivileges(trip, userId, TripPrivilege.SET_BUDGET_LIMITS);
 
         // Validate against spent amount
-        budgetValidator.validateAgainstSpent(trip.getTotalSpentAmount(), tripBudgetDto.getTotalBudgetLimit());
-        budgetValidator.validateAgainstTotalBudgetCategory(getTotalCategoryLimit(trip), tripBudgetDto.getTotalBudgetLimit());
+        budgetValidator.validateAgainstSpent(getTotalSpentAmount(trip), totalBudgetLimit);
+        budgetValidator.validateAgainstTotalBudgetCategory(getTotalCategoryLimit(trip), totalBudgetLimit);
 
         // Update and save
-        trip.setTotalBudgetLimit(tripBudgetDto.getTotalBudgetLimit());
+        trip.setTotalBudgetLimit(totalBudgetLimit);
         Trip updatedTrip = tripRepository.save(trip);
 
         TripBudgetDto updatedDto = modelMapper.map(updatedTrip, TripBudgetDto.class);
@@ -178,7 +174,7 @@ public class TripBudgetServiceImpl implements TripBudgetService {
     @Override
     public void updateTripBudgetSpentAmount(Trip trip, Double spentAmount, BudgetCategory budgetCategory) {
         log.info("Updating trip budget spent amount for trip ID: {}, category: {}, amount: {}",
-                 trip.getTripId(), budgetCategory, spentAmount);
+                trip.getTripId(), budgetCategory, spentAmount);
 
         // Find the budget category for the given trip and category
         TripBudgetCategory category = trip.getTripBudgetCategories().stream()
@@ -187,11 +183,11 @@ public class TripBudgetServiceImpl implements TripBudgetService {
                 .orElseThrow(() -> new BadRequestException("Budget category not found for trip ID: " + trip.getTripId()));
 
         // Update the spent amount
-        category.setSpentAmount(category.getSpentAmount() + spentAmount);
+        category.setSpentAmount(category.getSpentAmount().add(BigDecimal.valueOf(spentAmount)));
         tripBudgetCategoryRepository.save(category);
 
         log.info("Updated spent amount for trip ID: {}, category: {}, new spent amount: {}",
-                 trip.getTripId(), budgetCategory, category.getSpentAmount());
+                trip.getTripId(), budgetCategory, category.getSpentAmount());
     }
 
     private Double getTotalSpentAmountByCategory(Trip trip, BudgetCategory category) {
@@ -201,10 +197,15 @@ public class TripBudgetServiceImpl implements TripBudgetService {
                 .sum();
     }
 
-    private Double getTotalCategoryLimit(Trip trip) {
+    private BigDecimal getTotalCategoryLimit(Trip trip) {
         return trip.getTripBudgetCategories().stream()
-                .mapToDouble(TripBudgetCategory::getLimitAmount)
-                .sum();
+                .map(TripBudgetCategory::getLimitAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal getTotalSpentAmount(Trip trip) {
+        return trip.getTripExpenses().stream()
+                .map(expense -> BigDecimal.valueOf(expense.getTotalExpenseAmount()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }
-

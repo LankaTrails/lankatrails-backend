@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -32,28 +34,30 @@ public class BudgetValidator {
         }
     }
 
-    public void validateLimitAmount(Double limitAmount) {
-        if (limitAmount == null || limitAmount <= 0) {
+    public void validateLimitAmount(BigDecimal limitAmount) {
+        if (limitAmount == null || limitAmount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BadRequestException("Limit amount must be greater than zero");
         }
     }
 
-    public void validateAgainstSpent(Double spentAmount, Double newLimit) {
-        if (spentAmount > newLimit) {
+    public void validateAgainstSpent(BigDecimal spentAmount, BigDecimal newLimit) {
+        if (spentAmount.compareTo(newLimit) > 0) {
             throw new BadRequestException("Limit cannot be less than already spent amount");
         }
     }
 
-    public void validateAgainstTotalBudget(Trip trip, Double proposedCategoryTotal) {
-        if (trip.getTotalBudgetLimit() > 0 && proposedCategoryTotal > trip.getTotalBudgetLimit()) {
+    public void validateAgainstTotalBudget(Trip trip, BigDecimal proposedCategoryTotal) {
+        if (trip.getTotalBudgetLimit().compareTo(BigDecimal.ZERO) > 0 &&
+                proposedCategoryTotal.compareTo(trip.getTotalBudgetLimit()) > 0) {
             log.error("Proposed category total {} exceeds trip total limit {} for trip {}",
                     proposedCategoryTotal, trip.getTotalBudgetLimit(), trip.getTripId());
             throw new BadRequestException("Category limits cannot exceed total trip budget limit");
         }
     }
 
-    public void validateAgainstTotalBudgetCategory(Double totalBudgetCategoryLimit, Double newTotalBudgetLimit) {
-        if (totalBudgetCategoryLimit > 0 && newTotalBudgetLimit < totalBudgetCategoryLimit) {
+    public void validateAgainstTotalBudgetCategory(BigDecimal totalBudgetCategoryLimit, BigDecimal newTotalBudgetLimit) {
+        if (totalBudgetCategoryLimit.compareTo(BigDecimal.ZERO) > 0 &&
+                newTotalBudgetLimit.compareTo(totalBudgetCategoryLimit) < 0) {
             log.error("New total budget limit {} is less than existing category limit {}",
                     newTotalBudgetLimit, totalBudgetCategoryLimit);
             throw new BadRequestException("New total budget limit cannot be less than existing total category limits");
@@ -67,4 +71,3 @@ public class BudgetValidator {
         }
     }
 }
-
