@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.ChatRoomDto;
+import com.lankatrails.lankatrails_backend.dtos.TripParticipantDto;
 import com.lankatrails.lankatrails_backend.dtos.TripPeriodDto;
 import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
@@ -15,9 +16,7 @@ import com.lankatrails.lankatrails_backend.model.enums.BudgetCategory;
 import com.lankatrails.lankatrails_backend.model.enums.TripPrivilege;
 import com.lankatrails.lankatrails_backend.model.enums.TripRole;
 import com.lankatrails.lankatrails_backend.model.enums.TripStatus;
-import com.lankatrails.lankatrails_backend.repositories.LocationRepository;
-import com.lankatrails.lankatrails_backend.repositories.TouristRepository;
-import com.lankatrails.lankatrails_backend.repositories.TripRepository;
+import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ChatRoomService;
 import com.lankatrails.lankatrails_backend.service.TripService;
@@ -103,7 +102,7 @@ public class TripServiceImpl implements TripService {
         trip.setLocations(new ArrayList<>());
         trip.setTripItems(new ArrayList<>());
         trip.setTripExpenses(new ArrayList<>());
-        trip.setTripBudgetCategoryLimits(initializeCategoryLimits(tripRequestDTO, trip));
+        trip.setTripBudgetCategories(new HashSet<>());
 
         // Set lead tourist as admin participant
         TripParticipant leadParticipant = TripParticipant.builder()
@@ -205,6 +204,28 @@ public class TripServiceImpl implements TripService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public APIResponse<List<TripParticipantDto>> getTripParticipants(Long tripId) {
+        log.info("Fetching participants for trip with ID: {}", tripId);
+        Trip trip = tripRepository.findByTripId(tripId)
+                .orElseThrow(() -> new ResourceNotFoundException("Trip", tripId));
+
+        List<TripParticipantDto> participantDTOs = new ArrayList<>();
+        for (TripParticipant participant : trip.getParticipants()) {
+            TripParticipantDto dto = TripParticipantDto.builder()
+                    .participantId(participant.getParticipantId())
+                    .firstName(participant.getTourist().getFirstName())
+                    .lastName(participant.getTourist().getLastName())
+                    // .tripId(trip.getTripId())
+                    .role(participant.getTripRole().name())
+                    .build();
+            participantDTOs.add(dto);
+        }
+
+        return new APIResponse<>(true, "Trip participants fetched successfully", participantDTOs);
+    }
+
+    @Override
     @Transactional
     public APIResponse<TripResponseDTO> removeTouristFromTrip(Long tripId, Long touristId) {
         log.info("Removing tourist with ID: {} from trip with ID: {}", touristId, tripId);
@@ -266,32 +287,32 @@ public class TripServiceImpl implements TripService {
         return new APIResponse<>(true, "Trip periods fetched successfully", tripPeriods);
     }
 
-    private Set<TripBudgetCategoryLimit> initializeCategoryLimits(TripRequestDTO tripRequestDTO, Trip trip) {
-        Set<TripBudgetCategoryLimit> categoryLimits = new HashSet<>();
+    private Set<TripBudgetCategory> initializeCategoryLimits(TripRequestDTO tripRequestDTO, Trip trip) {
+        Set<TripBudgetCategory> categoryLimits = new HashSet<>();
 
         if (tripRequestDTO.getAccommodationLimit() != null) {
-            categoryLimits.add(new TripBudgetCategoryLimit(
+            categoryLimits.add(new TripBudgetCategory(
                     BudgetCategory.ACCOMMODATION, tripRequestDTO.getAccommodationLimit(), trip));
         }
         if (tripRequestDTO.getFoodLimit() != null) {
-            categoryLimits.add(new TripBudgetCategoryLimit(
+            categoryLimits.add(new TripBudgetCategory(
                     BudgetCategory.FOOD, tripRequestDTO.getFoodLimit(), trip));
         }
         if (tripRequestDTO.getTransportLimit() != null) {
-            categoryLimits.add(new TripBudgetCategoryLimit(
+            categoryLimits.add(new TripBudgetCategory(
                     BudgetCategory.TRANSPORT, tripRequestDTO.getTransportLimit(), trip));
         }
         if (tripRequestDTO.getActivityLimit() != null) {
-            categoryLimits.add(new TripBudgetCategoryLimit(
+            categoryLimits.add(new TripBudgetCategory(
                     BudgetCategory.ACTIVITY, tripRequestDTO.getActivityLimit(), trip));
         }
         if (tripRequestDTO.getMiscellaneousLimit() != null) {
-            categoryLimits.add(new TripBudgetCategoryLimit(
+            categoryLimits.add(new TripBudgetCategory(
                     BudgetCategory.MISCELLANEOUS, tripRequestDTO.getMiscellaneousLimit(), trip));
         }
         if (tripRequestDTO.getShoppingLimit() != null) {
-            categoryLimits.add(new TripBudgetCategoryLimit(
-                    BudgetCategory.SHOPPING, tripRequestDTO.getTotalBudgetLimit(), trip));
+            categoryLimits.add(new TripBudgetCategory(
+                    BudgetCategory.SHOPPING, tripRequestDTO.getShoppingLimit(), trip));
         }
 
         return categoryLimits;

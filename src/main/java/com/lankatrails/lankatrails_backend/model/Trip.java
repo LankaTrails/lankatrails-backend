@@ -76,5 +76,5 @@ public class Trip {
     private List<TripExpense> tripExpenses;
 
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<TripBudgetCategoryLimit> tripBudgetCategoryLimits;
+    private Set<TripBudgetCategory> tripBudgetCategories;
 }
