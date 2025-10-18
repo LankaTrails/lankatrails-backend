@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -55,7 +56,7 @@ public class Tourist extends User {
     private Set<Place> favouritePlaces;
 
     @OneToMany(mappedBy = "tourist")
-    private List<Booking> bookings = new ArrayList<>();
+    private Set<RateAndReview> reviews = new HashSet<>();
 
     @OneToMany(mappedBy = "tourist", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude

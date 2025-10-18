@@ -11,6 +11,8 @@ import java.util.stream.Collectors;
 
 import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
+import com.lankatrails.lankatrails_backend.exception.BadRequestException;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -24,7 +26,6 @@ import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
-import com.lankatrails.lankatrails_backend.factory.CreateServiceFactory;
 import com.lankatrails.lankatrails_backend.model.ActivityCategory;
 import com.lankatrails.lankatrails_backend.model.ActivityService;
 import com.lankatrails.lankatrails_backend.model.Category;
@@ -44,22 +45,6 @@ import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ActivityServiceService;
 import com.lankatrails.lankatrails_backend.service.ImageService;
 import com.lankatrails.lankatrails_backend.service.ServicesForAll;
-import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
-
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 public class ActivityServiceServiceImpl implements ActivityServiceService {
@@ -88,9 +73,6 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     private ActivityCategoryRepository activityCategoryRepository;
 
     @Autowired
-    private CreateServiceFactory serviceFactory;
-
-    @Autowired
     private ImageService imageService;
 
     @Autowired
@@ -100,13 +82,10 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     private PolicyImpl policyImpl;
 
     @Autowired
-    private serviceImpl serviceImpl;
+    private ServicesForAll serviceImpl;
 
     @Autowired
     private AuthUtils authUtils;
-
-    @Autowired
-    private FileUploadService fileUploadService;
 
     @Autowired
     private ServicesForAll servicesForAll;
@@ -114,7 +93,6 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     @Override
     @Transactional
     public APIResponse<String> addService(ActivityServiceRequest services, List<MultipartFile> images) {
-        System.out.println("hello"+services.getAvailabilitySlots());
         Category category = categoryRepository.findByCategoryName(ServiceCategory.ACTIVITY)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", 4L));
 
@@ -126,6 +104,9 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         mappedObj.setProvider(provider);
 
         mappedObj.setLocations(servicesForAll.setServiceLocation(services));
+        mappedObj.setBookingConfiguration(servicesForAll.setBookingConfig(services.getBookingConfig()));
+        mappedObj.setPriceConfiguration(servicesForAll.setPriceConfig(services.getPriceConfig()));
+        mappedObj.setStatus(ServiceStatus.ACTIVE);
 
         Optional<ActivityService> checkDb = activityServiceRepository.findByServiceName(mappedObj.getServiceName());
         ActivityService lastServiceAdded;
@@ -144,20 +125,18 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
             tabsImpl.addTabs(tabsReq, lastServiceAdded);
 
             // Set Policies
-            List<PolicySectionRequest> policyReq = services.getPolicySection();
-            policyImpl.addPolicies(policyReq, lastServiceAdded, category);
+            lastServiceAdded.setPolicies(policyImpl.addPolicies(services.getPolicySection(), category, lastServiceAdded));
 
             // Upload and associate images
             imageService.uploadImagesForService(images, lastServiceAdded);
 
             // Set the availability slots
-            List<AvailabilitySlotDTO> availabilitySlots = services.getAvailabilitySlots();
-            for(AvailabilitySlotDTO availabilitySlotDTO : availabilitySlots){
-                if(availabilitySlotDTO.getCloseTime().isEmpty() || availabilitySlotDTO.getOpenTime().isEmpty()){
-                    throw new BadCredentialsException("Invalid Availability Slots","All Week Days should have the schedule");
-                }
+            List<AvailableTimeDTO> availabilitySlots = services.getAvailableTimeDTOS();
+            if (availabilitySlots == null ){
+                throw new BadRequestException("Availability Slots cannot be empty");
             }
-            serviceImpl.setAvailabilitySlots(availabilitySlots,lastServiceAdded);
+            servicesForAll.setAvailableTime(availabilitySlots, lastServiceAdded);
+            activityServiceRepository.save(lastServiceAdded);
 
         } else {
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());
@@ -187,7 +166,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
         for (ActivityService activity :activityServicePage){
             ActivityServiceRequest activityServiceRequest = new ActivityServiceRequest();
-            if (activity.getStatus()){
+            if (activity.getStatus() == ServiceStatus.ACTIVE){
                 activityServiceRequest.setServiceId(activity.getServiceId());
                 activityServiceRequest.setServiceName(activity.getServiceName());
                 activityServiceRequest.setStatus(activity.getStatus());
@@ -259,16 +238,28 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         prepareResponse.setActivityType(activityService.getActivityCategory().getCategoryName());
         prepareResponse.setActivityDetails(activityService.getActivityDetails());
         prepareResponse.setSafetyInstructions(activityService.getSafetyInstructions());
-        prepareResponse.setPrice(activityService.getPrice());
-        prepareResponse.setPriceType(activityService.getPriceType());
         prepareResponse.setLocations(activityService.getLocations().stream()
                 .map(location -> modelMapper.map(location, LocationDTO.class))
                 .collect(Collectors.toSet()));
+        prepareResponse.setPriceConfig(modelMapper.map(activityService.getPriceConfiguration(), PriceConfigDTO.class));
+        prepareResponse.setBookingConfig(modelMapper.map(activityService.getBookingConfiguration(), BookingConfigDTO.class));
         prepareResponse.setContactNo(activityService.getContactNo());
         prepareResponse.setServiceId(Id);
         prepareResponse.setTabsSection(tabs);
         prepareResponse.setPolicySection(policies);
         prepareResponse.setImages(imgDTOs);
+        prepareResponse.setStatus(activityService.getStatus());
+          prepareResponse.setAvailableTimeDTOS(activityService.getAvailableTimes().stream()
+                  .map(availableTime -> {
+                      AvailableTimeDTO availableTimeDTO = modelMapper.map(availableTime, AvailableTimeDTO.class);
+                      List<BreakTimeDTO> breakTimeDTOS = availableTime.getBreakTimes().stream()
+                              .map(breakTime -> modelMapper.map(breakTime, BreakTimeDTO.class))
+                              .collect(Collectors.toList());
+                      availableTimeDTO.setBreakTimes(breakTimeDTOS);
+                      return availableTimeDTO;
+                  })
+                  .collect(Collectors.toList())
+          );
 
         return  APIResponse.<ActivityServiceRequest>builder()
                 .success(true)
@@ -281,7 +272,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
   public APIResponse<ActivityServiceRequest> removeActivityService(Long Id){
         ActivityService activity=activityServiceRepository.findById(Id)
                 .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
-        activity.setStatus(false);
+        activity.setStatus(ServiceStatus.INACTIVE);
         ActivityService activityService=activityServiceRepository.save(activity);
 
         ActivityServiceRequest activityServiceResponse=new ActivityServiceRequest();
@@ -383,13 +374,11 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
     }
 
-
-
     @Override
   @Transactional
   public APIResponse<String> updateWithId(Long Id,ActivityServiceRequest activityService){
 
-      ActivityService activity=activityServiceRepository.findById(Id)
+      ActivityService activity= activityServiceRepository.findById(Id)
               .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
 
 
@@ -399,80 +388,33 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
       activity.setStatus(activityService.getStatus());
       activity.setActivityDetails(activityService.getActivityDetails());
       activity.setSafetyInstructions(activityService.getSafetyInstructions());
-      activity.setPrice(activityService.getPrice());
-      activity.setPriceType(activityService.getPriceType());
       
       // Update locations
-      if (activityService.getLocations() != null && !activityService.getLocations().isEmpty()) {
           activity.setLocations(servicesForAll.setServiceLocation(activityService));
-      }
+
+        // Update configurations
+        activity.setBookingConfiguration(servicesForAll.setBookingConfig(activityService.getBookingConfig()));
+        activity.setPriceConfiguration(servicesForAll.setPriceConfig(activityService.getPriceConfig()));
 
       //save the updated activity service
-      activityServiceRepository.save(activity);
+      ActivityService updatedActivity = activityServiceRepository.save(activity);
 
-      //update or add tabs
-      //get the tabs from the database
-      Set<TabsSection> tabs=activity.getTabs();
+        // Set the availability slots
+        List<AvailableTimeDTO> availabilitySlots = activityService.getAvailableTimeDTOS();
+        if (availabilitySlots == null ){
+            throw new BadRequestException("Availability Slots cannot be empty");
+        }
+        servicesForAll.setAvailableTime(availabilitySlots, updatedActivity);
 
-      //get the tabs from the request
-      List<TabSectionRequest> reqTabs=activityService.getTabsSection();
+        // Update tabs
+        tabsImpl.updateTabs(activityService.getTabsSection(), updatedActivity);
+        tabsImpl.deleteTabs(activityService.getDeletedTabs());
 
-      //create a map of existing tabs by ID for quick lookup
-      Map<Long,TabsSection> savedTabMap=tabs.stream()
-              .collect(Collectors.toMap(TabsSection::getId, Function.identity()));
+        // Update policies
+        policyImpl.updatePolicies(activityService.getPolicySection(), updatedActivity);
+        policyImpl.deletePolicies(activityService.getDeletedPolicies(), updatedActivity);
 
-      //create a set to track updated or newly added tabs
-      Set<TabsSection> updatedTabs=new HashSet<>();
 
-      for (TabSectionRequest req:reqTabs){
-          TabsSection tab;
-          if (req.getId()!=null && savedTabMap.containsKey(req.getId())){
-              //update the existing tab
-              tab=savedTabMap.get(req.getId());
-              tab.setHeading(req.getHeading());
-              tab.setContent(req.getContent());
-          }else{
-              //create new tab
-              tab=new TabsSection();
-              tab.setHeading(req.getHeading());
-              tab.setContent(req.getContent());
-              tab.setService(activity);
-          }
-          updatedTabs.add(tab);
-      }
-
-      tabsSectionRepository.saveAll(updatedTabs);
-
-      //update or add policies
-      Set<PolicySection> policies=activity.getPolicies();
-
-      //get the policySection from the request
-      List<PolicySectionRequest> reqPolicies=activityService.getPolicySection();
-      //create a map from existing policy ids in the db for easy lookup
-      Map<Long,PolicySection> savedPoliciesMap=policies.stream()
-              .collect(Collectors.toMap(PolicySection::getId,Function.identity()));
-
-      //create a set to track updated policies or the newly added policies
-      Set<PolicySection> updatedPolicies=new HashSet<>();
-
-      for (PolicySectionRequest policy:reqPolicies){
-          PolicySection policySection;
-          if (policy.getId()!=null && savedPoliciesMap.containsKey(policy.getId())){
-              //update the existing tab
-              policySection=savedPoliciesMap.get(policy.getId());
-              policySection.setHeading(policy.getHeading());
-              policySection.setPolicy(policy.getPolicy());
-          }else{
-              //create new tab
-              policySection=new PolicySection();
-              policySection.setHeading(policy.getHeading());
-              policySection.setPolicy(policy.getPolicy());
-              policySection.setProvider(activity.getProvider());
-          }
-          updatedPolicies.add(policySection);
-
-      }
-      policySectionRepository.saveAll(updatedPolicies);
 
       return APIResponse.<String>builder()
               .success(true)
@@ -538,8 +480,8 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 //        activity.setStatus(activityService.getStatus());
         activity.setActivityDetails(activityService.getActivityDetails());
         activity.setSafetyInstructions(activityService.getSafetyInstructions());
-        activity.setPrice(activityService.getPrice());
-        activity.setPriceType(activityService.getPriceType());
+        activity.setPriceConfiguration(modelMapper.map(activityService.getPriceConfig(), com.lankatrails.lankatrails_backend.model.PriceConfiguration.class));
+        activity.setBookingConfiguration(modelMapper.map(activityService.getBookingConfig(), com.lankatrails.lankatrails_backend.model.BookingConfiguration.class));
         activity.setActivityCategory(activityCategory);
 
         // Update locations
@@ -579,7 +521,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         ActivityService activity = activityServiceRepository.findById(Id)
                 .orElseThrow(() -> new ResourceNotFoundException("Activity Service", Id));
 
-        activity.setStatus(false);
+        activity.setStatus(ServiceStatus.INACTIVE);
         activityServiceRepository.save(activity);
 
         return APIResponse.<String>builder()

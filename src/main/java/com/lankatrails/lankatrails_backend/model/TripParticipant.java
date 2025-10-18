@@ -49,6 +49,9 @@ public class TripParticipant {
     @ManyToMany(mappedBy = "participants")
     private Set<GroupChatRoom> chatRooms = new HashSet<>();
 
+    @OneToMany(mappedBy = "tripParticipant")
+    private Set<Booking> bookings = new HashSet<>();
+
     @OneToMany(mappedBy = "tripParticipant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<TripExpenseShare> expenseShares = new HashSet<>();
 

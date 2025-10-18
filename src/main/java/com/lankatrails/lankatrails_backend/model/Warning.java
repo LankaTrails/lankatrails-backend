@@ -1,26 +1,25 @@
 package com.lankatrails.lankatrails_backend.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.time.LocalTime;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
-public class AvailabilitySlot {
+@AllArgsConstructor
+public class Warning {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    private Long slotId;
-    private String dayOfWeek;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long warningId;
 
-    private String openTime;
-    private String closeTime;
+    private String warning;
 
     @ManyToOne
     @JoinColumn(name = "service_id")
     private Service service;
+
 }

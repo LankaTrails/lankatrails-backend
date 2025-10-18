@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -126,8 +127,8 @@ public class TripServiceImpl implements TripService {
         if (trip.getNumberOfChildren() == null) {
             trip.setNumberOfChildren(0);
         }
-        if (trip.getTotalSpentAmount() == null) {
-            trip.setTotalSpentAmount(0.0);
+        if (trip.getTotalBudget() == null) {
+            trip.setTotalBudget(BigDecimal.ZERO);
         }
 
         // Save the trip

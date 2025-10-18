@@ -15,4 +15,5 @@ public interface ChatRoomService {
     APIResponse<ChatRoomDto> getChatRoomById(Long chatRoomId);
     Boolean isUserInRoom(Long userId, Long chatRoomId);
     GroupChatRoomDto setChatRoomForTrip(Trip trip);
+    APIResponse<GroupChatRoomDto> getGroupChatRoomByTripId(Long tripId);
 }

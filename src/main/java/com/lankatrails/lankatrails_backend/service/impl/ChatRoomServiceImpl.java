@@ -2,9 +2,11 @@ package com.lankatrails.lankatrails_backend.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.lankatrails.lankatrails_backend.dtos.DirectChatRoomDto;
 import com.lankatrails.lankatrails_backend.dtos.GroupChatRoomDto;
+import com.lankatrails.lankatrails_backend.dtos.TouristDto;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.ChatRoomType;
 import com.lankatrails.lankatrails_backend.model.enums.UserRole;
@@ -128,6 +130,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     }
 
     @Override
+    @Transactional
     public GroupChatRoomDto setChatRoomForTrip(Trip trip) {
         // Get the chat room for the trip else set null
         GroupChatRoom chatRoom = groupChatRoomRepository.findByTrip_TripId(trip.getTripId());
@@ -151,6 +154,31 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public APIResponse<GroupChatRoomDto> getGroupChatRoomByTripId(Long tripId) {
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new BadRequestException("Trip with ID " + tripId + " does not exist"));
+
+        GroupChatRoom chatRoom = groupChatRoomRepository.findByTrip_TripId(trip.getTripId());
+
+        if (chatRoom == null) {
+            throw new BadRequestException("Group chat room for trip with ID " + tripId + " does not exist");
+        }
+
+        GroupChatRoomDto chatRoomDto = modelMapper.map(chatRoom, GroupChatRoomDto.class);
+        chatRoomDto.setParticipants(chatRoom.getParticipants().stream()
+                .map(participant -> modelMapper.map(participant.getTourist(), TouristDto.class))
+                .collect(Collectors.toList()));
+
+        return APIResponse.<GroupChatRoomDto>builder()
+                .success(true)
+                .message("Group chat room retrieved successfully")
+                .data(chatRoomDto)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Boolean isUserInRoom(Long userId, Long chatRoomId) {
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(() -> new BadRequestException("Chat room with ID " + chatRoomId + " does not exist"));
