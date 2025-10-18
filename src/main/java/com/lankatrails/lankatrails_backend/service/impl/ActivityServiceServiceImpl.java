@@ -155,9 +155,10 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
         Pageable pageDetails= PageRequest.of(pageNumber,pageSize);
 
-        Page<ActivityService> activityServicePage=activityServiceRepository.findAll(pageDetails);
+        List<ActivityService> activityServicePage=activityServiceRepository.findByProvider_UserId(authUtils.loggedInUserId())
+                .orElseThrow(()->new ResourceNotFoundException("Activity", authUtils.loggedInUserId()));
 
-        List<ActivityService> activityServices=activityServicePage.getContent();
+//        List<ActivityService> activityServices=activityServicePage.getContent();
 
 //        if (activityServices.isEmpty())
 //            throw new APIException("No Activity Service created till now");
@@ -178,11 +179,11 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         ActivityServiceResponse activityServiceResponse=new ActivityServiceResponse();
 
         activityServiceResponse.setContent(activityServices_DTOs);
-        activityServiceResponse.setLastPage(activityServicePage.isLast());
-        activityServiceResponse.setPageNumber(activityServicePage.getNumber());
-        activityServiceResponse.setPageSize(activityServicePage.getSize());
-        activityServiceResponse.setTotalElements(activityServicePage.getTotalElements());
-        activityServiceResponse.setTotalPages(activityServicePage.getTotalPages());
+//        activityServiceResponse.setLastPage(activityServicePage.isLast());
+//        activityServiceResponse.setPageNumber(activityServicePage.getNumber());
+//        activityServiceResponse.setPageSize(activityServicePage.getSize());
+//        activityServiceResponse.setTotalElements(activityServicePage.getTotalElements());
+//        activityServiceResponse.setTotalPages(activityServicePage.getTotalPages());
         return  APIResponse.<ActivityServiceResponse>builder()
                 .success(true)
                 .message("Activity Services Fetched")

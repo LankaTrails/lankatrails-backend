@@ -89,13 +89,14 @@ public class TransportServiceImpl implements TransportService {
     public APIResponse<TransportResponseDTO> getAll(Integer pageNumber, Integer pageSize){
         Pageable pageDetails= PageRequest.of(pageNumber,pageSize);
 
-        Page<Transport> transportPage=transportRepository.findAll(pageDetails);
+        List<Transport> transportPage=transportRepository.findByProvider_UserId(authUtils.loggedInUserId())
+                .orElseThrow(()->new ResourceNotFoundException("Transport", authUtils.loggedInUserId()));
 
-        List<Transport> transports=transportPage.getContent();
+//        List<Transport> transports=transportPage.getContent();
 
-        if (transports.isEmpty()){
-            throw new APIException("No Transport Created Until Now");
-        }
+//        if (transports.isEmpty()){
+//            throw new APIException("No Transport Created Until Now");
+//        }
 
 //        List<TransportRequestDTO>  transport_DTOs=transports.stream()
 //                .map(transport -> modelMapper.map(transport, TransportRequestDTO.class))
@@ -116,11 +117,11 @@ public class TransportServiceImpl implements TransportService {
         TransportResponseDTO transportResponseDTO=new TransportResponseDTO();
 
         transportResponseDTO.setContent(transport_DTOs);
-        transportResponseDTO.setLastPage(transportPage.isLast());
-        transportResponseDTO.setPageNumber(transportPage.getNumber());
-        transportResponseDTO.setPageSize(transportPage.getSize());
-        transportResponseDTO.setTotalElements(transportPage.getTotalElements());
-        transportResponseDTO.setTotalPages(transportPage.getTotalPages());
+//        transportResponseDTO.setLastPage(transportPage.isLast());
+//        transportResponseDTO.setPageNumber(transportPage.getNumber());
+//        transportResponseDTO.setPageSize(transportPage.getSize());
+//        transportResponseDTO.setTotalElements(transportPage.getTotalElements());
+//        transportResponseDTO.setTotalPages(transportPage.getTotalPages());
 
         return APIResponse.<TransportResponseDTO>builder()
                 .success(true)
