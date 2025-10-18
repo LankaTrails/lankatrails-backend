@@ -36,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -82,17 +83,16 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public APIResponse<PaymentRequestDto> addNewBooking(Long tripItemId) {
-
-        TripItem tripItem = tripItemRepository.findById(tripItemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Trip Item", tripItemId));
-
-        TripParticipant tripParticipant = tripParticipantRepository.findByTrip_TripIdAndTourist_UserId(tripItem.getTrip().getTripId(), authUtils.loggedInUserId())
+        TripParticipant tripParticipant = tripParticipantRepository.findByTourist_UserId(authUtils.loggedInUserId())
                 .orElseThrow(() -> new RuntimeException("Trip Participant not found"));
 
         // Validate participant's privilege to book for the trip
         if (!tripPrivilegeUtils.hasPrivilege(tripParticipant.getTripRole(), TripPrivilege.ADD_BOOKINGS)) {
             throw new BadRequestException("Insufficient privileges to add bookings to this trip");
         }
+
+        TripItem tripItem = tripItemRepository.findById(tripItemId)
+                .orElseThrow(() -> new ResourceNotFoundException("Trip Item", tripItemId));
 
         // Use pessimistic locking to prevent race conditions during booking
         Service serviceWithLock = serviceRepository.findByIdWithLock(tripItem.getService().getServiceId())
@@ -257,6 +257,46 @@ public class BookingServiceImpl implements BookingService {
             }
             bookingItemDtos.add(dto);
         }
+        return APIResponse.<List<BookingItemDto>>builder()
+                .success(true)
+                .message("Bookings retrieved successfully")
+                .data(bookingItemDtos)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<List<BookingItemDto>> getBookings(Long serviceId, LocalDateTime from, LocalDateTime to) {
+        List<Booking> bookings = bookingRepository.findBookingsInDateRange(serviceId, from, to, BookingStatus.CONFIRMED);
+        List<BookingItemDto> bookingItemDtos = bookings.stream().map(booking -> {
+            TripItem tripItem = booking.getTripItem();
+            BookingItemDto dto = new BookingItemDto();
+            dto.setTripItemId(tripItem.getTripItemId());
+            dto.setStartTime(tripItem.getStartTime());
+            dto.setEndTime(tripItem.getEndTime());
+            dto.setNoOfUnits(tripItem.getNoOfUnits());
+            dto.setNumberOfAdults(tripItem.getNumberOfAdults());
+            dto.setNumberOfChildren(tripItem.getNumberOfChildren());
+            dto.setService(ServiceDTO.builder()
+                    .serviceId(tripItem.getService().getServiceId())
+                    .serviceName(tripItem.getService().getServiceName())
+                    .Category(tripItem.getService().getCategory().getCategoryName())
+                    .mainImageUrl(tripItem.getService().getImages().isEmpty() ? null : tripItem.getService().getImages().getFirst().getImageUrl())
+                    .locations(tripItem.getService().getLocations().stream()
+                            .map(location -> modelMapper.map(location, LocationDTO.class))
+                            .collect(Collectors.toSet()))
+                    .prices(tripItem.getService().getPriceConfiguration().getPriceWithType())
+                    .provider(modelMapper.map(tripItem.getService().getProvider(), ProviderDto.class))
+                    .build());
+            dto.setStatus(booking.getBookingStatus());
+            dto.setTotalPrice(booking.getTotalPrice());
+            dto.setDepositAmount(booking.getDepositAmount());
+            dto.setPaidAmount(booking.getPaidAmount());
+            dto.setDueAmount(booking.getTotalPrice().subtract(booking.getPaidAmount()));
+            dto.setBookingDate(booking.getBookedDateTime());
+            return dto;
+        }).collect(Collectors.toList());
+
         return APIResponse.<List<BookingItemDto>>builder()
                 .success(true)
                 .message("Bookings retrieved successfully")
