@@ -25,6 +25,7 @@ import com.lankatrails.lankatrails_backend.model.TripExpenseShare;
 import com.lankatrails.lankatrails_backend.model.TripParticipant;
 import com.lankatrails.lankatrails_backend.model.enums.BudgetCategory;
 import com.lankatrails.lankatrails_backend.model.enums.TripPrivilege;
+import com.lankatrails.lankatrails_backend.repositories.TripBudgetCategoryRepository;
 import com.lankatrails.lankatrails_backend.repositories.TripExpenseRepository;
 import com.lankatrails.lankatrails_backend.repositories.TripExpenseShareRepository;
 import com.lankatrails.lankatrails_backend.repositories.TripRepository;
@@ -63,6 +64,9 @@ public class TripExpenseServiceImpl implements TripExpenseService {
 
     @Autowired
     private TripRepository tripRepository;
+
+    @Autowired
+    private TripBudgetCategoryRepository tripBudgetCategoryRepository;
 
     @Autowired
     private TripExpenseRepository tripExpenseRepository;
@@ -141,13 +145,37 @@ public class TripExpenseServiceImpl implements TripExpenseService {
             throw new BadRequestException("Budget category is required");
         }
 
+        // Validate that the budget category string is a valid enum value
+        BudgetCategory budgetCategoryEnum;
+        try {
+            budgetCategoryEnum = BudgetCategory.valueOf(budgetCategoryStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid budget category: " + budgetCategoryStr);
+        }
+
+        // Find or create budget category for this trip
         TripBudgetCategory existingCategory = trip.getTripBudgetCategories().stream()
                 .filter(category -> category.getBudgetCategory().name().equalsIgnoreCase(budgetCategoryStr))
                 .findFirst()
-                .orElseThrow(() -> new BadRequestException("Invalid budget category: " + budgetCategoryStr));
+                .orElse(null);
 
-        // Validate expense does not exceed category limit
-        if (existingCategory.getLimitAmount() < existingCategory.getSpentAmount() + totalExpenseAmount) {
+        boolean isNewCategory = false;
+        // If category doesn't exist, create one with no limit (0.0)
+        if (existingCategory == null) {
+            existingCategory = new TripBudgetCategory();
+            existingCategory.setBudgetCategory(budgetCategoryEnum);
+            existingCategory.setLimitAmount(0.0); // No budget limit
+            existingCategory.setSpentAmount(0.0);
+            existingCategory.setTrip(trip);
+            // Save the new category
+            existingCategory = tripBudgetCategoryRepository.save(existingCategory);
+            isNewCategory = true;
+            log.info("Created new budget category {} for trip {} with no limit", budgetCategoryEnum, trip.getTripId());
+        }
+
+        // Only validate budget limit if there's actually a limit set (> 0)
+        if (existingCategory.getLimitAmount() > 0 && 
+            existingCategory.getLimitAmount() < existingCategory.getSpentAmount() + totalExpenseAmount) {
             throw new BadRequestException("Expense exceeds the budget limit for category: " + existingCategory.getBudgetCategory());
         }
 
@@ -158,7 +186,7 @@ public class TripExpenseServiceImpl implements TripExpenseService {
         // Create new expense entity
         TripExpense tripExpense = new TripExpense();
         tripExpense.setExpenseName(expenseDTO.getExpenseName());
-        tripExpense.setBudgetCategory(BudgetCategory.valueOf(expenseDTO.getBudgetCategory()));
+        tripExpense.setBudgetCategory(budgetCategoryEnum);
         tripExpense.setExpenseDateTime(LocalDateTime.now());
         tripExpense.setTrip(trip);
         tripExpense.setCreatedByParticipant(loggedInParticipant);
@@ -167,7 +195,11 @@ public class TripExpenseServiceImpl implements TripExpenseService {
 
         // Update category spent amount
         existingCategory.setSpentAmount(existingCategory.getSpentAmount() + totalExpenseAmount);
-        trip.getTripBudgetCategories().add(existingCategory);
+        
+        // Only add to trip's categories if it's newly created
+        if (isNewCategory) {
+            trip.getTripBudgetCategories().add(existingCategory);
+        }
 
         // Update trip total spent amount
         trip.setTotalSpentAmount(trip.getTotalSpentAmount() + totalExpenseAmount);
