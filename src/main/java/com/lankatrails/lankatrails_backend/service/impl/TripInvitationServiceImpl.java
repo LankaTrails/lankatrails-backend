@@ -154,11 +154,11 @@ public class TripInvitationServiceImpl implements TripInvitationService {
         ChatRoomDto chatRoomDto = chatRoomService.setChatRoomForTrip(trip);
 
         // Update invitation status
-        if (!invitation.getIsGroupInvitation()) {
-            invitation.setStatus(InvitationStatus.EXPIRED);
-            invitation.setIsExpired(true);
-            tripInvitationRepository.save(invitation);
-        }
+//        if (!invitation.getIsGroupInvitation()) {
+//            invitation.setStatus(InvitationStatus.EXPIRED);
+//            invitation.setIsExpired(true);
+//            tripInvitationRepository.save(invitation);
+//        }
 
 
         return new APIResponse<>(
