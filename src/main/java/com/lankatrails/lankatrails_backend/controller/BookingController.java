@@ -8,6 +8,7 @@ import com.lankatrails.lankatrails_backend.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,6 +48,12 @@ public class BookingController {
     public ResponseEntity<APIResponse<PaymentRequestDto>> createBooking(@PathVariable Long tripItemId){
         APIResponse<PaymentRequestDto>  createBooking = bookingService.addNewBooking(tripItemId);
         return ResponseEntity.status(createBooking.isSuccess()? HttpStatus.CREATED:HttpStatus.BAD_REQUEST).body(createBooking);
+    }
+
+    @DeleteMapping("/tourist/booking/{tripItemId}/cancel")
+    public ResponseEntity<APIResponse<String>> cancelItem(@PathVariable Long tripItemId){
+        APIResponse<String> cancelItem = bookingService.cancelItem(tripItemId);
+        return ResponseEntity.status(cancelItem.isSuccess()? HttpStatus.OK:HttpStatus.BAD_REQUEST).body(cancelItem);
     }
 
     //get all bookings for a trip

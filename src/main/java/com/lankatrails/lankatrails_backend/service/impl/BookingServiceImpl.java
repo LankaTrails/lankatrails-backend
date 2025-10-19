@@ -4,9 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.lankatrails.lankatrails_backend.dtos.BookingItemDto;
@@ -259,6 +257,79 @@ public class BookingServiceImpl implements BookingService {
                 .message("Bookings retrieved successfully")
                 .data(bookingItemDtos)
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<String> cancelItem(Long tripItemId) {
+        log.info("Canceling booking for trip item with ID: {}", tripItemId);
+        
+        try {
+            // Find the trip item
+            TripItem tripItem = tripItemRepository.findById(tripItemId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Trip Item", tripItemId));
+
+            // Get the current user
+            Long currentUserId = authUtils.loggedInUserId();
+            
+            // Find the trip participant for the current user
+            TripParticipant tripParticipant = tripParticipantRepository
+                    .findByTourist_UserId(currentUserId)
+                    .orElseThrow(() -> new BadRequestException("You are not a participant of any trip"));
+
+            // Verify that the trip participant belongs to the same trip as the trip item
+            if (!tripParticipant.getTrip().getTripId().equals(tripItem.getTrip().getTripId())) {
+                throw new BadRequestException("You are not a participant of this trip");
+            }
+
+            // Check if user has privilege to cancel bookings
+            if (!tripPrivilegeUtils.hasPrivilege(tripParticipant.getTripRole(), TripPrivilege.CANCEL_BOOKINGS)) {
+                throw new BadRequestException("You don't have permission to cancel bookings for this trip");
+            }
+
+            // If the trip item has a booking, delete it first
+            if (tripItem.getBooking() != null) {
+                Booking booking = tripItem.getBooking();
+                
+                // Check if booking is already canceled
+                if (booking.getBookingStatus() == BookingStatus.CANCELLED) {
+                    return APIResponse.<String>builder()
+                            .success(false)
+                            .message("Booking is already canceled")
+                            .data(null)
+                            .build();
+                }
+                
+                // Delete the booking first
+                bookingRepository.delete(booking);
+                log.info("Deleted booking for trip item ID: {}", tripItemId);
+            }
+            
+            // Delete the trip item from the trip_items table
+            tripItemRepository.delete(tripItem);
+
+            log.info("Successfully removed trip item and its booking with ID: {}", tripItemId);
+            return APIResponse.<String>builder()
+                    .success(true)
+                    .message("Service removed from trip successfully")
+                    .data("Trip item removed for ID: " + tripItemId)
+                    .build();
+                    
+        } catch (ResourceNotFoundException | BadRequestException e) {
+            log.error("Error canceling booking for trip item ID {}: {}", tripItemId, e.getMessage());
+            return APIResponse.<String>builder()
+                    .success(false)
+                    .message(e.getMessage())
+                    .data(null)
+                    .build();
+        } catch (Exception e) {
+            log.error("Unexpected error canceling booking for trip item ID {}: {}", tripItemId, e.getMessage());
+            return APIResponse.<String>builder()
+                    .success(false)
+                    .message("Failed to cancel booking: " + e.getMessage())
+                    .data(null)
+                    .build();
+        }
     }
 
 }
