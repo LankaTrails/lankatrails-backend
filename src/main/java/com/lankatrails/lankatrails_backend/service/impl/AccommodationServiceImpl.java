@@ -170,8 +170,13 @@ public class AccommodationServiceImpl implements AccommodationService {
                 Double averageRating = (ratingResponse != null && ratingResponse.getData() != null)
                         ? ratingResponse.getData().getAverageRating()
                         : 0.0;
+                Long totalRatings = (ratingResponse != null && ratingResponse.getData() != null)
+                        ? ratingResponse.getData().getTotalReviews()
+                        : 0L;
+                accommodationServiceRequest.setReviewCount(totalRatings);
                 accommodationServiceRequest.setAverageRating(averageRating);
-                accommodationServiceRequest.setTotalBookingsForPastMonth(bookingService.countBookingsForServiceInPeriod(accommodation.getServiceId(), LocalDateTime.now().minusMonths(1), LocalDateTime.now()));
+                accommodationServiceRequest.setFutureBookingCount(bookingService.countFutureBookingsForService(accommodation.getServiceId(), LocalDateTime.now()));
+                accommodationServiceRequest.setPastBookingCount(bookingService.countPastBookingsForService(accommodation.getServiceId(), LocalDateTime.now()));
                 accommodationServices_DTOs.add(accommodationServiceRequest);
             }
 

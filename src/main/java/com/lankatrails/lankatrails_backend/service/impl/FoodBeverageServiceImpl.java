@@ -176,9 +176,13 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
                 Double averageRating = (ratingResponse != null && ratingResponse.getData() != null)
                         ? ratingResponse.getData().getAverageRating()
                         : 0.0;
+                Long totalRatings = (ratingResponse != null && ratingResponse.getData() != null)
+                        ? ratingResponse.getData().getTotalReviews()
+                        : 0L;
                 foodBeverageServiceRequest.setAverageRating(averageRating);
-
-                foodBeverageServiceRequest.setTotalBookingsForPastMonth(bookingService.countBookingsForServiceInPeriod(foodAndBeverage.getServiceId(), LocalDateTime.now().minusMonths(1), LocalDateTime.now()));
+                foodBeverageServiceRequest.setReviewCount(totalRatings);
+                foodBeverageServiceRequest.setFutureBookingCount(bookingService.countFutureBookingsForService(foodAndBeverage.getServiceId(), LocalDateTime.now()));
+                foodBeverageServiceRequest.setPastBookingCount(bookingService.countPastBookingsForService(foodAndBeverage.getServiceId(), LocalDateTime.now()));
                 foodBeverage_DTOs.add(foodBeverageServiceRequest);
             }
 

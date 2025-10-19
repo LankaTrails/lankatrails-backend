@@ -154,33 +154,38 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
         for (ActivityService activity : activityServicePage) {
             ActivityServiceRequest activityServiceRequest = new ActivityServiceRequest();
-            if (activity.getStatus() == ServiceStatus.ACTIVE) {
-                //set the images
-                List<Image> images = imageRepository.findByService_ServiceId(activity.getServiceId());
-                //map images to imageDTO
-                List<ImageRequestDTO> imgDTOs = new ArrayList<>();
-                for (Image img : images) {
-                    ImageRequestDTO imgDTO = new ImageRequestDTO();
-                    imgDTO.setId(img.getImageId());
-                    imgDTO.setImageUrl(img.getImageUrl());
-                    imgDTOs.add(imgDTO);
+//            if (activity.getStatus() == ServiceStatus.ACTIVE || activity.getStatus() == ServiceStatus.INACTIVE) {
+            //set the images
+            List<Image> images = imageRepository.findByService_ServiceId(activity.getServiceId());
+            //map images to imageDTO
+            List<ImageRequestDTO> imgDTOs = new ArrayList<>();
+            for (Image img : images) {
+                ImageRequestDTO imgDTO = new ImageRequestDTO();
+                imgDTO.setId(img.getImageId());
+                imgDTO.setImageUrl(img.getImageUrl());
+                imgDTOs.add(imgDTO);
 
-                }
-                activityServiceRequest.setServiceId(activity.getServiceId());
-                activityServiceRequest.setServiceName(activity.getServiceName());
-                activityServiceRequest.setStatus(activity.getStatus());
-                activityServiceRequest.setImages(imgDTOs);
-                // Safely get average rating with null check
-                APIResponse<RateAndReviewResponse> ratingResponse = reviewService.getAverageRatingByServiceId(activity.getServiceId());
-                Double averageRating = (ratingResponse != null && ratingResponse.getData() != null)
-                        ? ratingResponse.getData().getAverageRating()
-                        : 0.0;
-                activityServiceRequest.setAverageRating(averageRating);
-                activityServiceRequest.setTotalBookingsForPastMonth(bookingService.countBookingsForServiceInPeriod(activity.getServiceId(), LocalDateTime.now().minusMonths(1), LocalDateTime.now()));
-                activityServices_DTOs.add(activityServiceRequest);
             }
-
+            activityServiceRequest.setServiceId(activity.getServiceId());
+            activityServiceRequest.setServiceName(activity.getServiceName());
+            activityServiceRequest.setStatus(activity.getStatus());
+            activityServiceRequest.setImages(imgDTOs);
+            // Safely get average rating with null check
+            APIResponse<RateAndReviewResponse> ratingResponse = reviewService.getAverageRatingByServiceId(activity.getServiceId());
+            Double averageRating = (ratingResponse != null && ratingResponse.getData() != null)
+                    ? ratingResponse.getData().getAverageRating()
+                    : 0.0;
+            Long totalRatings = (ratingResponse != null && ratingResponse.getData() != null)
+                    ? ratingResponse.getData().getTotalReviews()
+                    : 0L;
+            activityServiceRequest.setReviewCount(totalRatings);
+            activityServiceRequest.setAverageRating(averageRating);
+            activityServiceRequest.setFutureBookingCount(bookingService.countFutureBookingsForService(activity.getServiceId(), LocalDateTime.now()));
+            activityServiceRequest.setPastBookingCount(bookingService.countPastBookingsForService(activity.getServiceId(), LocalDateTime.now()));
+            activityServices_DTOs.add(activityServiceRequest);
         }
+
+//        }
 
         ActivityServiceResponse activityServiceResponse = new ActivityServiceResponse();
 

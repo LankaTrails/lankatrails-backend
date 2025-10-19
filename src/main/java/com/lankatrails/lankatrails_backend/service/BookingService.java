@@ -22,4 +22,8 @@ public interface BookingService {
     APIResponse<List<BookingItemDto>> getBookings(Long serviceId, LocalDateTime from, LocalDateTime to);
 
     Long countBookingsForServiceInPeriod(Long serviceId, LocalDateTime from, LocalDateTime to);
+
+    Long countFutureBookingsForService(Long serviceId, LocalDateTime from);
+
+    Long countPastBookingsForService(Long serviceId, LocalDateTime to);
 }

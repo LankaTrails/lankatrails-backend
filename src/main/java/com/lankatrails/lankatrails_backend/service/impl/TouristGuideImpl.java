@@ -108,8 +108,13 @@ public class TouristGuideImpl implements TouristGuideService {
                 Double averageRating = (ratingResponse != null && ratingResponse.getData() != null)
                         ? ratingResponse.getData().getAverageRating()
                         : 0.0;
+                Long totalRatings = (ratingResponse != null && ratingResponse.getData() != null)
+                        ? ratingResponse.getData().getTotalReviews()
+                        : 0L;
+                tourGuideRequest.setReviewCount(totalRatings);
                 tourGuideRequest.setAverageRating(averageRating);
-                tourGuideRequest.setTotalBookingsForPastMonth(bookingService.countBookingsForServiceInPeriod(guide.getServiceId(), LocalDateTime.now().minusMonths(1), LocalDateTime.now()));
+                tourGuideRequest.setFutureBookingCount(bookingService.countFutureBookingsForService(guide.getServiceId(), LocalDateTime.now()));
+                tourGuideRequest.setPastBookingCount(bookingService.countPastBookingsForService(guide.getServiceId(), LocalDateTime.now()));
                 tourGuideReq_DTOs.add(tourGuideRequest);
             }
 

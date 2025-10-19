@@ -125,8 +125,13 @@ public class TransportServiceImpl implements TransportService {
                 Double averageRating = (ratingResponse != null && ratingResponse.getData() != null)
                         ? ratingResponse.getData().getAverageRating()
                         : 0.0;
+                Long totalRatings = (ratingResponse != null && ratingResponse.getData() != null)
+                        ? ratingResponse.getData().getTotalReviews()
+                        : 0L;
+                transportRequestDTO.setReviewCount(totalRatings);
                 transportRequestDTO.setAverageRating(averageRating);
-                transportRequestDTO.setTotalBookingsForPastMonth(bookingService.countBookingsForServiceInPeriod(transport.getServiceId(), LocalDateTime.now().minusMonths(1), LocalDateTime.now()));
+                transportRequestDTO.setFutureBookingCount(bookingService.countFutureBookingsForService(transport.getServiceId(), LocalDateTime.now()));
+                transportRequestDTO.setPastBookingCount(bookingService.countPastBookingsForService(transport.getServiceId(), LocalDateTime.now()));
                 transport_DTOs.add(transportRequestDTO);
 
             }
@@ -351,8 +356,6 @@ public class TransportServiceImpl implements TransportService {
                 .message("Transport Deleted Successfully")
                 .data("")
                 .build();
-
-
     }
 
     @Override
