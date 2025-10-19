@@ -15,6 +15,8 @@ public class BookingConfigDTO {
     private BookingType bookingType;
     // Capacity and unit management
     private Integer totalUnits;
+    private Boolean requireChildInfo;
+    private Boolean manageCapacity;
     private Integer unitAdultCapacity;
     private Integer unitChildCapacity;
     private Integer minUnitsPerBooking;

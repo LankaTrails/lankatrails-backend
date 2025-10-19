@@ -3,6 +3,7 @@ package com.lankatrails.lankatrails_backend.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.List;
 
 import com.lankatrails.lankatrails_backend.model.enums.BookingStatus;
 
@@ -50,7 +51,7 @@ public class Booking {
 
     @Column(name = "deposit_amount", scale = 2)
     private BigDecimal depositAmount;
-    
+
     @Enumerated(EnumType.STRING)
     private BookingStatus bookingStatus;
 
@@ -59,4 +60,7 @@ public class Booking {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "booking")
+    List<Complaint> complaints;
 }

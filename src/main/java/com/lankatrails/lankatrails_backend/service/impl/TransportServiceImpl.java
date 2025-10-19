@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.exception.*;
+import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import com.lankatrails.lankatrails_backend.repositories.*;
 import org.modelmapper.ModelMapper;
@@ -299,6 +300,7 @@ public class TransportServiceImpl implements TransportService {
 
             //set the policies
             List<PolicySectionRequest> policyReq=transportRequestDTO.getPolicySection();
+            lastTransportAdded.setPolicies(policiesImpl.addPolicies(policyReq, category, lastTransportAdded));
 
             //upload and associate images
             imageService.uploadImagesForService(images,lastTransportAdded);
@@ -309,7 +311,7 @@ public class TransportServiceImpl implements TransportService {
                 throw new BadRequestException("Availability Slots cannot be empty");
             }
             servicesForAll.setAvailableTime(availabilitySlots, lastTransportAdded);
-            servicesForAll.setAvailableTime(availabilitySlots, lastTransportAdded);
+            transportRepository.save(lastTransportAdded);
         }else{
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());
         }

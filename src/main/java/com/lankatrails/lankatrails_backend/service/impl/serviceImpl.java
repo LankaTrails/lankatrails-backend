@@ -129,8 +129,11 @@ public class serviceImpl implements ServicesForAll {
     @Override
     @Transactional
     public BookingConfiguration setBookingConfig(BookingConfigDTO bookingConfigDTO){
-        BookingConfiguration existingConfig = bookingConfigurationRepository.findById(bookingConfigDTO.getBookingConfigId())
-                .orElse(null);
+        BookingConfiguration existingConfig = null;
+        if (bookingConfigDTO.getBookingConfigId() != null) {
+            existingConfig = bookingConfigurationRepository.findById(bookingConfigDTO.getBookingConfigId())
+                    .orElse(null);
+        }
         if (existingConfig != null) {
             modelMapper.map(bookingConfigDTO, existingConfig);
             return bookingConfigurationRepository.save(existingConfig);
@@ -142,8 +145,11 @@ public class serviceImpl implements ServicesForAll {
     @Override
     @Transactional
     public PriceConfiguration setPriceConfig(PriceConfigDTO priceConfigDTO){
-        PriceConfiguration existingConfig = priceConfigurationRepository.findById(priceConfigDTO.getPriceConfigId())
-                .orElse(null);
+        PriceConfiguration existingConfig = null;
+        if (priceConfigDTO.getPriceConfigId() != null) {
+            existingConfig = priceConfigurationRepository.findById(priceConfigDTO.getPriceConfigId())
+                    .orElse(null);
+        }
         if (existingConfig != null) {
             modelMapper.map(priceConfigDTO, existingConfig);
             return priceConfigurationRepository.save(existingConfig);

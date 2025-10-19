@@ -1,7 +1,5 @@
 package com.lankatrails.lankatrails_backend.model;
 
-import com.lankatrails.lankatrails_backend.model.enums.BookingType;
-import com.lankatrails.lankatrails_backend.model.enums.PriceType;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -37,6 +35,8 @@ public class Service {
     @Enumerated(EnumType.STRING)
     private ServiceStatus status;
 
+    private Integer warnings;
+
     @ManyToOne
     @JoinColumn(name = "provider_id")
     private Provider provider;
@@ -49,7 +49,7 @@ public class Service {
     private Set<TabsSection> tabs=new HashSet<>();
 
 
-    @ManyToMany
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
           name = "service_policy",
           joinColumns = @JoinColumn(name = "service_id"),
@@ -85,4 +85,9 @@ public class Service {
     @OneToOne
     @JoinColumn(name = "price_config_id", nullable = false)
     private PriceConfiguration priceConfiguration;
+    @OneToMany(mappedBy = "service")
+    private Set<RateAndReview> reviews = new HashSet<>();
+
+    @OneToMany(mappedBy = "service")
+    private List<Warning> warning;
 }

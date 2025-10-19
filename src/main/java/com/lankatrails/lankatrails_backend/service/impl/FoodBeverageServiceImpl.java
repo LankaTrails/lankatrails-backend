@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.exception.*;
+import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -120,8 +121,8 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
             tabsImpl.addTabs(tabsReq, lastServiceAdded);
 
             // Set Policies
-//            List<PolicySectionRequest> policyReq = foodBeverageRequest.getPolicySection();
-//            Boolean policyAdditionStatus = policyImpl.addPolicies(policyReq, lastServiceAdded, category);
+            List<PolicySectionRequest> policyReq = foodBeverageRequest.getPolicySection();
+            lastServiceAdded.setPolicies(policyImpl.addPolicies(policyReq, category, lastServiceAdded));
 
             // Upload and associate images
             imageService.uploadImagesForService(images, lastServiceAdded);
@@ -132,6 +133,7 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
                 throw new BadRequestException("Availability Slots cannot be empty");
             }
             servicesForAll.setAvailableTime(availabilitySlots, lastServiceAdded);
+            foodBeverageRepository.save(lastServiceAdded);
 
         } else {
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());

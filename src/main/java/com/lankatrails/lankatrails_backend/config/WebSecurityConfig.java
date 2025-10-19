@@ -70,6 +70,8 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/tourist/**").hasRole("TOURIST")
                         .requestMatchers("/api/trip/**").hasRole("TOURIST")
+                        .requestMatchers("/api/trips/**").hasRole("TOURIST")  // Added trips endpoint
+                        .requestMatchers("/api/trips-budget/**").hasRole("TOURIST")  // Added budget endpoints
                         .requestMatchers("/api/service/**").permitAll()
                         .requestMatchers("/api/provider/**").permitAll()
                         .requestMatchers("/api/admin/**").permitAll()
@@ -78,6 +80,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/chat-rooms/**").permitAll()
                         .requestMatchers("/api/webhook/stripe/**").permitAll()
+                        .requestMatchers("/api/reviews/**").permitAll()
                         .requestMatchers("/ws/**").permitAll() // Allow WebSocket connections
                         .anyRequest().authenticated()
                 )

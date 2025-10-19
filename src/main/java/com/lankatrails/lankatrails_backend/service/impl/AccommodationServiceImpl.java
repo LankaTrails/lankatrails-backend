@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.exception.*;
+import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import com.lankatrails.lankatrails_backend.repositories.*;
@@ -104,7 +105,7 @@ public class AccommodationServiceImpl implements  AccommodationService {
 
             // Set Policies
             List<PolicySectionRequest> policyReq = services.getPolicySection();
-//            Boolean policyAdditionStatus = policyImpl.addPolicies(policyReq, lastServiceAdded, category);
+            lastServiceAdded.setPolicies(policyImpl.addPolicies(policyReq, category, lastServiceAdded));
 
             // Upload and associate images
             if (images != null && !images.isEmpty()) {
@@ -117,7 +118,7 @@ public class AccommodationServiceImpl implements  AccommodationService {
                 throw new BadRequestException("Availability Slots cannot be empty");
             }
             servicesForAll.setAvailableTime(availabilitySlots, lastServiceAdded);
-
+            accommodationRepository.save(lastServiceAdded);
 
         } else {
             throw new ServiceAlreadyExistsException(checkDb.get().getServiceId());
