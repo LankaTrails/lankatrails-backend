@@ -46,6 +46,19 @@ public class TripController {
                 .body(response);
     }
 
+    @DeleteMapping("/delete/{tripId}")
+    public ResponseEntity<APIResponse<String>> deleteTrip(@PathVariable Long tripId) {
+        log.info("Received request to delete trip with ID: {}", tripId);
+        APIResponse<String> response = tripService.deleteTrip(tripId);
+        if (response.isSuccess()) {
+            log.info("Trip deleted successfully: {}", response.getMessage());
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        } else {
+            log.error("Failed to delete trip: {}", response.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
 
     @GetMapping("/my-trips")
     public ResponseEntity<APIResponse<List<TripResponseDTO>>> getAllMyTrips() {

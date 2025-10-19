@@ -290,6 +290,12 @@ public class TripServiceImpl implements TripService {
         }
 
         List<Trip> trips = tripRepository.findByParticipants_Tourist(tourist);
+        
+        // Filter out cancelled trips
+        trips = trips.stream()
+                .filter(trip -> trip.getTripStatus() != TripStatus.CANCELLED)
+                .toList();
+                
         if (trips.isEmpty()) {
             return new APIResponse<>(false, "No trips found for the user", new ArrayList<>());
         }
@@ -398,6 +404,12 @@ public class TripServiceImpl implements TripService {
         }
 
         List<Trip> trips = tripRepository.findByParticipants_Tourist(tourist);
+        
+        // Filter out cancelled trips
+        trips = trips.stream()
+                .filter(trip -> trip.getTripStatus() != TripStatus.CANCELLED)
+                .toList();
+                
         if (trips.isEmpty()) {
             return new APIResponse<>(false, "No trips found for the user", null);
         }
@@ -466,6 +478,76 @@ public class TripServiceImpl implements TripService {
                     "Trip end date cannot be before the last trip item end date (" + latestEndDate + ")"
                 );
             }
+        }
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<String> deleteTrip(Long tripId) {
+        log.info("Attempting to delete trip with ID: {}", tripId);
+        
+        try {
+            // Find the trip
+            Trip trip = tripRepository.findById(tripId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Trip", tripId));
+            
+            // Get the current user
+            Long currentUserId = authUtils.loggedInUserId();
+            
+            // Find the trip participant for the current user
+            TripParticipant tripParticipant = trip.getParticipants().stream()
+                    .filter(participant -> participant.getTourist().getUserId().equals(currentUserId))
+                    .findFirst()
+                    .orElseThrow(() -> new BadRequestException("You are not a participant of this trip"));
+            
+            // Check if user is admin
+            if (tripParticipant.getTripRole() != TripRole.ADMIN) {
+                throw new BadRequestException("Only trip administrators can delete trips");
+            }
+            
+            // Check if trip has any confirmed bookings
+            boolean hasConfirmedBookings = trip.getTripItems().stream()
+                    .anyMatch(tripItem -> tripItem.getBooking() != null && 
+                             tripItem.getBooking().getBookingStatus() == com.lankatrails.lankatrails_backend.model.enums.BookingStatus.CONFIRMED);
+            
+            if (hasConfirmedBookings) {
+                throw new BadRequestException("Cannot delete trip with confirmed bookings. Please cancel all confirmed bookings first.");
+            }
+            
+            // Check if trip is already cancelled
+            if (trip.getTripStatus() == TripStatus.CANCELLED) {
+                return APIResponse.<String>builder()
+                        .success(false)
+                        .message("Trip is already cancelled")
+                        .data(null)
+                        .build();
+            }
+            
+            // Set trip status to CANCELLED (soft delete)
+            trip.setTripStatus(TripStatus.CANCELLED);
+            tripRepository.save(trip);
+            
+            log.info("Successfully cancelled trip with ID: {}", tripId);
+            return APIResponse.<String>builder()
+                    .success(true)
+                    .message("Trip cancelled successfully")
+                    .data("Trip with ID " + tripId + " has been cancelled")
+                    .build();
+                    
+        } catch (ResourceNotFoundException | BadRequestException e) {
+            log.error("Error cancelling trip with ID {}: {}", tripId, e.getMessage());
+            return APIResponse.<String>builder()
+                    .success(false)
+                    .message(e.getMessage())
+                    .data(null)
+                    .build();
+        } catch (Exception e) {
+            log.error("Unexpected error cancelling trip with ID {}: {}", tripId, e.getMessage());
+            return APIResponse.<String>builder()
+                    .success(false)
+                    .message("Failed to cancel trip: " + e.getMessage())
+                    .data(null)
+                    .build();
         }
     }
 }

@@ -16,6 +16,8 @@ public interface TripService {
 
     APIResponse<TripResponseDTO> editTrip(Long tripId, TripRequestDTO tripRequestDTO);
 
+    APIResponse<String> deleteTrip(Long tripId);
+
     APIResponse<List<TripResponseDTO>> getAllMyTrips();
 
     APIResponse<TripResponseDTO> getTripById(Long tripId);
