@@ -4,7 +4,6 @@ import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.FoodBeverageResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.RateAndReviewResponse;
-import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
@@ -17,7 +16,6 @@ import com.lankatrails.lankatrails_backend.service.*;
 import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -145,8 +143,8 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
     public APIResponse<FoodBeverageResponse> getAll(Integer pageNumber, Integer pageSize) {
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize);
 
-        List<FoodAndBeverage> foodBeveragePage=foodBeverageRepository.findByProvider_UserId(authUtils.loggedInUserId())
-                .orElseThrow(()->new ResourceNotFoundException("Food and Beverage",authUtils.loggedInUserId()));
+        List<FoodAndBeverage> foodBeveragePage = foodBeverageRepository.findByProvider_UserId(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Food and Beverage", authUtils.loggedInUserId()));
 
 //        List<FoodAndBeverage> foodBeverageServices=foodBeveragePage.getContent();
 
@@ -158,9 +156,21 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         for (FoodAndBeverage foodAndBeverage : foodBeveragePage) {
             FoodBeverageRequest foodBeverageServiceRequest = new FoodBeverageRequest();
             if (foodAndBeverage.getStatus() == ServiceStatus.ACTIVE) {
+                //set the images
+                List<Image> images = imageRepository.findByService_ServiceId(foodAndBeverage.getServiceId());
+                //map images to imageDTO
+                List<ImageRequestDTO> imgDTOs = new ArrayList<>();
+                for (Image img : images) {
+                    ImageRequestDTO imgDTO = new ImageRequestDTO();
+                    imgDTO.setId(img.getImageId());
+                    imgDTO.setImageUrl(img.getImageUrl());
+                    imgDTOs.add(imgDTO);
+
+                }
                 foodBeverageServiceRequest.setServiceId(foodAndBeverage.getServiceId());
                 foodBeverageServiceRequest.setServiceName(foodAndBeverage.getServiceName());
                 foodBeverageServiceRequest.setStatus(foodAndBeverage.getStatus());
+                foodBeverageServiceRequest.setImages(imgDTOs);
                 // Safely get average rating with null check
                 APIResponse<RateAndReviewResponse> ratingResponse = reviewService.getAverageRatingByServiceId(foodAndBeverage.getServiceId());
                 Double averageRating = (ratingResponse != null && ratingResponse.getData() != null)
@@ -182,7 +192,7 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
 //        foodBeverageResponse.setPageSize(foodBeveragePage.getSize());
 //        foodBeverageResponse.setTotalElements(foodBeveragePage.getTotalElements());
 //        foodBeverageResponse.setTotalPages(foodBeveragePage.getTotalPages());
-        return  APIResponse.<FoodBeverageResponse>builder()
+        return APIResponse.<FoodBeverageResponse>builder()
                 .success(true)
                 .message("Food and Beverages services Fetched")
                 .data(foodBeverageResponse)

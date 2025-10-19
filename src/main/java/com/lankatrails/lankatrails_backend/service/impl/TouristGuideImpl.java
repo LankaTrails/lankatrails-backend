@@ -4,7 +4,6 @@ import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.RateAndReviewResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TouristGuideResponseDTO;
-import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
@@ -20,7 +19,6 @@ import com.lankatrails.lankatrails_backend.service.TouristGuideService;
 import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -77,8 +75,8 @@ public class TouristGuideImpl implements TouristGuideService {
     public APIResponse<TouristGuideResponseDTO> getAllTourGuides(Integer pageNumber, Integer pageSize) {
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize);
 
-        List<TouristGuide> touristGuides=touristGuideRepository.findByProvider_UserId(authUtils.loggedInUserId())
-                .orElseThrow(()->new ResourceNotFoundException("Tourist Guide",authUtils.loggedInUserId()));
+        List<TouristGuide> touristGuides = touristGuideRepository.findByProvider_UserId(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Tourist Guide", authUtils.loggedInUserId()));
 
 //        List<TouristGuide> guidesContent=touristGuides.getContent();
 
@@ -87,12 +85,24 @@ public class TouristGuideImpl implements TouristGuideService {
 
         List<TouristGuideRequestDTO> tourGuideReq_DTOs = new ArrayList<>();
 
-        for (TouristGuide guide : touristGuides){
+        for (TouristGuide guide : touristGuides) {
             TouristGuideRequestDTO tourGuideRequest = new TouristGuideRequestDTO();
             if (guide.getStatus() == ServiceStatus.ACTIVE) {
+                //set the images
+                List<Image> images = imageRepository.findByService_ServiceId(guide.getServiceId());
+                //map images to imageDTO
+                List<ImageRequestDTO> imgDTOs = new ArrayList<>();
+                for (Image img : images) {
+                    ImageRequestDTO imgDTO = new ImageRequestDTO();
+                    imgDTO.setId(img.getImageId());
+                    imgDTO.setImageUrl(img.getImageUrl());
+                    imgDTOs.add(imgDTO);
+
+                }
                 tourGuideRequest.setServiceId(guide.getServiceId());
                 tourGuideRequest.setServiceName(guide.getServiceName());
                 tourGuideRequest.setStatus(guide.getStatus());
+                tourGuideRequest.setImages(imgDTOs);
                 // Safely get average rating with null check
                 APIResponse<RateAndReviewResponse> ratingResponse = reviewService.getAverageRatingByServiceId(guide.getServiceId());
                 Double averageRating = (ratingResponse != null && ratingResponse.getData() != null)
@@ -113,7 +123,7 @@ public class TouristGuideImpl implements TouristGuideService {
 //        tourGuideResponse.setPageSize(touristGuides.getSize());
 //        tourGuideResponse.setTotalElements(touristGuides.getTotalElements());
 //        tourGuideResponse.setTotalPages(touristGuides.getTotalPages());
-        return  APIResponse.<TouristGuideResponseDTO>builder()
+        return APIResponse.<TouristGuideResponseDTO>builder()
                 .success(true)
                 .message("Tourist Guides Fetched")
                 .data(tourGuideResponse)
