@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.dtos.UserPreferencesDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.*;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
@@ -8,16 +9,19 @@ import com.lankatrails.lankatrails_backend.exception.UserNotFoundException;
 import com.lankatrails.lankatrails_backend.model.Provider;
 import com.lankatrails.lankatrails_backend.model.Tourist;
 import com.lankatrails.lankatrails_backend.model.User;
+import com.lankatrails.lankatrails_backend.model.UserPreferences;
 import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
 import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import com.lankatrails.lankatrails_backend.repositories.ProviderRepository;
 import com.lankatrails.lankatrails_backend.repositories.TouristRepository;
 import com.lankatrails.lankatrails_backend.repositories.UserRepository;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.UserService;
 import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -38,6 +42,12 @@ public class UserServiceimpl implements UserService {
 
     @Autowired
     private FileUploadService fileUploadService;
+
+    @Autowired
+    private AuthUtils authUtils;
+
+    @Autowired
+    private ModelMapper modelMapper;
 
     @Override
     public APIResponse<UserProfileDto> updateUserProfile(UserProfileDto userProfileDto, MultipartFile profilePic, HttpServletRequest request) {
@@ -63,23 +73,23 @@ public class UserServiceimpl implements UserService {
 
             case UserRole.ROLE_PROVIDER:
                 //cast to ProviderProfileDto if needed
-                 ProviderProfileDto providerProfileDto = (ProviderProfileDto) userProfileDto;
-                 Provider provider = providerRepository.findById(userProfileDto.getId())
-                         .orElseThrow(() -> new UserNotFoundException("Provider not found with id: " + userProfileDto.getId()));
+                ProviderProfileDto providerProfileDto = (ProviderProfileDto) userProfileDto;
+                Provider provider = providerRepository.findById(userProfileDto.getId())
+                        .orElseThrow(() -> new UserNotFoundException("Provider not found with id: " + userProfileDto.getId()));
 
-                    provider.setBusinessName(providerProfileDto.getBusinessName());
-                    provider.setBusinessDescription(providerProfileDto.getBusinessDescription());
+                provider.setBusinessName(providerProfileDto.getBusinessName());
+                provider.setBusinessDescription(providerProfileDto.getBusinessDescription());
 
-                    //save the updated provider profile
-                    providerRepository.save(provider);
-                    return APIResponse.<UserProfileDto>builder()
-                            .success(true)
-                            .message("Provider profile updated successfully")
-                            .data(providerProfileDto)
-                            .build();
+                //save the updated provider profile
+                providerRepository.save(provider);
+                return APIResponse.<UserProfileDto>builder()
+                        .success(true)
+                        .message("Provider profile updated successfully")
+                        .data(providerProfileDto)
+                        .build();
 
             default:
-                throw new UnauthorizedException( "Invalid user role: " + userProfileDto.getRole());
+                throw new UnauthorizedException("Invalid user role: " + userProfileDto.getRole());
         }
 
     }
@@ -106,6 +116,21 @@ public class UserServiceimpl implements UserService {
                 .success(true)
                 .message("Profile picture added successfully")
                 .data(response)
+                .build();
+    }
+
+    @Override
+    public APIResponse<UserPreferencesDTO> updateUserPreferences(UserPreferencesDTO preference) {
+        User user = userRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("UserID", authUtils.loggedInUserId()));
+
+        user.setPreferences(modelMapper.map(preference, UserPreferences.class));
+        userRepository.save(user);
+
+        return APIResponse.<UserPreferencesDTO>builder()
+                .success(true)
+                .message("User preferences updated successfully")
+                .data(preference)
                 .build();
     }
 }

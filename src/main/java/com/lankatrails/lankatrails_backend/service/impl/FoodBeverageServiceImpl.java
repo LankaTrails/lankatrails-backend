@@ -1,14 +1,20 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import com.lankatrails.lankatrails_backend.dtos.request.*;
-import com.lankatrails.lankatrails_backend.exception.*;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.FoodBeverageResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.RateAndReviewResponse;
+import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
+import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
+import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
+import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
+import com.lankatrails.lankatrails_backend.repositories.*;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
+import com.lankatrails.lankatrails_backend.service.*;
+import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -18,28 +24,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.FoodBeverageResponse;
-import com.lankatrails.lankatrails_backend.model.Category;
-import com.lankatrails.lankatrails_backend.model.FoodAndBeverage;
-import com.lankatrails.lankatrails_backend.model.FoodAndBeverageCategory;
-import com.lankatrails.lankatrails_backend.model.Image;
-import com.lankatrails.lankatrails_backend.model.PolicySection;
-import com.lankatrails.lankatrails_backend.model.Provider;
-import com.lankatrails.lankatrails_backend.model.TabsSection;
-import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
-import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
-import com.lankatrails.lankatrails_backend.repositories.FoodAndBeverageCategoryRepository;
-import com.lankatrails.lankatrails_backend.repositories.FoodBeverageRepository;
-import com.lankatrails.lankatrails_backend.repositories.ImageRepository;
-import com.lankatrails.lankatrails_backend.repositories.PolicySectionRepository;
-import com.lankatrails.lankatrails_backend.repositories.ProviderRepository;
-import com.lankatrails.lankatrails_backend.repositories.TabsSectionRepository;
-import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
-import com.lankatrails.lankatrails_backend.service.FoodBeverageService;
-import com.lankatrails.lankatrails_backend.service.ImageService;
-import com.lankatrails.lankatrails_backend.service.ServicesForAll;
-import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class FoodBeverageServiceImpl implements FoodBeverageService {
@@ -85,6 +74,12 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
     @Autowired
     private ServicesForAll servicesForAll;
 
+    @Autowired
+    private ReviewService reviewService;
+
+    @Autowired
+    private BookingService bookingService;
+
 
     @Override
     @Transactional
@@ -129,7 +124,7 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
 
             // Set the availability slots
             List<AvailableTimeDTO> availabilitySlots = foodBeverageRequest.getAvailableTimeDTOS();
-            if (availabilitySlots == null ){
+            if (availabilitySlots == null) {
                 throw new BadRequestException("Availability Slots cannot be empty");
             }
             servicesForAll.setAvailableTime(availabilitySlots, lastServiceAdded);
@@ -148,7 +143,7 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
 
     @Override
     public APIResponse<FoodBeverageResponse> getAll(Integer pageNumber, Integer pageSize) {
-        Pageable pageDetails= PageRequest.of(pageNumber,pageSize);
+        Pageable pageDetails = PageRequest.of(pageNumber, pageSize);
 
         List<FoodAndBeverage> foodBeveragePage=foodBeverageRepository.findByProvider_UserId(authUtils.loggedInUserId())
                 .orElseThrow(()->new ResourceNotFoundException("Food and Beverage",authUtils.loggedInUserId()));
@@ -158,14 +153,22 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
 //        if (foodBeverageServices.isEmpty())
 //            throw new APIException("No Food and Beverage service created till now");
 
-        List<FoodBeverageRequest> foodBeverage_DTOs= new ArrayList<>();
+        List<FoodBeverageRequest> foodBeverage_DTOs = new ArrayList<>();
 
-        for (FoodAndBeverage foodAndBeverage :foodBeveragePage){
+        for (FoodAndBeverage foodAndBeverage : foodBeveragePage) {
             FoodBeverageRequest foodBeverageServiceRequest = new FoodBeverageRequest();
-            if (foodAndBeverage.getStatus() == ServiceStatus.ACTIVE){
+            if (foodAndBeverage.getStatus() == ServiceStatus.ACTIVE) {
                 foodBeverageServiceRequest.setServiceId(foodAndBeverage.getServiceId());
                 foodBeverageServiceRequest.setServiceName(foodAndBeverage.getServiceName());
                 foodBeverageServiceRequest.setStatus(foodAndBeverage.getStatus());
+                // Safely get average rating with null check
+                APIResponse<RateAndReviewResponse> ratingResponse = reviewService.getAverageRatingByServiceId(foodAndBeverage.getServiceId());
+                Double averageRating = (ratingResponse != null && ratingResponse.getData() != null)
+                        ? ratingResponse.getData().getAverageRating()
+                        : 0.0;
+                foodBeverageServiceRequest.setAverageRating(averageRating);
+
+                foodBeverageServiceRequest.setTotalBookingsForPastMonth(bookingService.countBookingsForServiceInPeriod(foodAndBeverage.getServiceId(), LocalDateTime.now().minusMonths(1), LocalDateTime.now()));
                 foodBeverage_DTOs.add(foodBeverageServiceRequest);
             }
 
@@ -189,14 +192,14 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
 
     @Override
     @Transactional
-    public APIResponse<FoodBeverageRequest> searchWithId(Long Id){
-        FoodAndBeverage foodAndBeverage=foodBeverageRepository.findById(Id)
-                .orElseThrow(()->new ResourceNotFoundException("Food and Beverage",Id));
+    public APIResponse<FoodBeverageRequest> searchWithId(Long Id) {
+        FoodAndBeverage foodAndBeverage = foodBeverageRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Food and Beverage", Id));
 
-        List<TabsSection> tabsSection=tabsSectionRepository.findByService_ServiceId(Id);
-        List<TabSectionRequest> tabs=new ArrayList<>();
+        List<TabsSection> tabsSection = tabsSectionRepository.findByService_ServiceId(Id);
+        List<TabSectionRequest> tabs = new ArrayList<>();
 
-        for (TabsSection tab :tabsSection){
+        for (TabsSection tab : tabsSection) {
             TabSectionRequest tabReq = new TabSectionRequest();
             tabReq.setId(tab.getId());
             tabReq.setHeading(tab.getHeading());
@@ -207,7 +210,7 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
 //        List<PolicySection> policySection = policySectionRepository.findByProviderIdAndCategoryIdOrNull(authUtils.loggedInUserId(),3L);
         List<PolicySection> policySection = foodAndBeverage.getPolicies().stream().toList();
         List<PolicySectionRequest> policies = new ArrayList<>();
-        for (PolicySection policy : policySection){
+        for (PolicySection policy : policySection) {
 
             PolicySectionRequest policyReq = new PolicySectionRequest();
             policyReq.setId(policy.getId());
@@ -220,7 +223,7 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         List<Image> images = imageRepository.findByService_ServiceId(Id);
         //map images to imageDTO
         List<ImageRequestDTO> imgDTOs = new ArrayList<>();
-        for (Image img : images){
+        for (Image img : images) {
             ImageRequestDTO imgDTO = new ImageRequestDTO();
             imgDTO.setId(img.getImageId());
             imgDTO.setImageUrl(img.getImageUrl());
@@ -262,7 +265,7 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
                 .collect(Collectors.toList())
         );
 
-        return  APIResponse.<FoodBeverageRequest>builder()
+        return APIResponse.<FoodBeverageRequest>builder()
                 .success(true)
                 .message("Fetched Food and Beverage Service ")
                 .data(prepareResponse)
@@ -282,7 +285,7 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
 
         //check whether the policy exists
         PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
-        if (policyCheck==null){
+        if (policyCheck == null) {
             //Policy doesn't exist
             policies.setProvider(provider);
             policies.setCategory(category);
@@ -292,7 +295,7 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
                     .message("Policy Added Successfully")
                     .data("")
                     .build();
-        }else{
+        } else {
 
             return APIResponse.<String>builder()
                     .success(false)
@@ -339,7 +342,7 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
 
         // Set the availability slots
         List<AvailableTimeDTO> availabilitySlots = foodBeverageRequest.getAvailableTimeDTOS();
-        if (availabilitySlots == null ){
+        if (availabilitySlots == null) {
             throw new BadRequestException("Availability Slots cannot be empty");
         }
         servicesForAll.setAvailableTime(availabilitySlots, foodAndBeverageService);

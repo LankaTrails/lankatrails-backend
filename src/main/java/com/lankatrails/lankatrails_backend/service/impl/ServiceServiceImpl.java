@@ -14,6 +14,8 @@ import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
 import com.lankatrails.lankatrails_backend.repositories.ImageRepository;
 import com.lankatrails.lankatrails_backend.repositories.ProviderRepository;
 import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
+import com.lankatrails.lankatrails_backend.service.BookingService;
+import com.lankatrails.lankatrails_backend.service.ReviewService;
 import com.lankatrails.lankatrails_backend.service.ServiceService;
 import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -46,6 +49,12 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Autowired
     FileUploadService fileUploadService;
+
+    @Autowired
+    ReviewService reviewService;
+
+    @Autowired
+    BookingService bookingService;
 
 //    @Transactional
 //    @Override
@@ -75,7 +84,8 @@ public class ServiceServiceImpl implements ServiceService {
 //                    dto.setServiceId(service.getServiceId());
 //                    dto.setServiceName(service.getServiceName());
 //                    dto.setCategory(service.getCategory().getCategoryName());
-////                    dto.setLocationBased(modelMapper.map(service.getLocationBased(), LocationDTO.class));
+
+    /// /                    dto.setLocationBased(modelMapper.map(service.getLocationBased(), LocationDTO.class));
 //                    dto.setMainImageUrl(service.getImages().getFirst().getImageUrl());
 //                    return dto;
 //                })
@@ -86,7 +96,6 @@ public class ServiceServiceImpl implements ServiceService {
 //                .message("Services found")
 //                .data(serviceDTOs).build();
 //    }
-
     @Override
     public APIResponse<String> addServiceImages(Long serviceId, MultipartFile[] serviceImages) {
         if (serviceImages == null || serviceImages.length == 0) {
@@ -175,9 +184,9 @@ public class ServiceServiceImpl implements ServiceService {
 
         // Step 3: Group by (provider + city + category)
         Map<String, List<Service>> groupedMap = filtered.collect(Collectors.groupingBy(service ->
-                service.getProvider().getUserId() + "|" +
+                        service.getProvider().getUserId() + "|" +
 //                        service.getLocationBased().getCity() + "|" +
-                        service.getCategory().getCategoryName()
+                                service.getCategory().getCategoryName()
         ));
 
         List<ProviderSearchDTO> groupedProviders = new ArrayList<>();
@@ -193,7 +202,15 @@ public class ServiceServiceImpl implements ServiceService {
                 dto.setServiceId(service.getServiceId());
                 dto.setServiceName(service.getServiceName());
                 dto.setCategory(service.getCategory().getCategoryName());
-//                dto.setLocationBased(modelMapper.map(service.getLocationBased(), LocationDTO.class));
+
+                // Safely get average rating with null check
+                APIResponse<RateAndReviewResponse> ratingResponse = reviewService.getAverageRatingByServiceId(service.getServiceId());
+                Double averageRating = (ratingResponse != null && ratingResponse.getData() != null)
+                        ? ratingResponse.getData().getAverageRating()
+                        : 0.0;
+                dto.setAverageRating(averageRating);
+
+                dto.setTotalBookingsForPastMonth(bookingService.countBookingsForServiceInPeriod(service.getServiceId(), LocalDateTime.now().minusMonths(1), LocalDateTime.now()));
                 dto.setPrices(service.getPriceConfiguration().getPriceWithType());
                 dto.setMainImageUrl(service.getImages() != null && !service.getImages().isEmpty()
                         ? service.getImages().getFirst().getImageUrl()
@@ -250,6 +267,14 @@ public class ServiceServiceImpl implements ServiceService {
                     serviceDTO.setServiceId(service.getServiceId());
                     serviceDTO.setServiceName(service.getServiceName());
                     serviceDTO.setCategory(service.getCategory().getCategoryName());
+                    // Safely get average rating with null check
+                    APIResponse<RateAndReviewResponse> ratingResponse = reviewService.getAverageRatingByServiceId(service.getServiceId());
+                    Double averageRating = (ratingResponse != null && ratingResponse.getData() != null)
+                            ? ratingResponse.getData().getAverageRating()
+                            : 0.0;
+                    serviceDTO.setAverageRating(averageRating);
+
+                    serviceDTO.setTotalBookingsForPastMonth(bookingService.countBookingsForServiceInPeriod(service.getServiceId(), LocalDateTime.now().minusMonths(1), LocalDateTime.now()));
                     serviceDTO.setMainImageUrl(service.getImages() != null && !service.getImages().isEmpty()
                             ? service.getImages().getFirst().getImageUrl()
                             : null);
@@ -304,6 +329,14 @@ public class ServiceServiceImpl implements ServiceService {
                     serviceDTO.setServiceName(service.getServiceName());
                     serviceDTO.setPrices(service.getPriceConfiguration().getPriceWithType());
                     serviceDTO.setCategory(service.getCategory().getCategoryName());
+                    // Safely get average rating with null check
+                    APIResponse<RateAndReviewResponse> ratingResponse = reviewService.getAverageRatingByServiceId(service.getServiceId());
+                    Double averageRating = (ratingResponse != null && ratingResponse.getData() != null)
+                            ? ratingResponse.getData().getAverageRating()
+                            : 0.0;
+                    serviceDTO.setAverageRating(averageRating);
+
+                    serviceDTO.setTotalBookingsForPastMonth(bookingService.countBookingsForServiceInPeriod(service.getServiceId(), LocalDateTime.now().minusMonths(1), LocalDateTime.now()));
                     serviceDTO.setMainImageUrl(service.getImages() != null && !service.getImages().isEmpty()
                             ? service.getImages().getFirst().getImageUrl()
                             : null);
