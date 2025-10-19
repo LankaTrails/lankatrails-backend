@@ -3,14 +3,12 @@ package com.lankatrails.lankatrails_backend.controller;
 import com.lankatrails.lankatrails_backend.dtos.request.LicenseDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.BusinessDetailDTO;
+import com.lankatrails.lankatrails_backend.dtos.response.BusinessResponseDTO;
 import com.lankatrails.lankatrails_backend.model.Provider;
 import com.lankatrails.lankatrails_backend.repositories.ProviderRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ProviderService;
 import com.lankatrails.lankatrails_backend.service.impl.PolicyImpl;
-import com.lankatrails.lankatrails_backend.service.impl.ProviderServiceImpl;
-import io.vavr.API;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -73,11 +71,17 @@ public class ProviderController {
 
     }
 
-    @GetMapping("/business-details")
-    public ResponseEntity<APIResponse<BusinessDetailDTO>> getBusinessDetails() {
-        APIResponse<BusinessDetailDTO> response = providerService.getBusinessDetails();
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(response);
+//    @GetMapping("/business-details")
+//    public ResponseEntity<APIResponse<BusinessDetailDTO>> getBusinessDetails() {
+//        APIResponse<BusinessDetailDTO> response = providerService.getBusinessDetails();
+//        return ResponseEntity.status(HttpStatus.OK)
+//                .body(response);
+//    }
+    @GetMapping("/provider-details")
+    public ResponseEntity<APIResponse<BusinessResponseDTO>> getProviderDetails() {
+        APIResponse<BusinessResponseDTO> response = providerService.getBusinessDetails();
+        return  new ResponseEntity<>(response,HttpStatus.OK);
+
     }
 
     @GetMapping("/delete/policy")
@@ -94,4 +98,6 @@ public class ProviderController {
         APIResponse<String> response = providerService.licenseRenewal(licenseDTO,licenseFiles);
         return null;
     }
+
+
 }

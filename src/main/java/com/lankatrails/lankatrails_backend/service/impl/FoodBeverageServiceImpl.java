@@ -145,12 +145,13 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
     public APIResponse<FoodBeverageResponse> getAll(Integer pageNumber, Integer pageSize) {
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize);
 
-        Page<FoodAndBeverage> foodBeveragePage = foodBeverageRepository.findAll(pageDetails);
+        List<FoodAndBeverage> foodBeveragePage=foodBeverageRepository.findByProvider_UserId(authUtils.loggedInUserId())
+                .orElseThrow(()->new ResourceNotFoundException("Food and Beverage",authUtils.loggedInUserId()));
 
-        List<FoodAndBeverage> foodBeverageServices = foodBeveragePage.getContent();
+//        List<FoodAndBeverage> foodBeverageServices=foodBeveragePage.getContent();
 
-        if (foodBeverageServices.isEmpty())
-            throw new APIException("No Food and Beverage service created till now");
+//        if (foodBeverageServices.isEmpty())
+//            throw new APIException("No Food and Beverage service created till now");
 
         List<FoodBeverageRequest> foodBeverage_DTOs = new ArrayList<>();
 
@@ -176,12 +177,12 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         FoodBeverageResponse foodBeverageResponse = new FoodBeverageResponse();
 
         foodBeverageResponse.setContent(foodBeverage_DTOs);
-        foodBeverageResponse.setLastPage(foodBeveragePage.isLast());
-        foodBeverageResponse.setPageNumber(foodBeveragePage.getNumber());
-        foodBeverageResponse.setPageSize(foodBeveragePage.getSize());
-        foodBeverageResponse.setTotalElements(foodBeveragePage.getTotalElements());
-        foodBeverageResponse.setTotalPages(foodBeveragePage.getTotalPages());
-        return APIResponse.<FoodBeverageResponse>builder()
+//        foodBeverageResponse.setLastPage(foodBeveragePage.isLast());
+//        foodBeverageResponse.setPageNumber(foodBeveragePage.getNumber());
+//        foodBeverageResponse.setPageSize(foodBeveragePage.getSize());
+//        foodBeverageResponse.setTotalElements(foodBeveragePage.getTotalElements());
+//        foodBeverageResponse.setTotalPages(foodBeveragePage.getTotalPages());
+        return  APIResponse.<FoodBeverageResponse>builder()
                 .success(true)
                 .message("Food and Beverages services Fetched")
                 .data(foodBeverageResponse)
