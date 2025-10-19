@@ -136,12 +136,13 @@ public class AccommodationServiceImpl implements  AccommodationService {
     public APIResponse<AccommodationResponse> getAll_Accommodations(Integer pageNumber, Integer pageSize) {
         Pageable pageDetails= PageRequest.of(pageNumber,pageSize);
 
-        Page<Accommodation> accommodationServicePage=accommodationRepository.findAll(pageDetails);
+        List<Accommodation> accommodationServicePage=accommodationRepository.findByProvider_UserId(authUtils.loggedInUserId())
+                .orElseThrow(()->new ResourceNotFoundException("Accommodation", authUtils.loggedInUserId()));
 
-        List<Accommodation> accommodationServices=accommodationServicePage.getContent();
+//        List<Accommodation> accommodationServices=accommodationServicePage.getContent();
 
-        if (accommodationServices.isEmpty())
-            throw new APIException("No Activity Service created till now");
+//        if (accommodationServices.isEmpty())
+//            throw new APIException("No Activity Service created till now");
 
         List<AccommodationServiceRequestDTO> accommodationServices_DTOs= new ArrayList<>();
 
@@ -159,11 +160,11 @@ public class AccommodationServiceImpl implements  AccommodationService {
         AccommodationResponse accommodationResponse=new AccommodationResponse();
 
         accommodationResponse.setContent(accommodationServices_DTOs);
-        accommodationResponse.setLastPage(accommodationServicePage.isLast());
-        accommodationResponse.setPageNumber(accommodationServicePage.getNumber());
-        accommodationResponse.setPageSize(accommodationServicePage.getSize());
-        accommodationResponse.setTotalElements(accommodationServicePage.getTotalElements());
-        accommodationResponse.setTotalPages(accommodationServicePage.getTotalPages());
+//        accommodationResponse.setLastPage(accommodationServicePage.isLast());
+//        accommodationResponse.setPageNumber(accommodationServicePage.getNumber());
+//        accommodationResponse.setPageSize(accommodationServicePage.getSize());
+//        accommodationResponse.setTotalElements(accommodationServicePage.getTotalElements());
+//        accommodationResponse.setTotalPages(accommodationServicePage.getTotalPages());
         return  APIResponse.<AccommodationResponse>builder()
                 .success(true)
                 .message("Accommodation Services Fetched")

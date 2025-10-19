@@ -107,16 +107,17 @@ public class TouristGuideImpl implements TouristGuideService {
     public APIResponse<TouristGuideResponseDTO> getAllTourGuides(Integer pageNumber, Integer pageSize) {
         Pageable pageDetails= PageRequest.of(pageNumber,pageSize);
 
-        Page<TouristGuide> touristGuides=touristGuideRepository.findAll(pageDetails);
+        List<TouristGuide> touristGuides=touristGuideRepository.findByProvider_UserId(authUtils.loggedInUserId())
+                .orElseThrow(()->new ResourceNotFoundException("Tourist Guide",authUtils.loggedInUserId()));
 
-        List<TouristGuide> guidesContent=touristGuides.getContent();
+//        List<TouristGuide> guidesContent=touristGuides.getContent();
 
-        if (guidesContent.isEmpty())
-            throw new APIException("No tourist guide created till now");
+//        if (guidesContent.isEmpty())
+//            throw new APIException("No tourist guide created till now");
 
         List<TouristGuideRequestDTO> tourGuideReq_DTOs= new ArrayList<>();
 
-        for (TouristGuide guide : guidesContent){
+        for (TouristGuide guide : touristGuides){
             TouristGuideRequestDTO tourGuideRequest = new TouristGuideRequestDTO();
             if (guide.getStatus() == ServiceStatus.ACTIVE){
                 tourGuideRequest.setServiceId(guide.getServiceId());
@@ -130,11 +131,11 @@ public class TouristGuideImpl implements TouristGuideService {
         TouristGuideResponseDTO tourGuideResponse=new TouristGuideResponseDTO();
 
         tourGuideResponse.setContent(tourGuideReq_DTOs);
-        tourGuideResponse.setLastPage(touristGuides.isLast());
-        tourGuideResponse.setPageNumber(touristGuides.getNumber());
-        tourGuideResponse.setPageSize(touristGuides.getSize());
-        tourGuideResponse.setTotalElements(touristGuides.getTotalElements());
-        tourGuideResponse.setTotalPages(touristGuides.getTotalPages());
+//        tourGuideResponse.setLastPage(touristGuides.isLast());
+//        tourGuideResponse.setPageNumber(touristGuides.getNumber());
+//        tourGuideResponse.setPageSize(touristGuides.getSize());
+//        tourGuideResponse.setTotalElements(touristGuides.getTotalElements());
+//        tourGuideResponse.setTotalPages(touristGuides.getTotalPages());
         return  APIResponse.<TouristGuideResponseDTO>builder()
                 .success(true)
                 .message("Tourist Guides Fetched")

@@ -21,4 +21,7 @@ public class LicenseDTO {
     private ServiceCategory category;
     private Long providerId;
     private ApprovalStatus status;
+    private String businessName;
+    private String categoryName;
+    private Long licenseId;
 }
