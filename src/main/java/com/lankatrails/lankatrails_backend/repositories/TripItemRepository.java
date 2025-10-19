@@ -48,4 +48,11 @@ public interface TripItemRepository extends JpaRepository<TripItem, Long> {
 
     Optional<TripItem> findTopByTripAndStartTimeGreaterThanEqualOrderByStartTimeAsc(Trip trip, LocalDateTime time);
 
+    // Find the earliest start time for a trip's items
+    @Query("SELECT MIN(ti.startTime) FROM TripItem ti WHERE ti.trip.tripId = :tripId")
+    Optional<LocalDateTime> findEarliestStartTimeByTripId(@Param("tripId") Long tripId);
+
+    // Find the latest end time for a trip's items
+    @Query("SELECT MAX(ti.endTime) FROM TripItem ti WHERE ti.trip.tripId = :tripId")
+    Optional<LocalDateTime> findLatestEndTimeByTripId(@Param("tripId") Long tripId);
 }

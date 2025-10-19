@@ -37,6 +37,16 @@ public class TripController {
                 .body(response);
     }
 
+    @PutMapping("/edit/{tripId}")
+    public ResponseEntity<APIResponse<TripResponseDTO>> editTrip(@PathVariable Long tripId, @Valid @RequestBody TripRequestDTO tripRequest) {
+        log.info("Received request to edit trip with ID: {}", tripId);
+        APIResponse<TripResponseDTO> response = tripService.editTrip(tripId, tripRequest);
+        log.info("Trip edited successfully: {}", response.getData());
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
+    }
+
+
     @GetMapping("/my-trips")
     public ResponseEntity<APIResponse<List<TripResponseDTO>>> getAllMyTrips() {
         log.info("Fetching all trips for the authenticated user");

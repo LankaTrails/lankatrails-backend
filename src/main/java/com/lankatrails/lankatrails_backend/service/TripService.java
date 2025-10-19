@@ -14,6 +14,8 @@ import java.util.List;
 public interface TripService {
     APIResponse<TripResponseDTO> createTrip(TripRequestDTO tripRequestDTO);
 
+    APIResponse<TripResponseDTO> editTrip(Long tripId, TripRequestDTO tripRequestDTO);
+
     APIResponse<List<TripResponseDTO>> getAllMyTrips();
 
     APIResponse<TripResponseDTO> getTripById(Long tripId);
