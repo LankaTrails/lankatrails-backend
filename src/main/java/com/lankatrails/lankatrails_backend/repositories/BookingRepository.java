@@ -124,4 +124,46 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Long countBookingsInFuture(@Param("serviceId") Long serviceId,
                                @Param("start") LocalDateTime start,
                                @Param("status") BookingStatus status);
+
+    // Admin-specific repository methods
+    List<Booking> findByBookingStatus(BookingStatus status);
+
+    List<Booking> findByBookedDateTimeBetween(LocalDateTime from, LocalDateTime to);
+
+    Long countByBookingStatus(BookingStatus status);
+
+    @Query("SELECT COALESCE(SUM(b.paidAmount), 0) FROM Booking b")
+    java.math.BigDecimal sumTotalPaidAmount();
+
+    Long countByBookedDateTimeAfter(LocalDateTime dateTime);
+
+    List<Booking> findTop10ByOrderByBookedDateTimeDesc();
+
+    // Advanced Analytics Repository Methods
+    @Query("SELECT COUNT(DISTINCT b.tripParticipant.tourist.userId) FROM Booking b WHERE b.bookingStatus = :status")
+    Long countUniqueTourists(@Param("status") BookingStatus status);
+
+    @Query("SELECT COUNT(DISTINCT b.tripParticipant.tourist.userId) FROM Booking b WHERE b.bookedDateTime BETWEEN :from AND :to")
+    Long countUniqueTouristsByDateRange(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    @Query("SELECT COALESCE(SUM(b.paidAmount), 0) FROM Booking b WHERE b.bookedDateTime BETWEEN :from AND :to AND b.bookingStatus = 'CONFIRMED'")
+    java.math.BigDecimal sumRevenueByDateRange(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    @Query("SELECT COALESCE(AVG(b.totalPrice), 0) FROM Booking b WHERE b.bookingStatus = 'CONFIRMED'")
+    java.math.BigDecimal getAverageBookingValue();
+
+    @Query("SELECT b.tripItem.service.serviceName, COUNT(b) as bookingCount FROM Booking b WHERE b.bookingStatus = 'CONFIRMED' GROUP BY b.tripItem.service.serviceName ORDER BY bookingCount DESC")
+    List<Object[]> getTopServicesByBookingCount();
+
+    @Query("SELECT b.tripItem.service.provider.businessName, COUNT(b) as bookingCount FROM Booking b WHERE b.bookingStatus = 'CONFIRMED' GROUP BY b.tripItem.service.provider.businessName ORDER BY bookingCount DESC")
+    List<Object[]> getTopProvidersByBookingCount();
+
+    @Query("SELECT MONTH(b.bookedDateTime) as month, COUNT(b) as bookingCount, COALESCE(SUM(b.paidAmount), 0) as revenue FROM Booking b WHERE YEAR(b.bookedDateTime) = :year AND b.bookingStatus = 'CONFIRMED' GROUP BY MONTH(b.bookedDateTime) ORDER BY month")
+    List<Object[]> getMonthlyBookingStatistics(@Param("year") int year);
+
+    @Query("SELECT DATE(b.bookedDateTime) as bookingDate, COUNT(b) as dailyBookings FROM Booking b WHERE b.bookedDateTime BETWEEN :from AND :to GROUP BY DATE(b.bookedDateTime) ORDER BY bookingDate")
+    List<Object[]> getDailyBookingTrends(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    @Query("SELECT b.bookingStatus, COUNT(b) as statusCount FROM Booking b WHERE b.bookedDateTime BETWEEN :from AND :to GROUP BY b.bookingStatus")
+    List<Object[]> getBookingStatusDistribution(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 }

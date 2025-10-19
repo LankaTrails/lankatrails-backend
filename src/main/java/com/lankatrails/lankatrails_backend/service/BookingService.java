@@ -9,6 +9,7 @@ import com.lankatrails.lankatrails_backend.dtos.response.BookingResponseDTO;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 public interface BookingService {
     APIResponse<AvailabilityResponse> checkAvailability(AvailabilityDto availabilityDto);
@@ -26,4 +27,30 @@ public interface BookingService {
     Long countFutureBookingsForService(Long serviceId, LocalDateTime from);
 
     Long countPastBookingsForService(Long serviceId, LocalDateTime to);
+
+    // Admin-specific methods
+    APIResponse<List<BookingItemDto>> getAllBookings();
+
+    APIResponse<List<BookingItemDto>> getBookingsByStatus(String status);
+
+    APIResponse<List<BookingItemDto>> getBookingsByDateRange(LocalDateTime from, LocalDateTime to);
+
+    APIResponse<Map<String, Object>> getBookingStatistics();
+
+    APIResponse<List<BookingItemDto>> getRecentBookings(Integer limit);
+
+    // Advanced Analytics Methods
+    APIResponse<Map<String, Object>> getTouristAnalytics();
+
+    APIResponse<Map<String, Object>> getBookingAnalytics(LocalDateTime from, LocalDateTime to);
+
+    APIResponse<Map<String, Object>> getRevenueAnalytics(LocalDateTime from, LocalDateTime to);
+
+    APIResponse<Map<String, Object>> getServiceProviderAnalytics();
+
+    APIResponse<Map<String, Object>> getMonthlyAnalytics(int year);
+
+    APIResponse<Map<String, Object>> getTopServicesAnalytics(Integer limit);
+
+    APIResponse<Map<String, Object>> getDashboardAnalytics();
 }
