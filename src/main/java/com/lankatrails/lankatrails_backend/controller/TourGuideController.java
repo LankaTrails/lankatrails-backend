@@ -76,7 +76,7 @@ public class TourGuideController {
 
     }
 
-    @PostMapping("/{id}")
+    @PostMapping("/tour-guide/update/{id}")
     public ResponseEntity<TouristGuideResponseDTO> updateTourGuide(@PathVariable Long id, @RequestBody TouristGuideRequestDTO requestDTO) {
         TouristGuideResponseDTO touristGuideResponseDTO = touristGuideService.updateTourGuide(id, requestDTO);
         return new ResponseEntity<>(touristGuideResponseDTO, HttpStatus.OK);
