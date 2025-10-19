@@ -304,4 +304,9 @@ public class BookingServiceImpl implements BookingService {
                 .build();
     }
 
+    @Override
+    public Long countBookingsForServiceInPeriod(Long serviceId, LocalDateTime from, LocalDateTime to) {
+        return bookingRepository.countByTripItem_Service_ServiceIdAndBookingStatusAndStartDateTimeGreaterThanEqualAndEndDateTimeLessThanEqual(serviceId, BookingStatus.CONFIRMED, from, to);
+    }
+
 }

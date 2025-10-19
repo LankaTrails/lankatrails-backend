@@ -20,4 +20,6 @@ public interface BookingService {
     APIResponse<List<BookingItemDto>> getAllBookingForTrip(Long tripId);
 
     APIResponse<List<BookingItemDto>> getBookings(Long serviceId, LocalDateTime from, LocalDateTime to);
+
+    Long countBookingsForServiceInPeriod(Long serviceId, LocalDateTime from, LocalDateTime to);
 }

@@ -1,18 +1,18 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import com.lankatrails.lankatrails_backend.dtos.request.*;
-import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.RateAndReviewResponse;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
+import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
+import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
+import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
+import com.lankatrails.lankatrails_backend.repositories.*;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
+import com.lankatrails.lankatrails_backend.service.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -22,29 +22,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.ActivityServiceResponse;
-import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
-import com.lankatrails.lankatrails_backend.model.ActivityCategory;
-import com.lankatrails.lankatrails_backend.model.ActivityService;
-import com.lankatrails.lankatrails_backend.model.Category;
-import com.lankatrails.lankatrails_backend.model.Image;
-import com.lankatrails.lankatrails_backend.model.PolicySection;
-import com.lankatrails.lankatrails_backend.model.Provider;
-import com.lankatrails.lankatrails_backend.model.TabsSection;
-import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
-import com.lankatrails.lankatrails_backend.repositories.ActivityCategoryRepository;
-import com.lankatrails.lankatrails_backend.repositories.ActivityServiceRepository;
-import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
-import com.lankatrails.lankatrails_backend.repositories.ImageRepository;
-import com.lankatrails.lankatrails_backend.repositories.PolicySectionRepository;
-import com.lankatrails.lankatrails_backend.repositories.ProviderRepository;
-import com.lankatrails.lankatrails_backend.repositories.TabsSectionRepository;
-import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
-import com.lankatrails.lankatrails_backend.service.ActivityServiceService;
-import com.lankatrails.lankatrails_backend.service.ImageService;
-import com.lankatrails.lankatrails_backend.service.ServicesForAll;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ActivityServiceServiceImpl implements ActivityServiceService {
@@ -90,6 +72,12 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     @Autowired
     private ServicesForAll servicesForAll;
 
+    @Autowired
+    private ReviewService reviewService;
+
+    @Autowired
+    private BookingService bookingService;
+
     @Override
     @Transactional
     public APIResponse<String> addService(ActivityServiceRequest services, List<MultipartFile> images) {
@@ -132,7 +120,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
             // Set the availability slots
             List<AvailableTimeDTO> availabilitySlots = services.getAvailableTimeDTOS();
-            if (availabilitySlots == null ){
+            if (availabilitySlots == null) {
                 throw new BadRequestException("Availability Slots cannot be empty");
             }
             servicesForAll.setAvailableTime(availabilitySlots, lastServiceAdded);
@@ -151,31 +139,38 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
     @Override
     @Transactional
-    public APIResponse<ActivityServiceResponse> getAll_ActivityServices(Integer pageNumber, Integer pageSize){
+    public APIResponse<ActivityServiceResponse> getAll_ActivityServices(Integer pageNumber, Integer pageSize) {
 
-        Pageable pageDetails= PageRequest.of(pageNumber,pageSize);
+        Pageable pageDetails = PageRequest.of(pageNumber, pageSize);
 
-        Page<ActivityService> activityServicePage=activityServiceRepository.findAll(pageDetails);
+        Page<ActivityService> activityServicePage = activityServiceRepository.findAll(pageDetails);
 
-        List<ActivityService> activityServices=activityServicePage.getContent();
+        List<ActivityService> activityServices = activityServicePage.getContent();
 
 //        if (activityServices.isEmpty())
 //            throw new APIException("No Activity Service created till now");
 
-        List<ActivityServiceRequest> activityServices_DTOs= new ArrayList<>();
+        List<ActivityServiceRequest> activityServices_DTOs = new ArrayList<>();
 
-        for (ActivityService activity :activityServicePage){
+        for (ActivityService activity : activityServicePage) {
             ActivityServiceRequest activityServiceRequest = new ActivityServiceRequest();
-            if (activity.getStatus() == ServiceStatus.ACTIVE){
+            if (activity.getStatus() == ServiceStatus.ACTIVE) {
                 activityServiceRequest.setServiceId(activity.getServiceId());
                 activityServiceRequest.setServiceName(activity.getServiceName());
                 activityServiceRequest.setStatus(activity.getStatus());
+                // Safely get average rating with null check
+                APIResponse<RateAndReviewResponse> ratingResponse = reviewService.getAverageRatingByServiceId(activity.getServiceId());
+                Double averageRating = (ratingResponse != null && ratingResponse.getData() != null)
+                        ? ratingResponse.getData().getAverageRating()
+                        : 0.0;
+                activityServiceRequest.setAverageRating(averageRating);
+                activityServiceRequest.setTotalBookingsForPastMonth(bookingService.countBookingsForServiceInPeriod(activity.getServiceId(), LocalDateTime.now().minusMonths(1), LocalDateTime.now()));
                 activityServices_DTOs.add(activityServiceRequest);
             }
 
         }
 
-        ActivityServiceResponse activityServiceResponse=new ActivityServiceResponse();
+        ActivityServiceResponse activityServiceResponse = new ActivityServiceResponse();
 
         activityServiceResponse.setContent(activityServices_DTOs);
         activityServiceResponse.setLastPage(activityServicePage.isLast());
@@ -183,23 +178,23 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         activityServiceResponse.setPageSize(activityServicePage.getSize());
         activityServiceResponse.setTotalElements(activityServicePage.getTotalElements());
         activityServiceResponse.setTotalPages(activityServicePage.getTotalPages());
-        return  APIResponse.<ActivityServiceResponse>builder()
+        return APIResponse.<ActivityServiceResponse>builder()
                 .success(true)
                 .message("Activity Services Fetched")
                 .data(activityServiceResponse)
                 .build();
     }
 
-  @Override
-  @Transactional
-  public APIResponse<ActivityServiceRequest> searchWithId(Long Id){
-        ActivityService activityService=activityServiceRepository.findById(Id)
-                .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
+    @Override
+    @Transactional
+    public APIResponse<ActivityServiceRequest> searchWithId(Long Id) {
+        ActivityService activityService = activityServiceRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Activity Service", Id));
 
-        List<TabsSection> tabsSection=tabsSectionRepository.findByService_ServiceId(Id);
-        List<TabSectionRequest> tabs=new ArrayList<>();
+        List<TabsSection> tabsSection = tabsSectionRepository.findByService_ServiceId(Id);
+        List<TabSectionRequest> tabs = new ArrayList<>();
 
-        for (TabsSection tab :tabsSection){
+        for (TabsSection tab : tabsSection) {
             TabSectionRequest tabReq = new TabSectionRequest();
             tabReq.setId(tab.getId());
             tabReq.setHeading(tab.getHeading());
@@ -211,7 +206,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         List<PolicySection> policySection = activityService.getPolicies().stream().toList();
         List<PolicySectionRequest> policies = new ArrayList<>();
 //
-        for (PolicySection policy : policySection){
+        for (PolicySection policy : policySection) {
 
             PolicySectionRequest policyReq = new PolicySectionRequest();
             policyReq.setId(policy.getId());
@@ -223,8 +218,8 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         //set the images
         List<Image> images = imageRepository.findByService_ServiceId(Id);
         //map images to imageDTO
-       List<ImageRequestDTO> imgDTOs = new ArrayList<>();
-        for (Image img : images){
+        List<ImageRequestDTO> imgDTOs = new ArrayList<>();
+        for (Image img : images) {
             ImageRequestDTO imgDTO = new ImageRequestDTO();
             imgDTO.setId(img.getImageId());
             imgDTO.setImageUrl(img.getImageUrl());
@@ -249,33 +244,34 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         prepareResponse.setPolicySection(policies);
         prepareResponse.setImages(imgDTOs);
         prepareResponse.setStatus(activityService.getStatus());
-          prepareResponse.setAvailableTimeDTOS(activityService.getAvailableTimes().stream()
-                  .map(availableTime -> {
-                      AvailableTimeDTO availableTimeDTO = modelMapper.map(availableTime, AvailableTimeDTO.class);
-                      List<BreakTimeDTO> breakTimeDTOS = availableTime.getBreakTimes().stream()
-                              .map(breakTime -> modelMapper.map(breakTime, BreakTimeDTO.class))
-                              .collect(Collectors.toList());
-                      availableTimeDTO.setBreakTimes(breakTimeDTOS);
-                      return availableTimeDTO;
-                  })
-                  .collect(Collectors.toList())
-          );
+        prepareResponse.setAvailableTimeDTOS(activityService.getAvailableTimes().stream()
+                .map(availableTime -> {
+                    AvailableTimeDTO availableTimeDTO = modelMapper.map(availableTime, AvailableTimeDTO.class);
+                    List<BreakTimeDTO> breakTimeDTOS = availableTime.getBreakTimes().stream()
+                            .map(breakTime -> modelMapper.map(breakTime, BreakTimeDTO.class))
+                            .collect(Collectors.toList());
+                    availableTimeDTO.setBreakTimes(breakTimeDTOS);
+                    return availableTimeDTO;
+                })
+                .collect(Collectors.toList())
+        );
 
-        return  APIResponse.<ActivityServiceRequest>builder()
+        return APIResponse.<ActivityServiceRequest>builder()
                 .success(true)
                 .message("Fetched Activity Service ")
                 .data(prepareResponse)
                 .build();
 
-  }
-  @Override
-  public APIResponse<ActivityServiceRequest> removeActivityService(Long Id){
-        ActivityService activity=activityServiceRepository.findById(Id)
-                .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
-        activity.setStatus(ServiceStatus.INACTIVE);
-        ActivityService activityService=activityServiceRepository.save(activity);
+    }
 
-        ActivityServiceRequest activityServiceResponse=new ActivityServiceRequest();
+    @Override
+    public APIResponse<ActivityServiceRequest> removeActivityService(Long Id) {
+        ActivityService activity = activityServiceRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Activity Service", Id));
+        activity.setStatus(ServiceStatus.INACTIVE);
+        ActivityService activityService = activityServiceRepository.save(activity);
+
+        ActivityServiceRequest activityServiceResponse = new ActivityServiceRequest();
         activityServiceResponse.setServiceName(activityService.getServiceName());
         activityServiceResponse.setServiceId(activityService.getServiceId());
         activityServiceResponse.setStatus(activityService.getStatus());
@@ -286,34 +282,34 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
                 .data(activityServiceResponse)
                 .build();
 
-  }
+    }
 
-  @Override
-  public APIResponse<String> removeTabs(Long id){
+    @Override
+    public APIResponse<String> removeTabs(Long id) {
         tabsSectionRepository.findById(id)
-                .orElseThrow(()->new ResourceNotFoundException("Activity Service Tabs",id));
+                .orElseThrow(() -> new ResourceNotFoundException("Activity Service Tabs", id));
 
         tabsSectionRepository.deleteById(id);
-        return  APIResponse.<String>builder()
+        return APIResponse.<String>builder()
                 .success(true)
                 .message("Tab Deleted Successfully")
                 .data("")
                 .build();
 
-  }
+    }
 
-  @Override
-  @Transactional
-  public APIResponse<String> addNewPolicy(Long id,PolicySection policies) {
-        ActivityService service=activityServiceRepository.findById(id)
-                .orElseThrow(()->new ResourceNotFoundException("Activity Service",id));
+    @Override
+    @Transactional
+    public APIResponse<String> addNewPolicy(Long id, PolicySection policies) {
+        ActivityService service = activityServiceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Activity Service", id));
 
-      Provider provider = providerRepository.findById(authUtils.loggedInUserId())
+        Provider provider = providerRepository.findById(authUtils.loggedInUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
 
         //check whether the policy exists
         PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
-        if (policyCheck==null){
+        if (policyCheck == null) {
             //Policy doesn't exist
             policies.setProvider(provider);
             policies.getServices().add(service);
@@ -325,7 +321,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
                     .message("Policy Added Successfully")
                     .data("")
                     .build();
-        }else{
+        } else {
 //            Set<PolicySection> policy = policyCheck.stream().collect(Collectors.toSet());
 //            service.getPolicies().add(policy);
             service.getPolicies().add(policyCheck);
@@ -339,7 +335,8 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
         }
 
-  }
+    }
+
     @Override
     @Transactional
     //Adding new policy for the entire activity category
@@ -352,7 +349,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
         //check whether the policy exists
         PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
-        if (policyCheck==null){
+        if (policyCheck == null) {
             //Policy doesn't exist
             policies.setProvider(provider);
             policies.setCategory(category);
@@ -362,7 +359,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
                     .message("Policy Added Successfully")
                     .data("")
                     .build();
-        }else{
+        } else {
 
             return APIResponse.<String>builder()
                     .success(false)
@@ -375,33 +372,33 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     }
 
     @Override
-  @Transactional
-  public APIResponse<String> updateWithId(Long Id,ActivityServiceRequest activityService){
+    @Transactional
+    public APIResponse<String> updateWithId(Long Id, ActivityServiceRequest activityService) {
 
-      ActivityService activity= activityServiceRepository.findById(Id)
-              .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
+        ActivityService activity = activityServiceRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Activity Service", Id));
 
 
-      //update the activity service
-      activity.setServiceName(activityService.getServiceName());
-      activity.setContactNo(activityService.getContactNo());
-      activity.setStatus(activityService.getStatus());
-      activity.setActivityDetails(activityService.getActivityDetails());
-      activity.setSafetyInstructions(activityService.getSafetyInstructions());
-      
-      // Update locations
-          activity.setLocations(servicesForAll.setServiceLocation(activityService));
+        //update the activity service
+        activity.setServiceName(activityService.getServiceName());
+        activity.setContactNo(activityService.getContactNo());
+        activity.setStatus(activityService.getStatus());
+        activity.setActivityDetails(activityService.getActivityDetails());
+        activity.setSafetyInstructions(activityService.getSafetyInstructions());
+
+        // Update locations
+        activity.setLocations(servicesForAll.setServiceLocation(activityService));
 
         // Update configurations
         activity.setBookingConfiguration(servicesForAll.setBookingConfig(activityService.getBookingConfig()));
         activity.setPriceConfiguration(servicesForAll.setPriceConfig(activityService.getPriceConfig()));
 
-      //save the updated activity service
-      ActivityService updatedActivity = activityServiceRepository.save(activity);
+        //save the updated activity service
+        ActivityService updatedActivity = activityServiceRepository.save(activity);
 
         // Set the availability slots
         List<AvailableTimeDTO> availabilitySlots = activityService.getAvailableTimeDTOS();
-        if (availabilitySlots == null ){
+        if (availabilitySlots == null) {
             throw new BadRequestException("Availability Slots cannot be empty");
         }
         servicesForAll.setAvailableTime(availabilitySlots, updatedActivity);
@@ -415,36 +412,34 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         policyImpl.deletePolicies(activityService.getDeletedPolicies(), updatedActivity);
 
 
-
-      return APIResponse.<String>builder()
-              .success(true)
-              .message("Updated Successfully")
-              .data("")
-              .build();
-
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Updated Successfully")
+                .data("")
+                .build();
 
 
-  }
+    }
 
     @Override
     public ActivityServiceRequest addTabs(Long Id, TabsSection tabsSection) {
-        ActivityService service=activityServiceRepository.findById(Id)
-                .orElseThrow(()->new ResourceNotFoundException("Activity Service",Id));
+        ActivityService service = activityServiceRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Activity Service", Id));
 
         tabsSection.setService(service);
         tabsSectionRepository.save(tabsSection);
 
-        List<TabsSection> tabs=tabsSectionRepository.findByService_ServiceId(Id);
-        List<TabSectionRequest> tabResponse=new ArrayList<>();
-        for (TabsSection tab :tabs){
-            TabSectionRequest tabSectionRequest=new TabSectionRequest();
+        List<TabsSection> tabs = tabsSectionRepository.findByService_ServiceId(Id);
+        List<TabSectionRequest> tabResponse = new ArrayList<>();
+        for (TabsSection tab : tabs) {
+            TabSectionRequest tabSectionRequest = new TabSectionRequest();
             tabSectionRequest.setId(tab.getId());
             tabSectionRequest.setHeading(tab.getHeading());
             tabSectionRequest.setContent(tab.getContent());
             tabResponse.add(tabSectionRequest);
         }
 
-        ActivityServiceRequest responseDTO=modelMapper.map(service,ActivityServiceRequest.class);
+        ActivityServiceRequest responseDTO = modelMapper.map(service, ActivityServiceRequest.class);
 
         responseDTO.setTabsSection(tabResponse);
         return responseDTO;
@@ -453,9 +448,9 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     }
 
     @Override
-    public APIResponse<String> removePolicies(Long id){
+    public APIResponse<String> removePolicies(Long id) {
         policySectionRepository.findById(id)
-                        .orElseThrow(()->new ResourceNotFoundException("Activity Service Policy",id));
+                .orElseThrow(() -> new ResourceNotFoundException("Activity Service Policy", id));
         policySectionRepository.deleteById(id);
         return APIResponse.<String>builder()
                 .success(true)

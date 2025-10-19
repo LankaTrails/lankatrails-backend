@@ -100,4 +100,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
 //    List<Booking> findByService_ServiceIdAndTourist_UserId(Long serviceId, Long touristId);
 
+    Long countByTripItem_Service_ServiceIdAndBookingStatusAndStartDateTimeGreaterThanEqualAndEndDateTimeLessThanEqual(Long serviceId, BookingStatus bookingStatus, LocalDateTime from, LocalDateTime to);
+
 }
