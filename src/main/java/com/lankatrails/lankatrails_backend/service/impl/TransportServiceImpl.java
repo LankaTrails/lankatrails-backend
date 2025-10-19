@@ -4,7 +4,6 @@ import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.RateAndReviewResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TransportResponseDTO;
-import com.lankatrails.lankatrails_backend.exception.APIException;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
@@ -18,7 +17,6 @@ import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -89,8 +87,8 @@ public class TransportServiceImpl implements TransportService {
     public APIResponse<TransportResponseDTO> getAll(Integer pageNumber, Integer pageSize) {
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize);
 
-        List<Transport> transportPage=transportRepository.findByProvider_UserId(authUtils.loggedInUserId())
-                .orElseThrow(()->new ResourceNotFoundException("Transport", authUtils.loggedInUserId()));
+        List<Transport> transportPage = transportRepository.findByProvider_UserId(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Transport", authUtils.loggedInUserId()));
 
 //        List<Transport> transports=transportPage.getContent();
 
@@ -107,16 +105,33 @@ public class TransportServiceImpl implements TransportService {
         for (Transport transport : transportPage) {
             TransportRequestDTO transportRequestDTO = new TransportRequestDTO();
             if (transport.getStatus() == ServiceStatus.ACTIVE) {
+                //set the images
+                List<Image> images = imageRepository.findByService_ServiceId(transport.getServiceId());
+                //map images to imageDTO
+                List<ImageRequestDTO> imgDTOs = new ArrayList<>();
+                for (Image img : images) {
+                    ImageRequestDTO imgDTO = new ImageRequestDTO();
+                    imgDTO.setId(img.getImageId());
+                    imgDTO.setImageUrl(img.getImageUrl());
+                    imgDTOs.add(imgDTO);
+
+                }
                 transportRequestDTO.setServiceId(transport.getServiceId());
                 transportRequestDTO.setServiceName(transport.getServiceName());
                 transportRequestDTO.setStatus(transport.getStatus());
+                transportRequestDTO.setImages(imgDTOs);
                 // Safely get average rating with null check
                 APIResponse<RateAndReviewResponse> ratingResponse = reviewService.getAverageRatingByServiceId(transport.getServiceId());
                 Double averageRating = (ratingResponse != null && ratingResponse.getData() != null)
                         ? ratingResponse.getData().getAverageRating()
                         : 0.0;
+                Long totalRatings = (ratingResponse != null && ratingResponse.getData() != null)
+                        ? ratingResponse.getData().getTotalReviews()
+                        : 0L;
+                transportRequestDTO.setReviewCount(totalRatings);
                 transportRequestDTO.setAverageRating(averageRating);
-                transportRequestDTO.setTotalBookingsForPastMonth(bookingService.countBookingsForServiceInPeriod(transport.getServiceId(), LocalDateTime.now().minusMonths(1), LocalDateTime.now()));
+                transportRequestDTO.setFutureBookingCount(bookingService.countFutureBookingsForService(transport.getServiceId(), LocalDateTime.now()));
+                transportRequestDTO.setPastBookingCount(bookingService.countPastBookingsForService(transport.getServiceId(), LocalDateTime.now()));
                 transport_DTOs.add(transportRequestDTO);
 
             }
@@ -331,9 +346,15 @@ public class TransportServiceImpl implements TransportService {
     }
 
     @Override
-    public APIResponse<String> deleteTransport(Long Id) {
+    public APIResponse<String> deactivateService(Long Id) {
         Transport transport = transportRepository.findById(Id)
                 .orElseThrow(() -> new ResourceNotFoundException("Transport Service", Id));
+        //get the number of bookings in future
+        Long futureBookings = bookingService.countFutureBookingsForService(transport.getServiceId(), LocalDateTime.now());
+        if (futureBookings > 0) {
+            throw new BadRequestException("Cannot delete transport service with future bookings");
+        }
+
         transport.setStatus(ServiceStatus.INACTIVE);
         transportRepository.save(transport);
         return APIResponse.<String>builder()
@@ -341,8 +362,20 @@ public class TransportServiceImpl implements TransportService {
                 .message("Transport Deleted Successfully")
                 .data("")
                 .build();
+    }
 
+    @Override
+    public APIResponse<String> activateService(Long Id) {
+        Transport transport = transportRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Transport Service", Id));
 
+        transport.setStatus(ServiceStatus.ACTIVE);
+        transportRepository.save(transport);
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Transport Activated Successfully")
+                .data("")
+                .build();
     }
 
     @Override

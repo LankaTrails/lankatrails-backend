@@ -100,6 +100,28 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
 //    List<Booking> findByService_ServiceIdAndTourist_UserId(Long serviceId, Long touristId);
 
-    Long countByTripItem_Service_ServiceIdAndBookingStatusAndStartDateTimeGreaterThanEqualAndEndDateTimeLessThanEqual(Long serviceId, BookingStatus bookingStatus, LocalDateTime from, LocalDateTime to);
+    @Query("SELECT COUNT(b) FROM Booking b WHERE " +
+            "b.tripItem.service.serviceId = :serviceId AND " +
+            "b.bookingStatus = :status AND " +
+            "(b.startDateTime < :end AND b.endDateTime > :start)")
+    Long countBookingsInDateRange(@Param("serviceId") Long serviceId,
+                                  @Param("start") LocalDateTime start,
+                                  @Param("end") LocalDateTime end,
+                                  @Param("status") BookingStatus status);
 
+    @Query("SELECT COUNT(b) FROM Booking b WHERE " +
+            "b.tripItem.service.serviceId = :serviceId AND " +
+            "b.bookingStatus = :status AND " +
+            "b.endDateTime < :start")
+    Long countBookingsInPast(@Param("serviceId") Long serviceId,
+                             @Param("start") LocalDateTime start,
+                             @Param("status") BookingStatus status);
+
+    @Query("SELECT COUNT(b) FROM Booking b WHERE " +
+            "b.tripItem.service.serviceId = :serviceId AND " +
+            "b.bookingStatus = :status AND " +
+            "b.startDateTime > :start")
+    Long countBookingsInFuture(@Param("serviceId") Long serviceId,
+                               @Param("start") LocalDateTime start,
+                               @Param("status") BookingStatus status);
 }

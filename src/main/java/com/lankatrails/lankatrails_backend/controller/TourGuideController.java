@@ -1,14 +1,11 @@
 package com.lankatrails.lankatrails_backend.controller;
 
 
-import com.lankatrails.lankatrails_backend.dtos.request.FoodBeverageRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.TouristGuideRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TouristGuideResponseDTO;
 import com.lankatrails.lankatrails_backend.model.PolicySection;
-import com.lankatrails.lankatrails_backend.model.Provider;
-import com.lankatrails.lankatrails_backend.repositories.TouristGuideRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ServicesForAll;
 import com.lankatrails.lankatrails_backend.service.TouristGuideService;
@@ -48,7 +45,7 @@ public class TourGuideController {
                     @RequestParam(name = "pageSize") Integer pageSize
             ) {
 
-        APIResponse<TouristGuideResponseDTO> touristGuideResponseDTO = touristGuideService.getAllTourGuides(pageNumber,pageSize);
+        APIResponse<TouristGuideResponseDTO> touristGuideResponseDTO = touristGuideService.getAllTourGuides(pageNumber, pageSize);
         return new ResponseEntity<>(touristGuideResponseDTO, HttpStatus.OK);
     }
 
@@ -86,20 +83,21 @@ public class TourGuideController {
     }
 
     @PostMapping("/policy/tour-guide")
-    public ResponseEntity<APIResponse<String>> addPolicies(@RequestBody PolicySection policies){
-        APIResponse<String> responseDTO= touristGuideService.addNewPolicy(policies);
-        return new ResponseEntity<>(responseDTO,HttpStatus.CREATED);
+    public ResponseEntity<APIResponse<String>> addPolicies(@RequestBody PolicySection policies) {
+        APIResponse<String> responseDTO = touristGuideService.addNewPolicy(policies);
+        return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
     }
+
     @GetMapping("/policy/tour-guide")
-    public ResponseEntity<APIResponse<List<PolicySectionRequest>>> guidePolicies (){
+    public ResponseEntity<APIResponse<List<PolicySectionRequest>>> guidePolicies() {
         List<PolicySectionRequest> policies = policyImpl.getServicePolicies(authUtils.loggedInUserId(), 5L);
-        APIResponse<List<PolicySectionRequest>> response =APIResponse.<List<PolicySectionRequest>>builder()
+        APIResponse<List<PolicySectionRequest>> response = APIResponse.<List<PolicySectionRequest>>builder()
                 .success(true)
                 .message("Found TourGuide Policies")
                 .data(policies)
                 .build();
 
-        return new ResponseEntity<>(response,HttpStatus.OK);
+        return new ResponseEntity<>(response, HttpStatus.OK);
 
     }
 
@@ -110,10 +108,10 @@ public class TourGuideController {
                     @RequestPart("service") @Valid TouristGuideRequestDTO service,
                     @RequestPart(value = "images", required = false) List<MultipartFile> images,
                     BindingResult result
-            ){
-        if (result.hasErrors()){
-            Map<String,String> errors = new HashMap<>();
-            result.getFieldErrors().forEach(field ->{
+            ) {
+        if (result.hasErrors()) {
+            Map<String, String> errors = new HashMap<>();
+            result.getFieldErrors().forEach(field -> {
                 errors.put(field.getField(), field.getDefaultMessage());
             });
             APIResponse<String> errorResponse = APIResponse.<String>builder()
@@ -121,17 +119,23 @@ public class TourGuideController {
                     .message("Validation Failed")
                     .details(errors)
                     .build();
-            return  new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
-        }else{
-            APIResponse<String> ActivityServiceDTO =  touristGuideService.updateService(Id, service, images);
-            return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.OK);
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        } else {
+            APIResponse<String> ActivityServiceDTO = touristGuideService.updateService(Id, service, images);
+            return new ResponseEntity<>(ActivityServiceDTO, HttpStatus.OK);
         }
 
     }
 
-    @PutMapping("/tour-guide/remove/{Id}")
-    public ResponseEntity<APIResponse<String>> deleteAccommodation(@PathVariable Long Id) {
-        APIResponse<String> response = touristGuideService.deleteService(Id);
+    @PutMapping("/tour-guide/deactivate/{Id}")
+    public ResponseEntity<APIResponse<String>> deactivateService(@PathVariable Long Id) {
+        APIResponse<String> response = touristGuideService.deactivateService(Id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping("/tour-guide/activate/{Id}")
+    public ResponseEntity<APIResponse<String>> activateService(@PathVariable Long Id) {
+        APIResponse<String> response = touristGuideService.activateService(Id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

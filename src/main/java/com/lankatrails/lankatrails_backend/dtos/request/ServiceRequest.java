@@ -54,6 +54,10 @@ public abstract class ServiceRequest {
 
     private Double averageRating;
 
-    private Long totalBookingsForPastMonth;
+    private Long reviewCount;
+
+    private Long futureBookingCount;
+
+    private Long pastBookingCount;
 
 }

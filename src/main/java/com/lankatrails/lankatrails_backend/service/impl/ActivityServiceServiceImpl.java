@@ -15,7 +15,6 @@ import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -143,8 +142,8 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize);
 
-        List<ActivityService> activityServicePage=activityServiceRepository.findByProvider_UserId(authUtils.loggedInUserId())
-                .orElseThrow(()->new ResourceNotFoundException("Activity", authUtils.loggedInUserId()));
+        List<ActivityService> activityServicePage = activityServiceRepository.findByProvider_UserId(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Activity", authUtils.loggedInUserId()));
 
 //        List<ActivityService> activityServices=activityServicePage.getContent();
 
@@ -155,21 +154,38 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 
         for (ActivityService activity : activityServicePage) {
             ActivityServiceRequest activityServiceRequest = new ActivityServiceRequest();
-            if (activity.getStatus() == ServiceStatus.ACTIVE) {
-                activityServiceRequest.setServiceId(activity.getServiceId());
-                activityServiceRequest.setServiceName(activity.getServiceName());
-                activityServiceRequest.setStatus(activity.getStatus());
-                // Safely get average rating with null check
-                APIResponse<RateAndReviewResponse> ratingResponse = reviewService.getAverageRatingByServiceId(activity.getServiceId());
-                Double averageRating = (ratingResponse != null && ratingResponse.getData() != null)
-                        ? ratingResponse.getData().getAverageRating()
-                        : 0.0;
-                activityServiceRequest.setAverageRating(averageRating);
-                activityServiceRequest.setTotalBookingsForPastMonth(bookingService.countBookingsForServiceInPeriod(activity.getServiceId(), LocalDateTime.now().minusMonths(1), LocalDateTime.now()));
-                activityServices_DTOs.add(activityServiceRequest);
-            }
+//            if (activity.getStatus() == ServiceStatus.ACTIVE || activity.getStatus() == ServiceStatus.INACTIVE) {
+            //set the images
+            List<Image> images = imageRepository.findByService_ServiceId(activity.getServiceId());
+            //map images to imageDTO
+            List<ImageRequestDTO> imgDTOs = new ArrayList<>();
+            for (Image img : images) {
+                ImageRequestDTO imgDTO = new ImageRequestDTO();
+                imgDTO.setId(img.getImageId());
+                imgDTO.setImageUrl(img.getImageUrl());
+                imgDTOs.add(imgDTO);
 
+            }
+            activityServiceRequest.setServiceId(activity.getServiceId());
+            activityServiceRequest.setServiceName(activity.getServiceName());
+            activityServiceRequest.setStatus(activity.getStatus());
+            activityServiceRequest.setImages(imgDTOs);
+            // Safely get average rating with null check
+            APIResponse<RateAndReviewResponse> ratingResponse = reviewService.getAverageRatingByServiceId(activity.getServiceId());
+            Double averageRating = (ratingResponse != null && ratingResponse.getData() != null)
+                    ? ratingResponse.getData().getAverageRating()
+                    : 0.0;
+            Long totalRatings = (ratingResponse != null && ratingResponse.getData() != null)
+                    ? ratingResponse.getData().getTotalReviews()
+                    : 0L;
+            activityServiceRequest.setReviewCount(totalRatings);
+            activityServiceRequest.setAverageRating(averageRating);
+            activityServiceRequest.setFutureBookingCount(bookingService.countFutureBookingsForService(activity.getServiceId(), LocalDateTime.now()));
+            activityServiceRequest.setPastBookingCount(bookingService.countPastBookingsForService(activity.getServiceId(), LocalDateTime.now()));
+            activityServices_DTOs.add(activityServiceRequest);
         }
+
+//        }
 
         ActivityServiceResponse activityServiceResponse = new ActivityServiceResponse();
 
@@ -179,7 +195,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
 //        activityServiceResponse.setPageSize(activityServicePage.getSize());
 //        activityServiceResponse.setTotalElements(activityServicePage.getTotalElements());
 //        activityServiceResponse.setTotalPages(activityServicePage.getTotalPages());
-        return  APIResponse.<ActivityServiceResponse>builder()
+        return APIResponse.<ActivityServiceResponse>builder()
                 .success(true)
                 .message("Activity Services Fetched")
                 .data(activityServiceResponse)
@@ -269,6 +285,13 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     public APIResponse<ActivityServiceRequest> removeActivityService(Long Id) {
         ActivityService activity = activityServiceRepository.findById(Id)
                 .orElseThrow(() -> new ResourceNotFoundException("Activity Service", Id));
+
+        //get the number of bookings in future
+        Long futureBookings = bookingService.countFutureBookingsForService(activity.getServiceId(), LocalDateTime.now());
+        if (futureBookings > 0) {
+            throw new BadRequestException("Cannot delete transport service with future bookings");
+        }
+
         activity.setStatus(ServiceStatus.INACTIVE);
         ActivityService activityService = activityServiceRepository.save(activity);
 
@@ -513,7 +536,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     }
 
     @Override
-    public APIResponse<String> deleteService(Long Id) {
+    public APIResponse<String> deactivateService(Long Id) {
         ActivityService activity = activityServiceRepository.findById(Id)
                 .orElseThrow(() -> new ResourceNotFoundException("Activity Service", Id));
 
@@ -523,6 +546,21 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         return APIResponse.<String>builder()
                 .success(true)
                 .message("Activity Service Deleted Successfully")
+                .data("")
+                .build();
+    }
+
+    @Override
+    public APIResponse<String> activateService(Long Id) {
+        ActivityService activity = activityServiceRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Activity Service", Id));
+
+        activity.setStatus(ServiceStatus.ACTIVE);
+        activityServiceRepository.save(activity);
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Activity Service Activated Successfully")
                 .data("")
                 .build();
     }

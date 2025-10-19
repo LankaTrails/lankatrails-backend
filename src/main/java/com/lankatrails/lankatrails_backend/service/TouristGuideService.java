@@ -10,10 +10,18 @@ import java.util.List;
 
 public interface TouristGuideService {
     APIResponse<TouristGuideResponseDTO> getAllTourGuides(Integer pageNumber, Integer pageSize);
+
     TouristGuideResponseDTO addNewTouristGuide(TouristGuideRequestDTO requestDTO, List<MultipartFile> images);
+
     APIResponse<TouristGuideRequestDTO> searchWithId(Long id);
-    TouristGuideResponseDTO updateTourGuide(Long id,TouristGuideRequestDTO requestDTO);
+
+    TouristGuideResponseDTO updateTourGuide(Long id, TouristGuideRequestDTO requestDTO);
+
     APIResponse<String> addNewPolicy(PolicySection policies);
-    APIResponse<String> updateService(Long id, TouristGuideRequestDTO requestDTO, List<MultipartFile> images );
-    APIResponse<String> deleteService(Long Id);
+
+    APIResponse<String> updateService(Long id, TouristGuideRequestDTO requestDTO, List<MultipartFile> images);
+
+    APIResponse<String> deactivateService(Long Id);
+
+    APIResponse<String> activateService(Long Id);
 }
