@@ -389,9 +389,16 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
     }
 
     @Override
-    public APIResponse<String> deleteService(Long Id) {
+    public APIResponse<String> deactivateService(Long Id) {
         FoodAndBeverage foodAndBeverage = foodBeverageRepository.findById(Id)
                 .orElseThrow(() -> new ResourceNotFoundException("Food and Beverage", Id));
+
+        //get the number of bookings in future
+        Long futureBookings = bookingService.countFutureBookingsForService(foodAndBeverage.getServiceId(), LocalDateTime.now());
+        if (futureBookings > 0) {
+            throw new BadRequestException("Cannot delete transport service with future bookings");
+        }
+
 
         foodAndBeverage.setStatus(ServiceStatus.INACTIVE);
         foodBeverageRepository.save(foodAndBeverage);
@@ -399,6 +406,21 @@ public class FoodBeverageServiceImpl implements FoodBeverageService {
         return APIResponse.<String>builder()
                 .success(true)
                 .message("Food and Beverage Service Deleted Successfully")
+                .data("")
+                .build();
+    }
+
+    @Override
+    public APIResponse<String> activateService(Long Id) {
+        FoodAndBeverage foodAndBeverage = foodBeverageRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Food and Beverage", Id));
+
+        foodAndBeverage.setStatus(ServiceStatus.ACTIVE);
+        foodBeverageRepository.save(foodAndBeverage);
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Food and Beverage Service Activated Successfully")
                 .data("")
                 .build();
     }

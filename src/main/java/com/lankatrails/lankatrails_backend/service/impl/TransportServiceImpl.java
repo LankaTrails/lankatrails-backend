@@ -346,14 +346,34 @@ public class TransportServiceImpl implements TransportService {
     }
 
     @Override
-    public APIResponse<String> deleteTransport(Long Id) {
+    public APIResponse<String> deactivateService(Long Id) {
         Transport transport = transportRepository.findById(Id)
                 .orElseThrow(() -> new ResourceNotFoundException("Transport Service", Id));
+        //get the number of bookings in future
+        Long futureBookings = bookingService.countFutureBookingsForService(transport.getServiceId(), LocalDateTime.now());
+        if (futureBookings > 0) {
+            throw new BadRequestException("Cannot delete transport service with future bookings");
+        }
+
         transport.setStatus(ServiceStatus.INACTIVE);
         transportRepository.save(transport);
         return APIResponse.<String>builder()
                 .success(true)
                 .message("Transport Deleted Successfully")
+                .data("")
+                .build();
+    }
+
+    @Override
+    public APIResponse<String> activateService(Long Id) {
+        Transport transport = transportRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Transport Service", Id));
+
+        transport.setStatus(ServiceStatus.ACTIVE);
+        transportRepository.save(transport);
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Transport Activated Successfully")
                 .data("")
                 .build();
     }

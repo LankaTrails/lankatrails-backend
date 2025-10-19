@@ -447,15 +447,35 @@ public class TouristGuideImpl implements TouristGuideService {
     }
 
     @Override
-    public APIResponse<String> deleteService(Long Id) {
+    public APIResponse<String> deactivateService(Long Id) {
         TouristGuide touristGuide = touristGuideRepository.findById(Id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tourist Guide", Id));
+        //get the number of bookings in future
+        Long futureBookings = bookingService.countFutureBookingsForService(touristGuide.getServiceId(), LocalDateTime.now());
+        if (futureBookings > 0) {
+            throw new BadRequestException("Cannot delete transport service with future bookings");
+        }
+
 
         touristGuide.setStatus(ServiceStatus.INACTIVE);
         touristGuideRepository.save(touristGuide);
         return APIResponse.<String>builder()
                 .success(true)
                 .message("Tourist Guide Deleted Successfully")
+                .data("")
+                .build();
+    }
+
+    @Override
+    public APIResponse<String> activateService(Long Id) {
+        TouristGuide touristGuide = touristGuideRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Tourist Guide", Id));
+
+        touristGuide.setStatus(ServiceStatus.ACTIVE);
+        touristGuideRepository.save(touristGuide);
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Tourist Guide Activated Successfully")
                 .data("")
                 .build();
     }

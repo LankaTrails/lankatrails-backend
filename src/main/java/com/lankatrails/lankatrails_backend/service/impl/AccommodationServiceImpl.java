@@ -388,9 +388,15 @@ public class AccommodationServiceImpl implements AccommodationService {
     }
 
     @Override
-    public APIResponse<String> deleteService(Long Id) {
+    public APIResponse<String> deactivateService(Long Id) {
         Accommodation accommodation = accommodationRepository.findById(Id)
                 .orElseThrow(() -> new ResourceNotFoundException("Accommodation Service", Id));
+        //get the number of bookings in future
+        Long futureBookings = bookingService.countFutureBookingsForService(accommodation.getServiceId(), LocalDateTime.now());
+        if (futureBookings > 0) {
+            throw new BadRequestException("Cannot delete transport service with future bookings");
+        }
+
 
         accommodation.setStatus(ServiceStatus.INACTIVE); // Set status to false instead of deleting
         accommodationRepository.save(accommodation);
@@ -398,6 +404,21 @@ public class AccommodationServiceImpl implements AccommodationService {
         return APIResponse.<String>builder()
                 .success(true)
                 .message("Accommodation Service Deleted Successfully")
+                .data("")
+                .build();
+    }
+
+    @Override
+    public APIResponse<String> activateService(Long Id) {
+        Accommodation accommodation = accommodationRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Accommodation Service", Id));
+
+        accommodation.setStatus(ServiceStatus.ACTIVE); // Set status to false instead of deleting
+        accommodationRepository.save(accommodation);
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Accommodation Service Activated Successfully")
                 .data("")
                 .build();
     }

@@ -285,6 +285,13 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     public APIResponse<ActivityServiceRequest> removeActivityService(Long Id) {
         ActivityService activity = activityServiceRepository.findById(Id)
                 .orElseThrow(() -> new ResourceNotFoundException("Activity Service", Id));
+
+        //get the number of bookings in future
+        Long futureBookings = bookingService.countFutureBookingsForService(activity.getServiceId(), LocalDateTime.now());
+        if (futureBookings > 0) {
+            throw new BadRequestException("Cannot delete transport service with future bookings");
+        }
+
         activity.setStatus(ServiceStatus.INACTIVE);
         ActivityService activityService = activityServiceRepository.save(activity);
 
@@ -529,7 +536,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
     }
 
     @Override
-    public APIResponse<String> deleteService(Long Id) {
+    public APIResponse<String> deactivateService(Long Id) {
         ActivityService activity = activityServiceRepository.findById(Id)
                 .orElseThrow(() -> new ResourceNotFoundException("Activity Service", Id));
 
@@ -539,6 +546,21 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         return APIResponse.<String>builder()
                 .success(true)
                 .message("Activity Service Deleted Successfully")
+                .data("")
+                .build();
+    }
+
+    @Override
+    public APIResponse<String> activateService(Long Id) {
+        ActivityService activity = activityServiceRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Activity Service", Id));
+
+        activity.setStatus(ServiceStatus.ACTIVE);
+        activityServiceRepository.save(activity);
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Activity Service Activated Successfully")
                 .data("")
                 .build();
     }
