@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TripItemRepository extends JpaRepository<TripItem, Long> {
@@ -39,4 +40,19 @@ public interface TripItemRepository extends JpaRepository<TripItem, Long> {
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime
     );
+
+    Optional<TripItem> findTopByTripAndEndTimeLessThanEqualOrderByEndTimeDesc(
+            Trip trip,
+            LocalDateTime time
+    );
+
+    Optional<TripItem> findTopByTripAndStartTimeGreaterThanEqualOrderByStartTimeAsc(Trip trip, LocalDateTime time);
+
+    // Find the earliest start time for a trip's items
+    @Query("SELECT MIN(ti.startTime) FROM TripItem ti WHERE ti.trip.tripId = :tripId")
+    Optional<LocalDateTime> findEarliestStartTimeByTripId(@Param("tripId") Long tripId);
+
+    // Find the latest end time for a trip's items
+    @Query("SELECT MAX(ti.endTime) FROM TripItem ti WHERE ti.trip.tripId = :tripId")
+    Optional<LocalDateTime> findLatestEndTimeByTripId(@Param("tripId") Long tripId);
 }

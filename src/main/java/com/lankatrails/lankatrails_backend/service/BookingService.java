@@ -14,7 +14,9 @@ public interface BookingService {
     APIResponse<AvailabilityResponse> checkAvailability(AvailabilityDto availabilityDto);
 
     APIResponse<PaymentRequestDto> addNewBooking(Long tripItemId);
-
+  
+    APIResponse<String> cancelItem(Long tripItemId);
+  
     APIResponse<BookingResponseDTO> getBookingsOnTheDay(AvailabilityDto availabilityDto, Long id);
 
     APIResponse<List<BookingItemDto>> getAllBookingForTrip(Long tripId);
