@@ -19,6 +19,8 @@ public interface TripItemRepository extends JpaRepository<TripItem, Long> {
     List<TripItem> findByTripItemTypeAndTrip_TripId(TripItemType tripItemType, Long tripId);
 
     @Query("SELECT ti FROM TripItem ti " +
+            "JOIN FETCH ti.service s " +
+            "LEFT JOIN FETCH s.bookingConfiguration bc " +
             "WHERE ti.trip.tripId = :tripId " +
             "AND ti.startTime <= :endTime " +
             "AND ti.endTime >= :startTime " +

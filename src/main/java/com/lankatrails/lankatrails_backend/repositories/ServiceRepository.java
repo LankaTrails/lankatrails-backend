@@ -1,36 +1,34 @@
 package com.lankatrails.lankatrails_backend.repositories;
 
-import java.util.List;
-import java.util.Optional;
-
+import com.lankatrails.lankatrails_backend.model.Category;
+import com.lankatrails.lankatrails_backend.model.Provider;
+import com.lankatrails.lankatrails_backend.model.Service;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.lankatrails.lankatrails_backend.model.Category;
-import com.lankatrails.lankatrails_backend.model.Provider;
-import com.lankatrails.lankatrails_backend.model.Service;
-
-import jakarta.persistence.LockModeType;
+import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ServiceRepository extends JpaRepository<Service, Long> {
 
-    // 1. Nearby services by distance (unchanged)
     @Query("""
-                SELECT DISTINCT s FROM Service s
+                SELECT s, function('ST_Distance',
+                    l.coordinates,
+                    function('ST_SetSRID', function('ST_MakePoint', :lng, :lat), 4326)
+                ) AS distance
+                FROM Service s
                 JOIN s.locations l
                 WHERE function('ST_DWithin',
                     l.coordinates,
                     function('ST_SetSRID', function('ST_MakePoint', :lng, :lat), 4326),
                     :radiusMeters
                 ) = true
-                ORDER BY function('ST_Distance',
-                    l.coordinates,
-                    function('ST_SetSRID', function('ST_MakePoint', :lng, :lat), 4326)
-                )
+                ORDER BY distance
             """)
     List<Service> findNearbyServices(
             @Param("lat") double lat,
@@ -139,6 +137,7 @@ public interface ServiceRepository extends JpaRepository<Service, Long> {
 
 
     List<Service> findByProviderAndCategory(Provider provider, Category category);
+
     List<Service> findByCategoryAndProvider(Category category, Provider provider);
 
     // Pessimistic locking to prevent race conditions during booking

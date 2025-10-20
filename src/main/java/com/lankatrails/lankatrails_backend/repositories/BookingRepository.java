@@ -124,4 +124,36 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Long countBookingsInFuture(@Param("serviceId") Long serviceId,
                                @Param("start") LocalDateTime start,
                                @Param("status") BookingStatus status);
+
+    // Query to find already booked units for MULTI_DAY services with proper overlap logic
+    // For multi-day services, we only consider it a conflict if the bookings have the exact same period
+    // or if they truly compete for the same resource (e.g., same room for same dates)
+    @Query("SELECT COALESCE(SUM(ti.noOfUnits), 0) " +
+            "FROM Booking b " +
+            "JOIN b.tripItem ti " +
+            "JOIN ti.service s " +
+            "JOIN s.bookingConfiguration bc " +
+            "WHERE ti.service.serviceId = :serviceId " +
+            "AND b.bookingStatus = :status " +
+            "AND bc.bookingType = 'MULTI_DAY' " +
+            "AND (b.startDateTime = :start AND b.endDateTime = :end)")
+    Integer findBookedUnitsForMultiDayExactMatch(@Param("serviceId") Long serviceId,
+                                                 @Param("start") LocalDateTime start,
+                                                 @Param("end") LocalDateTime end,
+                                                 @Param("status") BookingStatus status);
+
+    // Query to find already booked units for non-MULTI_DAY services using standard overlap logic
+    @Query("SELECT COALESCE(SUM(ti.noOfUnits), 0) " +
+            "FROM Booking b " +
+            "JOIN b.tripItem ti " +
+            "JOIN ti.service s " +
+            "JOIN s.bookingConfiguration bc " +
+            "WHERE ti.service.serviceId = :serviceId " +
+            "AND b.bookingStatus = :status " +
+            "AND bc.bookingType != 'MULTI_DAY' " +
+            "AND (b.startDateTime < :end AND b.endDateTime > :start)")
+    Integer findBookedUnitsForNonMultiDay(@Param("serviceId") Long serviceId,
+                                          @Param("start") LocalDateTime start,
+                                          @Param("end") LocalDateTime end,
+                                          @Param("status") BookingStatus status);
 }
