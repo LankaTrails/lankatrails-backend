@@ -8,8 +8,12 @@ import com.lankatrails.lankatrails_backend.dtos.response.ComplaintInfoResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ComplaintViewResponse;
 import com.lankatrails.lankatrails_backend.model.User;
 
+import java.util.List;
+
 public interface ComplaintService {
     APIResponse<String> addNewComplaint(ComplaintDTO complaintDTO);
+    APIResponse<String> addNewGeneralComplaint(ComplaintDTO complaintDTO);
+    APIResponse<List<ComplaintViewDTO>> getMyComplaints();
     APIResponse<ComplaintInfoResponse> getAllComplaints();
     APIResponse<ComplaintViewDTO> viewOneComplaint(Long id);
     APIResponse<String> handleComplaint(ComplaintHandleRequestDTO complaintHandleRequestDTO);
