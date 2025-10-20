@@ -576,12 +576,13 @@ public class AuthServiceImpl implements AuthService {
         ProviderViewInfoDTO providerViewInfoDTO = new ProviderViewInfoDTO();
         providerViewInfoDTO.setProviderId(provider.getUserId());
         providerViewInfoDTO.setEmail(provider.getEmail());
+        providerViewInfoDTO.setEmailVerified(provider.getEmailVerified());
         providerViewInfoDTO.setProfilePicUrl(provider.getProfilePictureUrl());
         providerViewInfoDTO.setStatus(provider.getStatus());
         providerViewInfoDTO.setBusinessDescription(provider.getBusinessDescription());
         providerViewInfoDTO.setBusinessName(provider.getBusinessName());
         providerViewInfoDTO.setBusinessRegistrationNumber(provider.getBusinessRegistrationNumber());
-        providerViewInfoDTO.setBusinessRegistrationUrl(providerViewInfoDTO.getBusinessRegistrationUrl());
+        providerViewInfoDTO.setBusinessRegistrationUrl(provider.getBusinessRegistrationUrl());
         providerViewInfoDTO.setBusinessType(provider.getBusinessType());
         providerViewInfoDTO.setCoverImgUrl(provider.getCoverImageUrl());
 
@@ -614,7 +615,8 @@ public class AuthServiceImpl implements AuthService {
                 prepareResponse.setActivity(activity);
             }
 
-        } else if (provider.getAccommodationApprovalStatus() == ApprovalStatus.PENDING) {
+        }
+        if (provider.getAccommodationApprovalStatus() == ApprovalStatus.PENDING) {
             //load all the unapproved license details of the accommodation
             List<License> licenses = licenseRepository.findByProvider_UserIdAndCategory_CategoryId(providerId, 1);
             if (!licenses.isEmpty()) {
@@ -636,7 +638,8 @@ public class AuthServiceImpl implements AuthService {
                 prepareResponse.setAccommodation(accommodation);
             }
 
-        } else if (provider.getFoodApprovalStatus() == ApprovalStatus.PENDING) {
+        }
+        if (provider.getFoodApprovalStatus() == ApprovalStatus.PENDING) {
             //load all the unapproved license details of the food and beverage services
             List<License> licenses = licenseRepository.findByProvider_UserIdAndCategory_CategoryId(providerId, 5);
             if (!licenses.isEmpty()) {
@@ -657,7 +660,8 @@ public class AuthServiceImpl implements AuthService {
                 //set to the response
                 prepareResponse.setFoodBeverage(foodBeverage);
             }
-        } else if (provider.getTransportApprovalStatus() == ApprovalStatus.PENDING) {
+        }
+        if (provider.getTransportApprovalStatus() == ApprovalStatus.PENDING) {
             //load all the unapproved license details of the transportation
             List<License> licenses = licenseRepository.findByProvider_UserIdAndCategory_CategoryId(providerId, 4);
             if (!licenses.isEmpty()) {
@@ -679,7 +683,8 @@ public class AuthServiceImpl implements AuthService {
                 prepareResponse.setTransport(transport);
             }
 
-        } else if (provider.getTourGuideApprovalStatus() == ApprovalStatus.PENDING) {
+        }
+        if (provider.getTourGuideApprovalStatus() == ApprovalStatus.PENDING) {
             //load all the unapproved license details of the tourist guide
             List<License> licenses = licenseRepository.findByProvider_UserIdAndCategory_CategoryId(providerId, 3);
             if (!licenses.isEmpty()) {
@@ -707,11 +712,15 @@ public class AuthServiceImpl implements AuthService {
         providerViewInfoDTO.setPendingLicenses(licenseResponse);
 
         //contact person
-        providerViewInfoDTO.getContactPerson().setName(provider.getContactPerson().getName());
-        providerViewInfoDTO.getContactPerson().setEmail(provider.getContactPerson().getEmail());
-        providerViewInfoDTO.getContactPerson().setPosition(provider.getContactPerson().getPosition());
-        providerViewInfoDTO.getContactPerson().setIdentityDocumentUrl(provider.getContactPerson().getIdentityDocumentUrl());
-        providerViewInfoDTO.getContactPerson().setPhoneNumber(provider.getContactPerson().getPhoneNumber());
+        if (provider.getContactPerson() != null) {
+            ContactPersonDTO contactPersonDTO = new ContactPersonDTO();
+            contactPersonDTO.setName(provider.getContactPerson().getName());
+            contactPersonDTO.setEmail(provider.getContactPerson().getEmail());
+            contactPersonDTO.setPosition(provider.getContactPerson().getPosition());
+            contactPersonDTO.setIdentityDocumentUrl(provider.getContactPerson().getIdentityDocumentUrl());
+            contactPersonDTO.setPhoneNumber(provider.getContactPerson().getPhoneNumber());
+            providerViewInfoDTO.setContactPerson(contactPersonDTO);
+        }
 
 
         //set the provider view response

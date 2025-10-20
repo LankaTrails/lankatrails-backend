@@ -15,6 +15,7 @@ import lombok.Setter;
 public class ProviderViewInfoDTO {
     private Long providerId;
     private String email;
+    private Boolean emailVerified;
     private String profilePicUrl;
     private UserStatus status;
     private String businessDescription;
