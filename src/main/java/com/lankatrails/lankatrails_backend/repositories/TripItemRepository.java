@@ -1,6 +1,5 @@
 package com.lankatrails.lankatrails_backend.repositories;
 
-import com.lankatrails.lankatrails_backend.model.Trip;
 import com.lankatrails.lankatrails_backend.model.TripItem;
 import com.lankatrails.lankatrails_backend.model.enums.TripItemType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,6 +17,8 @@ public interface TripItemRepository extends JpaRepository<TripItem, Long> {
     List<TripItem> findByTripItemTypeAndTrip_TripId(TripItemType tripItemType, Long tripId);
 
     @Query("SELECT ti FROM TripItem ti " +
+            "JOIN FETCH ti.service s " +
+            "LEFT JOIN FETCH s.bookingConfiguration bc " +
             "WHERE ti.trip.tripId = :tripId " +
             "AND ti.startTime <= :endTime " +
             "AND ti.endTime >= :startTime " +

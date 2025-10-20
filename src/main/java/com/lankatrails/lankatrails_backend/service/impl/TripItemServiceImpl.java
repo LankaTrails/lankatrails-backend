@@ -1,11 +1,5 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
-
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
@@ -22,9 +16,14 @@ import com.lankatrails.lankatrails_backend.repositories.TripItemRepository;
 import com.lankatrails.lankatrails_backend.repositories.TripRepository;
 import com.lankatrails.lankatrails_backend.service.BookingService;
 import com.lankatrails.lankatrails_backend.service.TripItemService;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @org.springframework.stereotype.Service
@@ -100,8 +99,8 @@ public class TripItemServiceImpl implements TripItemService {
                 if (requestedUnits <= 0) {
                     return createErrorResponse("Number of units must be at least 1");
                 }
-                
-                AvailabilityDto availabilityDto =  AvailabilityDto.builder()
+
+                AvailabilityDto availabilityDto = AvailabilityDto.builder()
                         .startDateTime(tripItemDTO.getStartTime())
                         .endDateTime(tripItemDTO.getEndTime())
                         .adultCount(tripItemDTO.getNumberOfAdults())
@@ -116,7 +115,7 @@ public class TripItemServiceImpl implements TripItemService {
                 if (!availabilityResponse.isSuccess() || !availabilityResponse.getData().isAvailable()) {
                     return createErrorResponse(availabilityResponse.getMessage());
                 }
-                
+
                 // Set the service and number of units on the trip item
                 tripItem.setService(service);
                 tripItem.setNoOfUnits(requestedUnits);
@@ -139,13 +138,50 @@ public class TripItemServiceImpl implements TripItemService {
             throw new IllegalParamsException("Start date-time must be before end date-time");
         }
 
-        boolean hasOverlap = tripItemRepository.existsOverlappingTripItemsForTripId(
+        // Get all existing trip items that might overlap
+        List<TripItem> overlappingItems = tripItemRepository.findOverlappingTripItemsForTripId(
                 tripId, startDateTime, endDateTime);
 
-        String message = hasOverlap ? "Overlapping trip items found" : "No overlapping trip items";
+        if (overlappingItems.isEmpty()) {
+            log.info("No overlapping trip items found");
+            return false;
+        }
 
-        log.info(message);
-        return hasOverlap;
+        // Check each overlapping item for type-specific rules
+        for (TripItem existingItem : overlappingItems) {
+            // If existing item is a multi-day accommodation, allow new items to fall within it
+            if (isMultiDayAccommodation(existingItem)) {
+                // Check if the new item falls completely within the accommodation period
+                if (startDateTime.isAfter(existingItem.getStartTime()) &&
+                        endDateTime.isBefore(existingItem.getEndTime())) {
+                    log.info("New trip item falls within multi-day accommodation period - allowing");
+                    continue; // This overlap is allowed
+                }
+                // If new item extends beyond accommodation, it's a conflict
+                log.info("Trip item conflicts with accommodation boundaries");
+                return true;
+            }
+
+            // For non-accommodation items, any overlap is a conflict
+            log.info("Overlapping trip items found with non-accommodation item");
+            return true;
+        }
+
+        log.info("No conflicting trip items found");
+        return false;
+    }
+
+    /**
+     * Checks if a trip item is a multi-day accommodation
+     */
+    private boolean isMultiDayAccommodation(TripItem tripItem) {
+        if (tripItem.getService() == null || tripItem.getService().getBookingConfiguration() == null) {
+            return false;
+        }
+
+        // Check if it's a multi-day service (accommodation)
+        return tripItem.getService().getBookingConfiguration().getBookingType() ==
+                com.lankatrails.lankatrails_backend.model.enums.BookingType.MULTI_DAY;
     }
 
     private APIResponse<String> createErrorResponse(String message) {
