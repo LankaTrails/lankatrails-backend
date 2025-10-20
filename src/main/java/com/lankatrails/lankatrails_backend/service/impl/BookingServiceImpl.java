@@ -92,16 +92,16 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public APIResponse<PaymentRequestDto> addNewBooking(Long tripItemId) {
-        TripParticipant tripParticipant = tripParticipantRepository.findByTourist_UserId(authUtils.loggedInUserId())
+        TripItem tripItem = tripItemRepository.findById(tripItemId)
+                .orElseThrow(() -> new ResourceNotFoundException("Trip Item", tripItemId));
+
+        TripParticipant tripParticipant = tripParticipantRepository.findByTrip_TripIdAndTourist_UserId(tripItem.getTrip().getTripId(), authUtils.loggedInUserId())
                 .orElseThrow(() -> new RuntimeException("Trip Participant not found"));
 
         // Validate participant's privilege to book for the trip
         if (!tripPrivilegeUtils.hasPrivilege(tripParticipant.getTripRole(), TripPrivilege.ADD_BOOKINGS)) {
             throw new BadRequestException("Insufficient privileges to add bookings to this trip");
         }
-
-        TripItem tripItem = tripItemRepository.findById(tripItemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Trip Item", tripItemId));
 
         // Use pessimistic locking to prevent race conditions during booking
         Service serviceWithLock = serviceRepository.findByIdWithLock(tripItem.getService().getServiceId())
@@ -288,7 +288,7 @@ public class BookingServiceImpl implements BookingService {
             
             // Find the trip participant for the current user
             TripParticipant tripParticipant = tripParticipantRepository
-                    .findByTourist_UserId(currentUserId)
+                    .findByTrip_TripIdAndTourist_UserId(tripItem.getTrip().getTripId(), currentUserId)
                     .orElseThrow(() -> new BadRequestException("You are not a participant of any trip"));
 
             // Verify that the trip participant belongs to the same trip as the trip item

@@ -36,7 +36,7 @@ public class ProviderOnboardingController {
         try {
             Map<String, Object> params = new HashMap<>();
             params.put("type", "express");
-            params.put("country", "US"); // Sri Lanka
+            params.put("country", "US");
             params.put("email", provider.getEmail());
             params.put("capabilities", Map.of(
                     "transfers", Map.of("requested", true),
@@ -45,15 +45,13 @@ public class ProviderOnboardingController {
 
             Account account = Account.create(params);
 
-            // Save Stripe account ID to provider
             provider.setStripeAccountId(account.getId());
             providerRepository.save(provider);
 
-            // Create account link for onboarding
             Map<String, Object> accountLinkParams = new HashMap<>();
             accountLinkParams.put("account", account.getId());
-            accountLinkParams.put("refresh_url", "https://yourapp.com/onboarding/refresh");
-            accountLinkParams.put("return_url", "https://yourapp.com/onboarding/success");
+            accountLinkParams.put("refresh_url", "https://lankatrails.lk/onboarding/refresh");
+            accountLinkParams.put("return_url", "https://lankatrails.lk/onboarding/success");
             accountLinkParams.put("type", "account_onboarding");
 
             AccountLink accountLink = AccountLink.create(accountLinkParams);
