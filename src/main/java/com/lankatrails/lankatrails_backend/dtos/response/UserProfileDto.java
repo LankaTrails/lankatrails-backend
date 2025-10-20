@@ -1,11 +1,12 @@
 package com.lankatrails.lankatrails_backend.dtos.response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.lankatrails.lankatrails_backend.dtos.UserPreferencesDTO;
 import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 @Getter
@@ -29,4 +30,5 @@ public abstract class UserProfileDto {
     private UserStatus status;
     private String profilePictureUrl;
     private boolean emailVerified;
+    private UserPreferencesDTO userPreferences;
 }

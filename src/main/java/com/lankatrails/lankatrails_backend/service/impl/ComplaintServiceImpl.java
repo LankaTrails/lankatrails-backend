@@ -9,25 +9,39 @@ import com.lankatrails.lankatrails_backend.model.enums.ComplaintResult;
 import com.lankatrails.lankatrails_backend.model.enums.ComplaintStatus;
 import com.lankatrails.lankatrails_backend.model.enums.ComplaintType;
 import com.lankatrails.lankatrails_backend.repositories.*;
+import com.lankatrails.lankatrails_backend.security.jwt.JwtUtils;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ComplaintService;
+import com.lankatrails.lankatrails_backend.service.utils.EmailService;
+import io.vavr.API;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @org.springframework.stereotype.Service
 public class ComplaintServiceImpl implements ComplaintService {
+    private static final Logger log = LoggerFactory.getLogger(ComplaintServiceImpl.class);
+    @Autowired
+    private EmailService emailService;
+
     @Autowired
     ComplaintRepository complaintRepository;
+
+    @Autowired
+    ProviderRepository providerRepository;
 
     @Autowired
     ServiceRepository serviceRepository;
 
     @Autowired
     TouristRepository touristRepository;
+
+    @Autowired
+    UserRepository userRepository;
 
     @Autowired
     ComplaintImgRepository complaintImgRepository;
@@ -84,7 +98,7 @@ public class ComplaintServiceImpl implements ComplaintService {
     @Override
     @Transactional
     public APIResponse<ComplaintInfoResponse> getAllComplaints() {
-        List<Complaint> complaints = complaintRepository.findByComplaintStatusOrComplaintStatus(ComplaintStatus.PENDING,ComplaintStatus.IN_PROGRESS);
+        List<Complaint> complaints = complaintRepository.findByComplaintStatusOrComplaintStatusOrComplaintStatus(ComplaintStatus.PENDING,ComplaintStatus.IN_PROGRESS,ComplaintStatus.RESOLVED);
         if (!complaints.isEmpty()){
             List<ComplaintInfoDTO> responseList = new ArrayList<>();
             for (Complaint complaint : complaints){
@@ -138,14 +152,13 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .orElseThrow(()-> new ResourceNotFoundException("Booking",complaint.getBooking().getBookingId()));
 
         List<Complaint> noOfComplaints = complaintRepository.findByService_ServiceId(service.getServiceId());
+        List<ComplaintImage> complaintImages = complaintImgRepository.findByComplaint_ComplaintId(id);
+
 
         ComplaintViewDTO complaintViewDTO = new ComplaintViewDTO();
 
         CategoryRequestDTO categoryRequestDTO = new CategoryRequestDTO();
         categoryRequestDTO.setCategoryName(service.getCategory().getCategoryName());
-
-//        BookingRequestDTO bookingRequestDTO = new BookingRequestDTO();
-
 
         complaintViewDTO.setTouristEmail(tourist.getEmail());
         complaintViewDTO.setDescription(complaint.getDescription());
@@ -157,7 +170,17 @@ public class ComplaintServiceImpl implements ComplaintService {
         complaintViewDTO.setComplaintId(complaint.getComplaintId());
         complaintViewDTO.setComplaintDateTime(complaint.getDateTime());
         complaintViewDTO.setBookingId(complaint.getBooking().getBookingId());
+        complaintViewDTO.setInvestigationStartedDate(complaint.getInvestigationStartedDate());
+        complaintViewDTO.setComplaintResult(complaint.getComplaintResult());
+        complaintViewDTO.setRefundReason(complaint.getRefundReason());
+        complaintViewDTO.setPaidAmount(booking.getPaidAmount().toString());
+        complaintViewDTO.setComplaintStatus(complaint.getComplaintStatus());
 //        complaintViewDTO.setBookings(bookings);
+        List<String> complaintImgList =  new ArrayList<>();
+        for(ComplaintImage complaintImage: complaintImages){
+            complaintImgList.add(complaintImage.getImageUrl());
+        }
+        complaintViewDTO.setComplaintImgs(complaintImgList);
 
         return APIResponse.<ComplaintViewDTO>builder()
                 .success(true)
@@ -237,6 +260,7 @@ public class ComplaintServiceImpl implements ComplaintService {
 
 
 //       complaint.setComplaintResult(complaintViewDTO.);
+        complaint.setComplaintResult(complaintViewDTO.getComplaintResult());
        complaintRepository.save(complaint);
         return APIResponse.<String>builder()
                 .success(true)
@@ -244,4 +268,82 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .data("")
                 .build();
     }
+
+    @Override
+    public APIResponse<String> updateRefundStatus(Long id,ComplaintViewDTO complaintViewDTO) {
+        Complaint complaint = complaintRepository.findById(id)
+                .orElseThrow(()-> new ResourceNotFoundException("Complaint",id));
+//        log.info("RefundResult"+complaintViewDTO.getRefundReason());
+        complaint.setComplaintResult(complaint.getComplaintResult());
+        complaint.setRefundStatus(complaintViewDTO.getRefundStatus());
+        complaint.setRefundReason(complaintViewDTO.getRefundReason());
+        complaint.setComplaintStatus(ComplaintStatus.RESOLVED);
+        complaintRepository.save(complaint);
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Successfully updated the Refund"+complaintViewDTO.getRefundStatus())
+                .data("")
+                .build();
+    }
+    public APIResponse<String> sendProviderFeedbackEmail(Long id,ComplaintViewDTO complaintViewDTO) {
+        Complaint complaint = complaintRepository.findById(id)
+                .orElseThrow(()-> new ResourceNotFoundException("Complaint",id));
+        Long userId = complaint.getTourist().getUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(()->new ResourceNotFoundException("User",userId));
+        Provider provider = providerRepository.findByUserId(userId)
+                .orElseThrow(()->new ResourceNotFoundException("Provider",userId));
+        complaint.setAdminToProvider(complaintViewDTO.getAdminToProvider());
+        complaint.setComplaintStatus(ComplaintStatus.RESOLVED);
+        complaintRepository.save(complaint);
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("name", provider.getBusinessName());
+        params.put("adminFeedback", complaintViewDTO.getAdminToProvider()); // Change to match template
+        params.put("emailContent", "You have received a complaint, please make sure below mentioned points are taken into consideration and taking measures to not to happen them again");
+
+        emailService.sendEmail(
+                user.getEmail(),
+                "Complaint Feedback",
+                "emails/provider-feedback", // template path relative to templates dir
+                params
+        );
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Email Sent Successfully")
+                .data("")
+                .build();
+    }
+    public APIResponse<String> sendTouristFeedbackEmail(Long id,ComplaintViewDTO complaintViewDTO) {
+        Complaint complaint = complaintRepository.findById(id)
+                .orElseThrow(()-> new ResourceNotFoundException("Complaint",id));
+        Long userId = complaint.getTourist().getUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(()->new ResourceNotFoundException("User",userId));
+        Tourist tourist= touristRepository.findByUserId(userId)
+                .orElseThrow(()->new ResourceNotFoundException("Provider",userId));
+        complaint.setAdminToTourist(complaintViewDTO.getAdminToTourist());
+        complaint.setComplaintStatus(ComplaintStatus.RESOLVED);
+        complaintRepository.save(complaint);
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("name", tourist.getFirstName());
+        params.put("adminFeedback", complaintViewDTO.getAdminToTourist()); // Change to match template
+//        params.put("emailContent", "You have received a complaint, please make sure below mentioned points are taken into consideration and taking measures to not to happen them again");
+
+        emailService.sendEmail(
+                user.getEmail(),
+                "Complaint Feedback",
+                "emails/tourist-feedback", // template path relative to templates dir
+                params
+        );
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Email Sent Successfully")
+                .data("")
+                .build();
+    }
+
+
 }

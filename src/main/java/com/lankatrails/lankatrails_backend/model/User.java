@@ -1,20 +1,19 @@
 package com.lankatrails.lankatrails_backend.model;
 
-import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 
 @Entity
@@ -64,6 +63,9 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private LocalDateTime updatedAt;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
+    private UserPreferences preferences;
 
     public Boolean getEmailVerified() {
         return emailVerified;

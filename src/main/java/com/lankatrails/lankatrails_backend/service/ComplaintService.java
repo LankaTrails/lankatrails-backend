@@ -6,6 +6,7 @@ import com.lankatrails.lankatrails_backend.dtos.request.ComplaintViewDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ComplaintInfoResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ComplaintViewResponse;
+import com.lankatrails.lankatrails_backend.model.User;
 
 public interface ComplaintService {
     APIResponse<String> addNewComplaint(ComplaintDTO complaintDTO);
@@ -14,4 +15,8 @@ public interface ComplaintService {
     APIResponse<String> handleComplaint(ComplaintHandleRequestDTO complaintHandleRequestDTO);
     APIResponse<String> updateProgress(Long id,ComplaintViewDTO complaintViewDTO);
     APIResponse<String> updateComplaintResult(Long id, ComplaintViewDTO complaintViewDTO);
+    APIResponse<String> updateRefundStatus(Long id,ComplaintViewDTO complaintViewDTO);
+    APIResponse<String> sendProviderFeedbackEmail(Long id,ComplaintViewDTO complaintViewDTO);
+    APIResponse<String> sendTouristFeedbackEmail(Long id,ComplaintViewDTO complaintViewDTO);
+
 }

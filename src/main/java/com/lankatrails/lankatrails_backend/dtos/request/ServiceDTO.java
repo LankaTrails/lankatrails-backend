@@ -2,10 +2,6 @@ package com.lankatrails.lankatrails_backend.dtos.request;
 
 import com.lankatrails.lankatrails_backend.dtos.PriceDTO;
 import com.lankatrails.lankatrails_backend.dtos.ProviderDto;
-import com.lankatrails.lankatrails_backend.dtos.response.ProviderProfileDto;
-import com.lankatrails.lankatrails_backend.model.Image;
-import com.lankatrails.lankatrails_backend.model.Location;
-import com.lankatrails.lankatrails_backend.model.enums.PriceType;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import lombok.*;
 
@@ -25,8 +21,8 @@ public class ServiceDTO {
     private List<PriceDTO> prices;
     private String mainImageUrl;
     private ProviderDto provider;
-
-//    private List<AvailabilitySlotDTO> availabilitySlots;
+    private Double averageRating;
+    private Long totalBookingsForPastMonth;
 
 }
 

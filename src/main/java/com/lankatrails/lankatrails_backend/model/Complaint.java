@@ -2,10 +2,12 @@ package com.lankatrails.lankatrails_backend.model;
 
 import com.lankatrails.lankatrails_backend.model.enums.ComplaintResult;
 import com.lankatrails.lankatrails_backend.model.enums.ComplaintStatus;
+import com.lankatrails.lankatrails_backend.model.enums.RefundStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.w3c.dom.Text;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,6 +25,9 @@ public class Complaint {
     private String description;
 
     @Enumerated(EnumType.STRING)
+    private RefundStatus refundStatus;
+
+    @Enumerated(EnumType.STRING)
     private ComplaintStatus complaintStatus;
 
     @Enumerated(EnumType.STRING)
@@ -31,6 +36,12 @@ public class Complaint {
     private LocalDateTime dateTime;
 
     private String investigationStartedDate;
+
+    private String refundReason;
+
+    private String adminToTourist;
+
+    private String adminToProvider;
 
     @ManyToOne
     @JoinColumn(name = "booking_id")
