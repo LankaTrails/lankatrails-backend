@@ -37,6 +37,29 @@ public class TripController {
                 .body(response);
     }
 
+    @PutMapping("/edit/{tripId}")
+    public ResponseEntity<APIResponse<TripResponseDTO>> editTrip(@PathVariable Long tripId, @Valid @RequestBody TripRequestDTO tripRequest) {
+        log.info("Received request to edit trip with ID: {}", tripId);
+        APIResponse<TripResponseDTO> response = tripService.editTrip(tripId, tripRequest);
+        log.info("Trip edited successfully: {}", response.getData());
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
+    }
+
+    @DeleteMapping("/delete/{tripId}")
+    public ResponseEntity<APIResponse<String>> deleteTrip(@PathVariable Long tripId) {
+        log.info("Received request to delete trip with ID: {}", tripId);
+        APIResponse<String> response = tripService.deleteTrip(tripId);
+        if (response.isSuccess()) {
+            log.info("Trip deleted successfully: {}", response.getMessage());
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        } else {
+            log.error("Failed to delete trip: {}", response.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+
     @GetMapping("/my-trips")
     public ResponseEntity<APIResponse<List<TripResponseDTO>>> getAllMyTrips() {
         log.info("Fetching all trips for the authenticated user");
