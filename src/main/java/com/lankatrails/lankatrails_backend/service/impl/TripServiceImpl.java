@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.ChatRoomDto;
+import com.lankatrails.lankatrails_backend.dtos.TripParticipantDto;
 import com.lankatrails.lankatrails_backend.dtos.TripPeriodDto;
 import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
@@ -15,9 +16,7 @@ import com.lankatrails.lankatrails_backend.model.enums.BudgetCategory;
 import com.lankatrails.lankatrails_backend.model.enums.TripPrivilege;
 import com.lankatrails.lankatrails_backend.model.enums.TripRole;
 import com.lankatrails.lankatrails_backend.model.enums.TripStatus;
-import com.lankatrails.lankatrails_backend.repositories.LocationRepository;
-import com.lankatrails.lankatrails_backend.repositories.TouristRepository;
-import com.lankatrails.lankatrails_backend.repositories.TripRepository;
+import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ChatRoomService;
 import com.lankatrails.lankatrails_backend.service.TripService;
@@ -35,6 +34,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
@@ -58,6 +58,9 @@ public class TripServiceImpl implements TripService {
 
     @Autowired
     private LocationRepository locationRepository;
+
+    @Autowired
+    private TripItemRepository tripItemRepository;
 
     @Autowired
     private TripPrivilegeUtils tripPrivilegeUtils;
@@ -92,6 +95,11 @@ public class TripServiceImpl implements TripService {
             throw new IllegalArgumentException("Number of adults must be positive");
         }
 
+        // Validate budget limit
+        if (tripRequestDTO.getTotalBudgetLimit() != null && tripRequestDTO.getTotalBudgetLimit().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Budget limit cannot be negative");
+        }
+
         // Convert DTO to entity
         Trip trip = modelMapper.map(tripRequestDTO, Trip.class);
 
@@ -103,7 +111,7 @@ public class TripServiceImpl implements TripService {
         trip.setLocations(new ArrayList<>());
         trip.setTripItems(new ArrayList<>());
         trip.setTripExpenses(new ArrayList<>());
-        trip.setTripBudgetCategoryLimits(initializeCategoryLimits(tripRequestDTO, trip));
+        trip.setTripBudgetCategories(new HashSet<>());
 
         // Set lead tourist as admin participant
         TripParticipant leadParticipant = TripParticipant.builder()
@@ -141,6 +149,122 @@ public class TripServiceImpl implements TripService {
         return new APIResponse<>(true, "Trip created successfully", responseDTO);
     }
 
+    @Override
+    @Transactional
+    public APIResponse<TripResponseDTO> editTrip(Long tripId, TripRequestDTO tripRequestDTO) {
+        log.info("Editing trip with ID: {} and request: {}", tripId, tripRequestDTO);
+        
+        // Get the current user
+        User currentUser = touristRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + authUtils.loggedInUserId()));
+        if (!(currentUser instanceof Tourist tourist)) {
+            throw new IllegalStateException("Only tourists can edit trips");
+        }
+
+        // Find the existing trip
+        Trip existingTrip = tripRepository.findByTripId(tripId)
+                .orElseThrow(() -> new ResourceNotFoundException("Trip", tripId));
+
+        // Check if the user has permission to edit this trip (must be a participant with admin or editor role)
+        TripParticipant userParticipant = existingTrip.getParticipants().stream()
+                .filter(participant -> participant.getTourist().getUserId().equals(authUtils.loggedInUserId()))
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException("You are not a participant of this trip"));
+
+        // Check if user has edit privileges
+        if (!tripPrivilegeUtils.hasPrivilege(userParticipant.getTripRole(), TripPrivilege.EDIT_TRIP_DETAILS)) {
+            throw new BadRequestException("You don't have permission to edit this trip");
+        }
+
+        // Validate dates
+        if (tripRequestDTO.getStartDate().isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("Start date must be today or in the future");
+        }
+        if (tripRequestDTO.getEndDate().isBefore(tripRequestDTO.getStartDate())) {
+            throw new IllegalArgumentException("End date must be after start date");
+        }
+
+        // Validate positive values
+        if (tripRequestDTO.getNumberOfAdults() != null && tripRequestDTO.getNumberOfAdults() <= 0) {
+            throw new IllegalArgumentException("Number of adults must be positive");
+        }
+        if (tripRequestDTO.getNumberOfChildren() != null && tripRequestDTO.getNumberOfChildren() < 0) {
+            throw new IllegalArgumentException("Number of children cannot be negative");
+        }
+
+        // Check for overlapping trips (excluding the current trip)
+        List<Trip> overlappingTrips = tripRepository.findOverlappingTripsForTourist(tourist, tripRequestDTO.getStartDate(), tripRequestDTO.getEndDate());
+        overlappingTrips.removeIf(trip -> trip.getTripId().equals(tripId)); // Exclude current trip
+        if (!overlappingTrips.isEmpty()) {
+            throw new BadRequestException("You already have another trip scheduled during this period");
+        }
+
+        // Validate trip dates against existing trip items
+        validateTripDatesAgainstTripItems(tripId, tripRequestDTO.getStartDate(), tripRequestDTO.getEndDate());
+
+        // Update trip fields
+        existingTrip.setTripName(tripRequestDTO.getTripName());
+        existingTrip.setStartDate(tripRequestDTO.getStartDate());
+        existingTrip.setEndDate(tripRequestDTO.getEndDate());
+        existingTrip.setNumberOfAdults(tripRequestDTO.getNumberOfAdults() != null ? tripRequestDTO.getNumberOfAdults() : existingTrip.getNumberOfAdults());
+        existingTrip.setNumberOfChildren(tripRequestDTO.getNumberOfChildren() != null ? tripRequestDTO.getNumberOfChildren() : existingTrip.getNumberOfChildren());
+        
+        // Update budget limits if provided
+        if (tripRequestDTO.getTotalBudgetLimit() != null) {
+            // Validate that budget limit is not negative
+            if (tripRequestDTO.getTotalBudgetLimit().compareTo(BigDecimal.ZERO) < 0) {
+                throw new IllegalArgumentException("Budget limit cannot be negative");
+            }
+            
+            // Validate that the new budget limit is not below the current total budget (amount spent)
+            if (tripRequestDTO.getTotalBudgetLimit().compareTo(existingTrip.getTotalBudget()) < 0) {
+                throw new BadRequestException(
+                    "Budget limit cannot be set below the current total budget (Rs. " + 
+                    existingTrip.getTotalBudget() + "). You have already spent more than the proposed limit."
+                );
+            }
+            existingTrip.setTotalBudgetLimit(tripRequestDTO.getTotalBudgetLimit());
+        }
+        
+        // Update trip status if provided
+        if (tripRequestDTO.getTripStatus() != null) {
+            existingTrip.setTripStatus(tripRequestDTO.getTripStatus());
+        }
+
+        // Update locations if provided
+        if (tripRequestDTO.getLocations() != null && !tripRequestDTO.getLocations().isEmpty()) {
+            List<Location> updatedLocations = setLocationsForTrip(tripRequestDTO.getLocations(), tripRequestDTO.getStartLocation());
+            existingTrip.setLocations(updatedLocations);
+            if (tripRequestDTO.getStartLocation() != null) {
+                existingTrip.setStartLocation(updatedLocations.getFirst());
+            }
+        }
+
+        // Update budget category limits if provided
+        if (tripRequestDTO.getAccommodationLimit() != null || 
+            tripRequestDTO.getFoodLimit() != null || 
+            tripRequestDTO.getTransportLimit() != null || 
+            tripRequestDTO.getActivityLimit() != null || 
+            tripRequestDTO.getMiscellaneousLimit() != null || 
+            tripRequestDTO.getShoppingLimit() != null) {
+            
+            // Clear existing budget categories
+            existingTrip.getTripBudgetCategories().clear();
+            
+            // Set new budget categories
+            Set<TripBudgetCategory> updatedCategories = initializeCategoryLimits(tripRequestDTO, existingTrip);
+            existingTrip.setTripBudgetCategories(updatedCategories);
+        }
+
+        // Save the updated trip
+        Trip updatedTrip = tripRepository.save(existingTrip);
+
+        // Convert to response DTO
+        TripResponseDTO responseDTO = modelMapper.map(updatedTrip, TripResponseDTO.class);
+
+        return new APIResponse<>(true, "Trip updated successfully", responseDTO);
+    }
+
     private List<Location> setLocationsForTrip(List<LocationDTO> locationDtos, LocationDTO startLocation) {
         List<Location> locations = new ArrayList<>();
         // Convert start location DTO to entity and add to locations
@@ -166,6 +290,12 @@ public class TripServiceImpl implements TripService {
         }
 
         List<Trip> trips = tripRepository.findByParticipants_Tourist(tourist);
+        
+        // Filter out cancelled trips
+        trips = trips.stream()
+                .filter(trip -> trip.getTripStatus() != TripStatus.CANCELLED)
+                .toList();
+                
         if (trips.isEmpty()) {
             return new APIResponse<>(false, "No trips found for the user", new ArrayList<>());
         }
@@ -205,6 +335,28 @@ public class TripServiceImpl implements TripService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public APIResponse<List<TripParticipantDto>> getTripParticipants(Long tripId) {
+        log.info("Fetching participants for trip with ID: {}", tripId);
+        Trip trip = tripRepository.findByTripId(tripId)
+                .orElseThrow(() -> new ResourceNotFoundException("Trip", tripId));
+
+        List<TripParticipantDto> participantDTOs = new ArrayList<>();
+        for (TripParticipant participant : trip.getParticipants()) {
+            TripParticipantDto dto = TripParticipantDto.builder()
+                    .participantId(participant.getParticipantId())
+                    .firstName(participant.getTourist().getFirstName())
+                    .lastName(participant.getTourist().getLastName())
+                    // .tripId(trip.getTripId())
+                    .role(participant.getTripRole().name())
+                    .build();
+            participantDTOs.add(dto);
+        }
+
+        return new APIResponse<>(true, "Trip participants fetched successfully", participantDTOs);
+    }
+
+    @Override
     @Transactional
     public APIResponse<TripResponseDTO> removeTouristFromTrip(Long tripId, Long touristId) {
         log.info("Removing tourist with ID: {} from trip with ID: {}", touristId, tripId);
@@ -222,9 +374,6 @@ public class TripServiceImpl implements TripService {
         if (!tripPrivilegeUtils.hasPrivilege(loggedInParticipant.getTripRole(), TripPrivilege.REMOVE_MEMBERS)) {
             throw new BadRequestException("Only admins can remove tourists from the trip");
         }
-
-        Tourist tourist = touristRepository.findById(touristId)
-                .orElseThrow(() -> new UserNotFoundException("Tourist not found with id: " + touristId));
 
         // Check if the tourist is part of the trip
         TripParticipant participantToRemove = trip.getParticipants().stream()
@@ -255,6 +404,12 @@ public class TripServiceImpl implements TripService {
         }
 
         List<Trip> trips = tripRepository.findByParticipants_Tourist(tourist);
+        
+        // Filter out cancelled trips
+        trips = trips.stream()
+                .filter(trip -> trip.getTripStatus() != TripStatus.CANCELLED)
+                .toList();
+                
         if (trips.isEmpty()) {
             return new APIResponse<>(false, "No trips found for the user", null);
         }
@@ -266,34 +421,133 @@ public class TripServiceImpl implements TripService {
         return new APIResponse<>(true, "Trip periods fetched successfully", tripPeriods);
     }
 
-    private Set<TripBudgetCategoryLimit> initializeCategoryLimits(TripRequestDTO tripRequestDTO, Trip trip) {
-        Set<TripBudgetCategoryLimit> categoryLimits = new HashSet<>();
+    private Set<TripBudgetCategory> initializeCategoryLimits(TripRequestDTO tripRequestDTO, Trip trip) {
+        Set<TripBudgetCategory> categoryLimits = new HashSet<>();
 
         if (tripRequestDTO.getAccommodationLimit() != null) {
-            categoryLimits.add(new TripBudgetCategoryLimit(
+            categoryLimits.add(new TripBudgetCategory(
                     BudgetCategory.ACCOMMODATION, tripRequestDTO.getAccommodationLimit(), trip));
         }
         if (tripRequestDTO.getFoodLimit() != null) {
-            categoryLimits.add(new TripBudgetCategoryLimit(
+            categoryLimits.add(new TripBudgetCategory(
                     BudgetCategory.FOOD, tripRequestDTO.getFoodLimit(), trip));
         }
         if (tripRequestDTO.getTransportLimit() != null) {
-            categoryLimits.add(new TripBudgetCategoryLimit(
+            categoryLimits.add(new TripBudgetCategory(
                     BudgetCategory.TRANSPORT, tripRequestDTO.getTransportLimit(), trip));
         }
         if (tripRequestDTO.getActivityLimit() != null) {
-            categoryLimits.add(new TripBudgetCategoryLimit(
+            categoryLimits.add(new TripBudgetCategory(
                     BudgetCategory.ACTIVITY, tripRequestDTO.getActivityLimit(), trip));
         }
         if (tripRequestDTO.getMiscellaneousLimit() != null) {
-            categoryLimits.add(new TripBudgetCategoryLimit(
+            categoryLimits.add(new TripBudgetCategory(
                     BudgetCategory.MISCELLANEOUS, tripRequestDTO.getMiscellaneousLimit(), trip));
         }
         if (tripRequestDTO.getShoppingLimit() != null) {
-            categoryLimits.add(new TripBudgetCategoryLimit(
-                    BudgetCategory.SHOPPING, tripRequestDTO.getTotalBudgetLimit(), trip));
+            categoryLimits.add(new TripBudgetCategory(
+                    BudgetCategory.SHOPPING, tripRequestDTO.getShoppingLimit(), trip));
         }
 
         return categoryLimits;
+    }
+
+    /**
+     * Validates that the new trip start and end dates don't conflict with existing trip items
+     * - Trip start date cannot be after the first trip item start date
+     * - Trip end date cannot be before the last trip item end date
+     */
+    private void validateTripDatesAgainstTripItems(Long tripId, LocalDate newStartDate, LocalDate newEndDate) {
+        // Find the earliest start time among trip items
+        Optional<LocalDateTime> earliestStartTime = tripItemRepository.findEarliestStartTimeByTripId(tripId);
+        if (earliestStartTime.isPresent()) {
+            LocalDate earliestStartDate = earliestStartTime.get().toLocalDate();
+            if (newStartDate.isAfter(earliestStartDate)) {
+                throw new BadRequestException(
+                    "Trip start date cannot be after the first trip item start date (" + earliestStartDate + ")"
+                );
+            }
+        }
+
+        // Find the latest end time among trip items
+        Optional<LocalDateTime> latestEndTime = tripItemRepository.findLatestEndTimeByTripId(tripId);
+        if (latestEndTime.isPresent()) {
+            LocalDate latestEndDate = latestEndTime.get().toLocalDate();
+            if (newEndDate.isBefore(latestEndDate)) {
+                throw new BadRequestException(
+                    "Trip end date cannot be before the last trip item end date (" + latestEndDate + ")"
+                );
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<String> deleteTrip(Long tripId) {
+        log.info("Attempting to delete trip with ID: {}", tripId);
+        
+        try {
+            // Find the trip
+            Trip trip = tripRepository.findById(tripId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Trip", tripId));
+            
+            // Get the current user
+            Long currentUserId = authUtils.loggedInUserId();
+            
+            // Find the trip participant for the current user
+            TripParticipant tripParticipant = trip.getParticipants().stream()
+                    .filter(participant -> participant.getTourist().getUserId().equals(currentUserId))
+                    .findFirst()
+                    .orElseThrow(() -> new BadRequestException("You are not a participant of this trip"));
+            
+            // Check if user is admin
+            if (tripParticipant.getTripRole() != TripRole.ADMIN) {
+                throw new BadRequestException("Only trip administrators can delete trips");
+            }
+            
+            // Check if trip has any confirmed bookings
+            boolean hasConfirmedBookings = trip.getTripItems().stream()
+                    .anyMatch(tripItem -> tripItem.getBooking() != null && 
+                             tripItem.getBooking().getBookingStatus() == com.lankatrails.lankatrails_backend.model.enums.BookingStatus.CONFIRMED);
+            
+            if (hasConfirmedBookings) {
+                throw new BadRequestException("Cannot delete trip with confirmed bookings. Please cancel all confirmed bookings first.");
+            }
+            
+            // Check if trip is already cancelled
+            if (trip.getTripStatus() == TripStatus.CANCELLED) {
+                return APIResponse.<String>builder()
+                        .success(false)
+                        .message("Trip is already cancelled")
+                        .data(null)
+                        .build();
+            }
+            
+            // Set trip status to CANCELLED (soft delete)
+            trip.setTripStatus(TripStatus.CANCELLED);
+            tripRepository.save(trip);
+            
+            log.info("Successfully cancelled trip with ID: {}", tripId);
+            return APIResponse.<String>builder()
+                    .success(true)
+                    .message("Trip cancelled successfully")
+                    .data("Trip with ID " + tripId + " has been cancelled")
+                    .build();
+                    
+        } catch (ResourceNotFoundException | BadRequestException e) {
+            log.error("Error cancelling trip with ID {}: {}", tripId, e.getMessage());
+            return APIResponse.<String>builder()
+                    .success(false)
+                    .message(e.getMessage())
+                    .data(null)
+                    .build();
+        } catch (Exception e) {
+            log.error("Unexpected error cancelling trip with ID {}: {}", tripId, e.getMessage());
+            return APIResponse.<String>builder()
+                    .success(false)
+                    .message("Failed to cancel trip: " + e.getMessage())
+                    .data(null)
+                    .build();
+        }
     }
 }

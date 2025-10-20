@@ -1,48 +1,51 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
+import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
 import com.lankatrails.lankatrails_backend.dtos.BookingItemDto;
 import com.lankatrails.lankatrails_backend.dtos.ProviderDto;
+import com.lankatrails.lankatrails_backend.dtos.request.BookingRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.PaymentRequestDto;
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
-import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.model.*;
-import com.lankatrails.lankatrails_backend.model.enums.TripItemType;
-import com.lankatrails.lankatrails_backend.repositories.*;
-import com.lankatrails.lankatrails_backend.service.PaymentService;
-import com.stripe.model.PaymentIntent;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
-import com.lankatrails.lankatrails_backend.dtos.request.BookingRequestDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.AvailabilityResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.BookingResponseDTO;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
+import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
+import com.lankatrails.lankatrails_backend.model.Booking;
+import com.lankatrails.lankatrails_backend.model.Service;
+import com.lankatrails.lankatrails_backend.model.TripItem;
+import com.lankatrails.lankatrails_backend.model.TripParticipant;
 import com.lankatrails.lankatrails_backend.model.enums.BookingStatus;
+import com.lankatrails.lankatrails_backend.model.enums.TripItemType;
 import com.lankatrails.lankatrails_backend.model.enums.TripPrivilege;
+import com.lankatrails.lankatrails_backend.repositories.BookingRepository;
+import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
+import com.lankatrails.lankatrails_backend.repositories.TripItemRepository;
+import com.lankatrails.lankatrails_backend.repositories.TripParticipantRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.AvailabilityService;
 import com.lankatrails.lankatrails_backend.service.BookingService;
+import com.lankatrails.lankatrails_backend.service.PaymentService;
 import com.lankatrails.lankatrails_backend.service.utils.TripPrivilegeUtils;
-
+import com.stripe.model.PaymentIntent;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @org.springframework.stereotype.Service
 @Slf4j
 public class BookingServiceImpl implements BookingService {
-    
+
     @Autowired
     BookingRepository bookingRepository;
 
@@ -170,10 +173,10 @@ public class BookingServiceImpl implements BookingService {
     //find the bookings a service has on a particular day
     @Override
     @Transactional(readOnly = true)
-    public APIResponse<BookingResponseDTO> getBookingsOnTheDay(AvailabilityDto availabilityDto,Long id){
-        List<Booking> bookings = bookingRepository.findBookingsOnADay(availabilityDto.getStartDateTime().toLocalDate(),id,BookingStatus.CONFIRMED);
+    public APIResponse<BookingResponseDTO> getBookingsOnTheDay(AvailabilityDto availabilityDto, Long id) {
+        List<Booking> bookings = bookingRepository.findBookingsOnADay(availabilityDto.getStartDateTime().toLocalDate(), id, BookingStatus.CONFIRMED);
         List<BookingRequestDTO> prepareResponse = new ArrayList<>();
-        for (Booking booking : bookings){
+        for (Booking booking : bookings) {
             //map each to BookingRequestDTO
             BookingRequestDTO setResponse = new BookingRequestDTO();
             setResponse.setStartDateTime(booking.getStartDateTime());
@@ -187,7 +190,7 @@ public class BookingServiceImpl implements BookingService {
         }
         BookingResponseDTO responseDTO = new BookingResponseDTO();
         responseDTO.setContent(prepareResponse);
-        return  APIResponse.<BookingResponseDTO>builder()
+        return APIResponse.<BookingResponseDTO>builder()
                 .success(true)
                 .message("")
                 .data(responseDTO)
@@ -259,6 +262,133 @@ public class BookingServiceImpl implements BookingService {
                 .message("Bookings retrieved successfully")
                 .data(bookingItemDtos)
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<String> cancelItem(Long tripItemId) {
+        log.info("Canceling booking for trip item with ID: {}", tripItemId);
+
+        try {
+            // Find the trip item
+            TripItem tripItem = tripItemRepository.findById(tripItemId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Trip Item", tripItemId));
+
+            // Get the current user
+            Long currentUserId = authUtils.loggedInUserId();
+
+            // Find the trip participant for the current user
+            TripParticipant tripParticipant = tripParticipantRepository
+                    .findByTourist_UserId(currentUserId)
+                    .orElseThrow(() -> new BadRequestException("You are not a participant of any trip"));
+
+            // Verify that the trip participant belongs to the same trip as the trip item
+            if (!tripParticipant.getTrip().getTripId().equals(tripItem.getTrip().getTripId())) {
+                throw new BadRequestException("You are not a participant of this trip");
+            }
+
+            // Check if user has privilege to cancel bookings
+            if (!tripPrivilegeUtils.hasPrivilege(tripParticipant.getTripRole(), TripPrivilege.CANCEL_BOOKINGS)) {
+                throw new BadRequestException("You don't have permission to cancel bookings for this trip");
+            }
+
+            // If the trip item has a booking, delete it first
+            if (tripItem.getBooking() != null) {
+                Booking booking = tripItem.getBooking();
+
+                // Check if booking is already canceled
+                if (booking.getBookingStatus() == BookingStatus.CANCELLED) {
+                    return APIResponse.<String>builder()
+                            .success(false)
+                            .message("Booking is already canceled")
+                            .data(null)
+                            .build();
+                }
+
+                // Delete the booking first
+                bookingRepository.delete(booking);
+                log.info("Deleted booking for trip item ID: {}", tripItemId);
+            }
+
+            // Delete the trip item from the trip_items table
+            tripItemRepository.delete(tripItem);
+
+            log.info("Successfully removed trip item and its booking with ID: {}", tripItemId);
+            return APIResponse.<String>builder()
+                    .success(true)
+                    .message("Service removed from trip successfully")
+                    .data("Trip item removed for ID: " + tripItemId)
+                    .build();
+
+        } catch (ResourceNotFoundException | BadRequestException e) {
+            log.error("Error canceling booking for trip item ID {}: {}", tripItemId, e.getMessage());
+            return APIResponse.<String>builder()
+                    .success(false)
+                    .message(e.getMessage())
+                    .data(null)
+                    .build();
+        } catch (Exception e) {
+            log.error("Unexpected error canceling booking for trip item ID {}: {}", tripItemId, e.getMessage());
+            return APIResponse.<String>builder()
+                    .success(false)
+                    .message("Failed to cancel booking: " + e.getMessage())
+                    .data(null)
+                    .build();
+        }
+    }
+
+    @Override
+    public APIResponse<List<BookingItemDto>> getBookings(Long serviceId, LocalDateTime from, LocalDateTime to) {
+        List<Booking> bookings = bookingRepository.findBookingsInDateRange(serviceId, from, to, BookingStatus.CONFIRMED);
+        List<BookingItemDto> bookingItemDtos = bookings.stream().map(booking -> {
+            TripItem tripItem = booking.getTripItem();
+            BookingItemDto dto = new BookingItemDto();
+            dto.setTripItemId(tripItem.getTripItemId());
+            dto.setStartTime(tripItem.getStartTime());
+            dto.setEndTime(tripItem.getEndTime());
+            dto.setNoOfUnits(tripItem.getNoOfUnits());
+            dto.setNumberOfAdults(tripItem.getNumberOfAdults());
+            dto.setNumberOfChildren(tripItem.getNumberOfChildren());
+            dto.setService(ServiceDTO.builder()
+                    .serviceId(tripItem.getService().getServiceId())
+                    .serviceName(tripItem.getService().getServiceName())
+                    .Category(tripItem.getService().getCategory().getCategoryName())
+                    .mainImageUrl(tripItem.getService().getImages().isEmpty() ? null : tripItem.getService().getImages().getFirst().getImageUrl())
+                    .locations(tripItem.getService().getLocations().stream()
+                            .map(location -> modelMapper.map(location, LocationDTO.class))
+                            .collect(Collectors.toSet()))
+                    .prices(tripItem.getService().getPriceConfiguration().getPriceWithType())
+                    .provider(modelMapper.map(tripItem.getService().getProvider(), ProviderDto.class))
+                    .build());
+            dto.setStatus(booking.getBookingStatus());
+            dto.setTotalPrice(booking.getTotalPrice());
+            dto.setDepositAmount(booking.getDepositAmount());
+            dto.setPaidAmount(booking.getPaidAmount());
+            dto.setDueAmount(booking.getTotalPrice().subtract(booking.getPaidAmount()));
+            dto.setBookingDate(booking.getBookedDateTime());
+            return dto;
+        }).collect(Collectors.toList());
+
+        return APIResponse.<List<BookingItemDto>>builder()
+                .success(true)
+                .message("Bookings retrieved successfully")
+                .data(bookingItemDtos)
+                .build();
+    }
+
+    @Override
+    public Long countBookingsForServiceInPeriod(Long serviceId, LocalDateTime from, LocalDateTime to) {
+        return bookingRepository.countBookingsInDateRange(serviceId, from, to, BookingStatus.CONFIRMED);
+    }
+
+    @Override
+    public Long countFutureBookingsForService(Long serviceId, LocalDateTime from) {
+        return bookingRepository.countBookingsInFuture(serviceId, from, BookingStatus.CONFIRMED);
+    }
+
+    @Override
+    public Long countPastBookingsForService(Long serviceId, LocalDateTime to) {
+        return bookingRepository.countBookingsInPast(serviceId, to, BookingStatus.CONFIRMED);
     }
 
 }

@@ -1,18 +1,6 @@
 package com.lankatrails.lankatrails_backend.controller;
 
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import com.lankatrails.lankatrails_backend.dtos.TripParticipantDto;
 import com.lankatrails.lankatrails_backend.dtos.TripPeriodDto;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripRequestDTO;
@@ -20,9 +8,14 @@ import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.TripResponseDTO;
 import com.lankatrails.lankatrails_backend.service.TripItemService;
 import com.lankatrails.lankatrails_backend.service.TripService;
-
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -43,6 +36,29 @@ public class TripController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(response);
     }
+
+    @PutMapping("/edit/{tripId}")
+    public ResponseEntity<APIResponse<TripResponseDTO>> editTrip(@PathVariable Long tripId, @Valid @RequestBody TripRequestDTO tripRequest) {
+        log.info("Received request to edit trip with ID: {}", tripId);
+        APIResponse<TripResponseDTO> response = tripService.editTrip(tripId, tripRequest);
+        log.info("Trip edited successfully: {}", response.getData());
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
+    }
+
+    @DeleteMapping("/delete/{tripId}")
+    public ResponseEntity<APIResponse<String>> deleteTrip(@PathVariable Long tripId) {
+        log.info("Received request to delete trip with ID: {}", tripId);
+        APIResponse<String> response = tripService.deleteTrip(tripId);
+        if (response.isSuccess()) {
+            log.info("Trip deleted successfully: {}", response.getMessage());
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        } else {
+            log.error("Failed to delete trip: {}", response.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
 
     @GetMapping("/my-trips")
     public ResponseEntity<APIResponse<List<TripResponseDTO>>> getAllMyTrips() {
@@ -76,7 +92,7 @@ public class TripController {
         log.info("Adding trip item to trip with ID: {}", tripId);
         APIResponse<String> response = tripItemService.addTripItem(tripId, tripItemDTO);
         log.info("Trip item added successfully: {}", response.getData());
-        return ResponseEntity.status(response.isSuccess()? HttpStatus.OK:HttpStatus.BAD_REQUEST).body(response);
+        return ResponseEntity.status(response.isSuccess() ? HttpStatus.OK : HttpStatus.BAD_REQUEST).body(response);
     }
 
     @GetMapping("/{tripId}/items")
@@ -97,4 +113,12 @@ public class TripController {
                 .body(response);
     }
 
+    @GetMapping("/{tripId}/participants")
+    public ResponseEntity<APIResponse<List<TripParticipantDto>>> getTripParticipants(@PathVariable Long tripId) {
+        log.info("Fetching participants for trip with ID: {}", tripId);
+        APIResponse<List<TripParticipantDto>> response = tripService.getTripParticipants(tripId);
+        log.info("Fetched {} participants", response.getData().size());
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
+    }
 }

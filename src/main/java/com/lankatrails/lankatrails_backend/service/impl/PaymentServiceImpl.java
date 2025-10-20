@@ -1,6 +1,5 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import com.lankatrails.lankatrails_backend.dtos.PaymentDto;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.model.Booking;
@@ -109,17 +108,54 @@ public class PaymentServiceImpl implements PaymentService {
 
             payment.setStatus(PaymentStatus.COMPLETED);
 
+            // Retrieve PaymentIntent first
             PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentId);
-            Charge charge = Charge.retrieve(paymentIntent.getLatestCharge());
 
-            payment.setStripeChargeId(charge.getId());
-            payment.setStripeFee(
-                    BigDecimal.valueOf(charge.getBalanceTransactionObject().getFee())
-                            .divide(BigDecimal.valueOf(100))
-            );
-            payment.setStripeTransferId(
-                    paymentIntent.getTransferData() != null ? paymentIntent.getTransferData().getDestination() : null
-            );
+            // Get the latest charge ID from the PaymentIntent
+            String latestChargeId = paymentIntent.getLatestCharge();
+            if (latestChargeId != null) {
+                // Retrieve charge with expanded balance transaction
+                Map<String, Object> chargeParams = Map.of(
+                        "expand", List.of("balance_transaction")
+                );
+                Charge charge = Charge.retrieve(latestChargeId, chargeParams, null);
+
+                payment.setStripeChargeId(charge.getId());
+
+                // Handle Stripe fee safely
+                if (charge.getBalanceTransactionObject() != null) {
+                    payment.setStripeFee(
+                            BigDecimal.valueOf(charge.getBalanceTransactionObject().getFee())
+                                    .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP)
+                    );
+                } else {
+                    // If balance transaction is not available, retrieve it separately
+                    try {
+                        String balanceTransactionId = charge.getBalanceTransaction();
+                        if (balanceTransactionId != null) {
+                            com.stripe.model.BalanceTransaction balanceTransaction =
+                                    com.stripe.model.BalanceTransaction.retrieve(balanceTransactionId);
+                            payment.setStripeFee(
+                                    BigDecimal.valueOf(balanceTransaction.getFee())
+                                            .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP)
+                            );
+                        } else {
+                            log.warn("No balance transaction ID found for charge: {}", charge.getId());
+                            payment.setStripeFee(BigDecimal.ZERO);
+                        }
+                    } catch (StripeException ex) {
+                        log.warn("Could not retrieve balance transaction: {}", ex.getMessage());
+                        payment.setStripeFee(BigDecimal.ZERO); // Set to zero if can't retrieve
+                    }
+                }
+
+                payment.setStripeTransferId(
+                        paymentIntent.getTransferData() != null ? paymentIntent.getTransferData().getDestination() : null
+                );
+            } else {
+                log.warn("No charges found for PaymentIntent: {}", paymentIntentId);
+                payment.setStripeFee(BigDecimal.ZERO);
+            }
 
             paymentRepository.save(payment);
 

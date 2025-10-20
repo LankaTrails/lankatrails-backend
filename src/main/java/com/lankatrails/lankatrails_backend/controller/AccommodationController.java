@@ -5,7 +5,6 @@ import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.AccommodationResponse;
 import com.lankatrails.lankatrails_backend.model.PolicySection;
-import com.lankatrails.lankatrails_backend.model.Provider;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.AccommodationService;
 import com.lankatrails.lankatrails_backend.service.impl.PolicyImpl;
@@ -41,10 +40,10 @@ public class AccommodationController {
                     @RequestPart("service") @Valid AccommodationServiceRequestDTO service,
                     @RequestPart(value = "images", required = false) List<MultipartFile> images,
                     BindingResult result
-            ){
-        if (result.hasErrors()){
-            Map<String,String> errors = new HashMap<>();
-            result.getFieldErrors().forEach(field ->{
+            ) {
+        if (result.hasErrors()) {
+            Map<String, String> errors = new HashMap<>();
+            result.getFieldErrors().forEach(field -> {
                 errors.put(field.getField(), field.getDefaultMessage());
             });
             APIResponse<String> errorResponse = APIResponse.<String>builder()
@@ -52,10 +51,10 @@ public class AccommodationController {
                     .message("Validation Failed")
                     .details(errors)
                     .build();
-            return  new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
-        }else{
-            APIResponse<String> ActivityServiceDTO =  accommodationService.addService(service, images);
-            return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.CREATED);
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        } else {
+            APIResponse<String> ActivityServiceDTO = accommodationService.addService(service, images);
+            return new ResponseEntity<>(ActivityServiceDTO, HttpStatus.CREATED);
         }
 
     }
@@ -64,33 +63,34 @@ public class AccommodationController {
     public ResponseEntity<APIResponse<AccommodationResponse>> getAll_ActivityServices(
             @RequestParam(name = "pageNumber") Integer pageNumber,
             @RequestParam(name = "pageSize") Integer pageSize
-    ){
+    ) {
 
-        APIResponse<AccommodationResponse> accommodationResponse= accommodationService.getAll_Accommodations(pageNumber,pageSize);
-        return new ResponseEntity<>(accommodationResponse,HttpStatus.OK);
+        APIResponse<AccommodationResponse> accommodationResponse = accommodationService.getAll_Accommodations(pageNumber, pageSize);
+        return new ResponseEntity<>(accommodationResponse, HttpStatus.OK);
     }
 
     @GetMapping("/provider/accommodation/{Id}")
-    public ResponseEntity<APIResponse<AccommodationServiceRequestDTO>> searchById(@PathVariable Long Id){
+    public ResponseEntity<APIResponse<AccommodationServiceRequestDTO>> searchById(@PathVariable Long Id) {
         APIResponse<AccommodationServiceRequestDTO> accommodationResponse = accommodationService.searchWithId(Id);
-        return new ResponseEntity<>(accommodationResponse,HttpStatus.OK);
+        return new ResponseEntity<>(accommodationResponse, HttpStatus.OK);
     }
 
     @PostMapping("/provider/policy/accommodation")
-    public ResponseEntity<APIResponse<String>> addPolicies(@RequestBody PolicySection policies){
-        APIResponse<String> responseDTO= accommodationService.addNewPolicy(policies);
-        return new ResponseEntity<>(responseDTO,HttpStatus.CREATED);
+    public ResponseEntity<APIResponse<String>> addPolicies(@RequestBody PolicySection policies) {
+        APIResponse<String> responseDTO = accommodationService.addNewPolicy(policies);
+        return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
     }
+
     @GetMapping("/provider/policy/accommodation")
-    public ResponseEntity<APIResponse<List<PolicySectionRequest>>> accommodationPolicies(){
+    public ResponseEntity<APIResponse<List<PolicySectionRequest>>> accommodationPolicies() {
         List<PolicySectionRequest> policies = policyImpl.getServicePolicies(authUtils.loggedInUserId(), 1L);
-        APIResponse<List<PolicySectionRequest>> response =APIResponse.<List<PolicySectionRequest>>builder()
+        APIResponse<List<PolicySectionRequest>> response = APIResponse.<List<PolicySectionRequest>>builder()
                 .success(true)
                 .message("Found Accommodation Policies")
                 .data(policies)
                 .build();
 
-        return new ResponseEntity<>(response,HttpStatus.OK);
+        return new ResponseEntity<>(response, HttpStatus.OK);
 
     }
 
@@ -101,10 +101,10 @@ public class AccommodationController {
                     @RequestPart("service") @Valid AccommodationServiceRequestDTO service,
                     @RequestPart(value = "images", required = false) List<MultipartFile> images,
                     BindingResult result
-            ){
-        if (result.hasErrors()){
-            Map<String,String> errors = new HashMap<>();
-            result.getFieldErrors().forEach(field ->{
+            ) {
+        if (result.hasErrors()) {
+            Map<String, String> errors = new HashMap<>();
+            result.getFieldErrors().forEach(field -> {
                 errors.put(field.getField(), field.getDefaultMessage());
             });
             APIResponse<String> errorResponse = APIResponse.<String>builder()
@@ -112,17 +112,23 @@ public class AccommodationController {
                     .message("Validation Failed")
                     .details(errors)
                     .build();
-            return  new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
-        }else{
-            APIResponse<String> ActivityServiceDTO =  accommodationService.updateAccommodation(Id, service, images);
-            return new ResponseEntity<>(ActivityServiceDTO,HttpStatus.OK);
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        } else {
+            APIResponse<String> ActivityServiceDTO = accommodationService.updateAccommodation(Id, service, images);
+            return new ResponseEntity<>(ActivityServiceDTO, HttpStatus.OK);
         }
 
     }
 
-    @PutMapping("/provider/accommodation/remove/{Id}")
-    public ResponseEntity<APIResponse<String>> deleteAccommodation(@PathVariable Long Id) {
-        APIResponse<String> response = accommodationService.deleteService(Id);
+    @PutMapping("/provider/accommodation/deactivate/{Id}")
+    public ResponseEntity<APIResponse<String>> deactivateService(@PathVariable Long Id) {
+        APIResponse<String> response = accommodationService.deactivateService(Id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping("/provider/accommodation/activate/{Id}")
+    public ResponseEntity<APIResponse<String>> activateService(@PathVariable Long Id) {
+        APIResponse<String> response = accommodationService.activateService(Id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

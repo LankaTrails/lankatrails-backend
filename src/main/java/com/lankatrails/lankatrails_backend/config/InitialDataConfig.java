@@ -42,6 +42,7 @@ public class InitialDataConfig {
             admin.setLastName("Administrator");
             admin.setRole(UserRole.ROLE_ADMIN);
             admin.setStatus(UserStatus.ACTIVE);
+            admin.setPreferences(new UserPreferences());
 
             userRepository.save(admin);
             System.out.println("Initial admin user created");

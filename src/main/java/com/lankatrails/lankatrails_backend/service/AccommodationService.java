@@ -10,9 +10,16 @@ import java.util.List;
 
 public interface AccommodationService {
     APIResponse<String> addService(AccommodationServiceRequestDTO accommodationService, List<MultipartFile> images);
+
     APIResponse<AccommodationResponse> getAll_Accommodations(Integer pageNumber, Integer pageSize);
+
     APIResponse<AccommodationServiceRequestDTO> searchWithId(Long Id);
+
     APIResponse<String> addNewPolicy(PolicySection policies);
+
     APIResponse<String> updateAccommodation(Long id, AccommodationServiceRequestDTO accommodationService, List<MultipartFile> images);
-    APIResponse<String> deleteService(Long Id);
+
+    APIResponse<String> deactivateService(Long Id);
+
+    APIResponse<String> activateService(Long Id);
 }

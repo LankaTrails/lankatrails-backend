@@ -1,35 +1,34 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import com.lankatrails.lankatrails_backend.dtos.request.*;
-import com.lankatrails.lankatrails_backend.exception.*;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.AccommodationResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.RateAndReviewResponse;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
+import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
+import com.lankatrails.lankatrails_backend.exception.ServiceAlreadyExistsException;
 import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import com.lankatrails.lankatrails_backend.repositories.*;
+import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
+import com.lankatrails.lankatrails_backend.service.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.AccommodationResponse;
-import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
-import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
-import com.lankatrails.lankatrails_backend.service.AccommodationService;
-import com.lankatrails.lankatrails_backend.service.ImageService;
-import com.lankatrails.lankatrails_backend.service.ServicesForAll;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
-public class AccommodationServiceImpl implements  AccommodationService {
+public class AccommodationServiceImpl implements AccommodationService {
     @Autowired
     CategoryRepository categoryRepository;
 
@@ -56,18 +55,19 @@ public class AccommodationServiceImpl implements  AccommodationService {
 
     @Autowired
     PolicyImpl policyImpl;
-
-    @Autowired
-    private ImageService imageService;
-
     @Autowired
     ModelMapper modelMapper;
-
     @Autowired
     AuthUtils authUtils;
-
     @Autowired
     ServicesForAll servicesForAll;
+    @Autowired
+    private ImageService imageService;
+    @Autowired
+    private ReviewService reviewService;
+
+    @Autowired
+    private BookingService bookingService;
 
 
     @Override
@@ -114,7 +114,7 @@ public class AccommodationServiceImpl implements  AccommodationService {
 
             // Set the availability slots
             List<AvailableTimeDTO> availabilitySlots = services.getAvailableTimeDTOS();
-            if (availabilitySlots == null ){
+            if (availabilitySlots == null) {
                 throw new BadRequestException("Availability Slots cannot be empty");
             }
             servicesForAll.setAvailableTime(availabilitySlots, lastServiceAdded);
@@ -134,30 +134,55 @@ public class AccommodationServiceImpl implements  AccommodationService {
 
     @Override
     public APIResponse<AccommodationResponse> getAll_Accommodations(Integer pageNumber, Integer pageSize) {
-        Pageable pageDetails= PageRequest.of(pageNumber,pageSize);
+        Pageable pageDetails = PageRequest.of(pageNumber, pageSize);
 
-        List<Accommodation> accommodationServicePage=accommodationRepository.findByProvider_UserId(authUtils.loggedInUserId())
-                .orElseThrow(()->new ResourceNotFoundException("Accommodation", authUtils.loggedInUserId()));
+        List<Accommodation> accommodationServicePage = accommodationRepository.findByProvider_UserId(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Accommodation", authUtils.loggedInUserId()));
 
 //        List<Accommodation> accommodationServices=accommodationServicePage.getContent();
 
 //        if (accommodationServices.isEmpty())
 //            throw new APIException("No Activity Service created till now");
 
-        List<AccommodationServiceRequestDTO> accommodationServices_DTOs= new ArrayList<>();
+        List<AccommodationServiceRequestDTO> accommodationServices_DTOs = new ArrayList<>();
 
-        for (Accommodation accommodation :accommodationServicePage){
+        for (Accommodation accommodation : accommodationServicePage) {
             AccommodationServiceRequestDTO accommodationServiceRequest = new AccommodationServiceRequestDTO();
-            if (accommodation.getStatus() == ServiceStatus.ACTIVE){
+            if (accommodation.getStatus() == ServiceStatus.ACTIVE) {
+                //set the images
+                List<Image> images = imageRepository.findByService_ServiceId(accommodation.getServiceId());
+                //map images to imageDTO
+                List<ImageRequestDTO> imgDTOs = new ArrayList<>();
+                for (Image img : images) {
+                    ImageRequestDTO imgDTO = new ImageRequestDTO();
+                    imgDTO.setId(img.getImageId());
+                    imgDTO.setImageUrl(img.getImageUrl());
+                    imgDTOs.add(imgDTO);
+
+                }
+
                 accommodationServiceRequest.setServiceId(accommodation.getServiceId());
                 accommodationServiceRequest.setServiceName(accommodation.getServiceName());
                 accommodationServiceRequest.setStatus(accommodation.getStatus());
+                accommodationServiceRequest.setImages(imgDTOs);
+                // Safely get average rating with null check
+                APIResponse<RateAndReviewResponse> ratingResponse = reviewService.getAverageRatingByServiceId(accommodation.getServiceId());
+                Double averageRating = (ratingResponse != null && ratingResponse.getData() != null)
+                        ? ratingResponse.getData().getAverageRating()
+                        : 0.0;
+                Long totalRatings = (ratingResponse != null && ratingResponse.getData() != null)
+                        ? ratingResponse.getData().getTotalReviews()
+                        : 0L;
+                accommodationServiceRequest.setReviewCount(totalRatings);
+                accommodationServiceRequest.setAverageRating(averageRating);
+                accommodationServiceRequest.setFutureBookingCount(bookingService.countFutureBookingsForService(accommodation.getServiceId(), LocalDateTime.now()));
+                accommodationServiceRequest.setPastBookingCount(bookingService.countPastBookingsForService(accommodation.getServiceId(), LocalDateTime.now()));
                 accommodationServices_DTOs.add(accommodationServiceRequest);
             }
 
         }
 
-        AccommodationResponse accommodationResponse=new AccommodationResponse();
+        AccommodationResponse accommodationResponse = new AccommodationResponse();
 
         accommodationResponse.setContent(accommodationServices_DTOs);
 //        accommodationResponse.setLastPage(accommodationServicePage.isLast());
@@ -165,7 +190,7 @@ public class AccommodationServiceImpl implements  AccommodationService {
 //        accommodationResponse.setPageSize(accommodationServicePage.getSize());
 //        accommodationResponse.setTotalElements(accommodationServicePage.getTotalElements());
 //        accommodationResponse.setTotalPages(accommodationServicePage.getTotalPages());
-        return  APIResponse.<AccommodationResponse>builder()
+        return APIResponse.<AccommodationResponse>builder()
                 .success(true)
                 .message("Accommodation Services Fetched")
                 .data(accommodationResponse)
@@ -175,14 +200,14 @@ public class AccommodationServiceImpl implements  AccommodationService {
     @Override
     @Transactional
     public APIResponse<AccommodationServiceRequestDTO> searchWithId(Long Id) {
-        Accommodation accommodation=accommodationRepository.findById(Id)
-                .orElseThrow(()->new ResourceNotFoundException("Accommodation Service",Id));
+        Accommodation accommodation = accommodationRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Accommodation Service", Id));
 
         //get the related tabs
-        List<TabsSection> tabsSection=tabsSectionRepository.findByService_ServiceId(Id);
-        List<TabSectionRequest> tabs=new ArrayList<>();
+        List<TabsSection> tabsSection = tabsSectionRepository.findByService_ServiceId(Id);
+        List<TabSectionRequest> tabs = new ArrayList<>();
 
-        for (TabsSection tab :tabsSection){
+        for (TabsSection tab : tabsSection) {
             TabSectionRequest tabReq = new TabSectionRequest();
             tabReq.setId(tab.getId());
             tabReq.setHeading(tab.getHeading());
@@ -196,7 +221,7 @@ public class AccommodationServiceImpl implements  AccommodationService {
                 .toList();
 
         List<PolicySectionRequest> policies = new ArrayList<>();
-        for (PolicySection policy : policySection){
+        for (PolicySection policy : policySection) {
 
             PolicySectionRequest policyReq = new PolicySectionRequest();
             policyReq.setId(policy.getId());
@@ -209,7 +234,7 @@ public class AccommodationServiceImpl implements  AccommodationService {
         List<Image> images = imageRepository.findByService_ServiceId(Id);
         //map images to imageDTO
         List<ImageRequestDTO> imgDTOs = new ArrayList<>();
-        for (Image img : images){
+        for (Image img : images) {
             ImageRequestDTO imgDTO = new ImageRequestDTO();
             imgDTO.setId(img.getImageId());
             imgDTO.setImageUrl(img.getImageUrl());
@@ -255,7 +280,7 @@ public class AccommodationServiceImpl implements  AccommodationService {
                 .collect(Collectors.toList())
         );
 
-        return  APIResponse.<AccommodationServiceRequestDTO>builder()
+        return APIResponse.<AccommodationServiceRequestDTO>builder()
                 .success(true)
                 .message("Fetched Accommodation Service")
                 .data(prepareResponse)
@@ -275,7 +300,7 @@ public class AccommodationServiceImpl implements  AccommodationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
         //check whether the policy exists
         PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
-        if (policyCheck==null){
+        if (policyCheck == null) {
             //Policy doesn't exist
             policies.setProvider(provider);
             policies.setCategory(category);
@@ -285,7 +310,7 @@ public class AccommodationServiceImpl implements  AccommodationService {
                     .message("Policy Added Successfully")
                     .data("")
                     .build();
-        }else{
+        } else {
 
             return APIResponse.<String>builder()
                     .success(false)
@@ -332,7 +357,7 @@ public class AccommodationServiceImpl implements  AccommodationService {
 
         // Set the availability slots
         List<AvailableTimeDTO> availabilitySlots = accommodationService.getAvailableTimeDTOS();
-        if (availabilitySlots == null ){
+        if (availabilitySlots == null) {
             throw new BadRequestException("Availability Slots cannot be empty");
         }
         servicesForAll.setAvailableTime(availabilitySlots, updatedAccommodation);
@@ -363,9 +388,15 @@ public class AccommodationServiceImpl implements  AccommodationService {
     }
 
     @Override
-    public APIResponse<String> deleteService(Long Id) {
+    public APIResponse<String> deactivateService(Long Id) {
         Accommodation accommodation = accommodationRepository.findById(Id)
                 .orElseThrow(() -> new ResourceNotFoundException("Accommodation Service", Id));
+        //get the number of bookings in future
+        Long futureBookings = bookingService.countFutureBookingsForService(accommodation.getServiceId(), LocalDateTime.now());
+        if (futureBookings > 0) {
+            throw new BadRequestException("Cannot delete transport service with future bookings");
+        }
+
 
         accommodation.setStatus(ServiceStatus.INACTIVE); // Set status to false instead of deleting
         accommodationRepository.save(accommodation);
@@ -373,6 +404,21 @@ public class AccommodationServiceImpl implements  AccommodationService {
         return APIResponse.<String>builder()
                 .success(true)
                 .message("Accommodation Service Deleted Successfully")
+                .data("")
+                .build();
+    }
+
+    @Override
+    public APIResponse<String> activateService(Long Id) {
+        Accommodation accommodation = accommodationRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Accommodation Service", Id));
+
+        accommodation.setStatus(ServiceStatus.ACTIVE); // Set status to false instead of deleting
+        accommodationRepository.save(accommodation);
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Accommodation Service Activated Successfully")
                 .data("")
                 .build();
     }
