@@ -38,6 +38,12 @@ public class ComplaintController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    @GetMapping("/tourist/my-complaints")
+    public ResponseEntity<APIResponse<List<ComplaintViewDTO>>> getMyComplaints() {
+        APIResponse<List<ComplaintViewDTO>> response = complaintService.getMyComplaints();
+        return ResponseEntity.ok(response);
+    }
+
     //Add a new general complaint by the tourist (not service-specific)
     @PostMapping("/tourist/make-general-complaint")
     public ResponseEntity<APIResponse<String>> makeGeneralComplaint(@RequestBody ComplaintDTO complaintDTO){
