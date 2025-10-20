@@ -1,5 +1,20 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
+import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.AvailabilityResponse;
+import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
+import com.lankatrails.lankatrails_backend.model.*;
+import com.lankatrails.lankatrails_backend.model.enums.BookingStatus;
+import com.lankatrails.lankatrails_backend.repositories.AvailableTimeRepository;
+import com.lankatrails.lankatrails_backend.repositories.BookingRepository;
+import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
+import com.lankatrails.lankatrails_backend.service.AvailabilityService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -10,50 +25,32 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import com.lankatrails.lankatrails_backend.model.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
-import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
-import com.lankatrails.lankatrails_backend.dtos.response.AvailabilityResponse;
-import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
-import com.lankatrails.lankatrails_backend.model.AvailableTime;
-import com.lankatrails.lankatrails_backend.model.enums.BookingStatus;
-import com.lankatrails.lankatrails_backend.repositories.AvailableTimeRepository;
-import com.lankatrails.lankatrails_backend.repositories.BookingRepository;
-import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
-import com.lankatrails.lankatrails_backend.service.AvailabilityService;
-
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * Refactored AvailabilityServiceImpl using BookingConfiguration and AvailabilitySlot model.
- * 
+ * <p>
  * Key improvements:
  * 1. Configuration-driven approach: Uses BookingConfiguration.bookingType instead of hardcoded service categories
  * 2. Generic capacity validation: Works for any service type through BookingConfiguration settings
  * 3. Enhanced availability validation: Includes break times, holidays, and 24h availability checks
  * 4. Flexible booking types: Supports TIME_SLOTS, MULTI_DAY, WHOLE_DAY, FIXED_TIME, FLEXIBLE_HOURS, EVENT_BASED
- * 
+ * <p>
  * The service now validates availability purely based on:
  * - BookingConfiguration (booking type, capacity, duration, limits)
  * - AvailabilitySlot (opening hours, break times, holidays)
  * - Existing confirmed bookings
- * 
+ * <p>
  * Legacy category-specific methods are deprecated but kept for backward compatibility.
  */
 @Service
 @Slf4j
 public class AvailabilityServiceImpl implements AvailabilityService {
-    
+
     @Autowired
     private ServiceRepository serviceRepository;
-    
+
     @Autowired
     private BookingRepository bookingRepository;
-    
+
     @Autowired
     private AvailableTimeRepository availableTimeRepository;
 
@@ -79,7 +76,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     public APIResponse<String> validateAvailabilityInput(AvailabilityDto availabilityDto) {
         // Check for null values
         if (availabilityDto.getStartDateTime() == null || availabilityDto.getEndDateTime() == null ||
-            availabilityDto.getAdultCount() == null || availabilityDto.getChildCount() == null) {
+                availabilityDto.getAdultCount() == null || availabilityDto.getChildCount() == null) {
             return createErrorResponse("Start date-time, end date-time, adult count, and child count are required");
         }
 
@@ -122,28 +119,28 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         // Create map for optimized availability slot lookup
         Map<DayOfWeek, AvailableTime> availabilityMap = availableTimeList.stream()
                 .collect(Collectors.toMap(
-                    slot -> DayOfWeek.valueOf(slot.getDayOfWeek().toUpperCase()),
-                    Function.identity(),
-                    (existing, replacement) -> existing // Keep first occurrence in case of duplicates
+                        slot -> DayOfWeek.valueOf(slot.getDayOfWeek().toUpperCase()),
+                        Function.identity(),
+                        (existing, replacement) -> existing // Keep first occurrence in case of duplicates
                 ));
 
         // Iterate through every day in the requested date range
         LocalDate currentDate = requestedStartDateTime.toLocalDate();
         LocalDate endDate = requestedEndDateTime.toLocalDate();
-        
+
         while (!currentDate.isAfter(endDate)) {
             DayOfWeek currentDayOfWeek = currentDate.getDayOfWeek();
             AvailableTime daySlot = availabilityMap.get(currentDayOfWeek);
-            
+
             if (daySlot == null) {
                 return createErrorResponse("Service not available on " + currentDayOfWeek + " (" + currentDate + ")");
             }
-            
+
             // Check if service is closed on this day
             if (Boolean.TRUE.equals(daySlot.getIsClosed())) {
                 return createErrorResponse("Service is closed on " + currentDayOfWeek + " (" + currentDate + ")");
             }
-            
+
             // Skip time validation for 24-hour services
             if (!Boolean.TRUE.equals(daySlot.getIs24Hours())) {
                 // For the first day, check start time constraint
@@ -157,7 +154,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                         return createErrorResponse("Invalid open time format in availability slot for " + currentDayOfWeek);
                     }
                 }
-                
+
                 // For the last day, check end time constraint
                 if (currentDate.equals(requestedEndDateTime.toLocalDate())) {
                     try {
@@ -169,14 +166,14 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                         return createErrorResponse("Invalid close time format in availability slot for " + currentDayOfWeek);
                     }
                 }
-                
+
                 // Check break times for the current day
                 APIResponse<String> breakTimeValidation = validateBreakTimes(requestedStartDateTime, requestedEndDateTime, currentDate, daySlot);
                 if (!breakTimeValidation.isSuccess()) {
                     return breakTimeValidation;
                 }
             }
-            
+
             currentDate = currentDate.plusDays(1);
         }
 
@@ -186,12 +183,12 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     /**
      * Validates that the requested time doesn't conflict with break times
      */
-    private APIResponse<String> validateBreakTimes(LocalDateTime requestedStart, LocalDateTime requestedEnd, 
-                                                  LocalDate currentDate, AvailableTime daySlot) {
+    private APIResponse<String> validateBreakTimes(LocalDateTime requestedStart, LocalDateTime requestedEnd,
+                                                   LocalDate currentDate, AvailableTime daySlot) {
         // Only check break times if the requested period includes this specific date
         boolean isStartDay = currentDate.equals(requestedStart.toLocalDate());
         boolean isEndDay = currentDate.equals(requestedEnd.toLocalDate());
-        
+
         if (!isStartDay && !isEndDay && currentDate.isAfter(requestedStart.toLocalDate()) && currentDate.isBefore(requestedEnd.toLocalDate())) {
             // For middle days in multi-day bookings, the entire day is booked, so break times don't apply
             return createSuccessResponse("Full day booking - break times don't apply");
@@ -208,9 +205,9 @@ public class AvailabilityServiceImpl implements AvailabilityService {
             // Check if requested time overlaps with break time
             // Two intervals [a,b] and [c,d] do NOT overlap if: b <= c || d <= a
             // They just touch if b == c || d == a, which should be allowed
-            if (!(actualEnd.isBefore(breakStart) || actualEnd.equals(breakStart) || 
-                  actualStart.isAfter(breakEnd) || actualStart.equals(breakEnd))) {
-                return createErrorResponse(String.format("Requested time overlaps with break time %s-%s on %s", 
+            if (!(actualEnd.isBefore(breakStart) || actualEnd.equals(breakStart) ||
+                    actualStart.isAfter(breakEnd) || actualStart.equals(breakEnd))) {
+                return createErrorResponse(String.format("Requested time overlaps with break time %s-%s on %s",
                         breakTime.getBreakStart(), breakTime.getBreakEnd(), currentDate));
             }
         }
@@ -283,7 +280,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     }
 
     @Transactional(readOnly = true)
-    private APIResponse<String> validateTimeSlotBooking(AvailabilityDto availabilityDto, 
+    private APIResponse<String> validateTimeSlotBooking(AvailabilityDto availabilityDto,
                                                         com.lankatrails.lankatrails_backend.model.Service service,
                                                         BookingConfiguration config) {
         // TIME_SLOTS booking must be for the same day
@@ -295,7 +292,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         if (config.getSlotDuration() != null) {
             long requestedMinutes = Duration.between(availabilityDto.getStartDateTime(), availabilityDto.getEndDateTime()).toMinutes();
             if (requestedMinutes != config.getSlotDuration()) {
-                return createErrorResponse(String.format("Requested slot duration (%d minutes) does not match configured slot duration (%d minutes)", 
+                return createErrorResponse(String.format("Requested slot duration (%d minutes) does not match configured slot duration (%d minutes)",
                         requestedMinutes, config.getSlotDuration()));
             }
         }
@@ -311,19 +308,19 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     }
 
     @Transactional(readOnly = true)
-    private APIResponse<String> validateMultiDayBooking(AvailabilityDto availabilityDto, 
-                                                       com.lankatrails.lankatrails_backend.model.Service service,
-                                                       BookingConfiguration config) {
+    private APIResponse<String> validateMultiDayBooking(AvailabilityDto availabilityDto,
+                                                        com.lankatrails.lankatrails_backend.model.Service service,
+                                                        BookingConfiguration config) {
         // Validate minimum and maximum booking days if configured
         long requestedDays = Duration.between(availabilityDto.getStartDateTime(), availabilityDto.getEndDateTime()).toDays();
-        
+
         if (config.getMinimumBookingDays() != null && requestedDays < config.getMinimumBookingDays()) {
-            return createErrorResponse(String.format("Minimum booking period is %d days, but %d days requested", 
+            return createErrorResponse(String.format("Minimum booking period is %d days, but %d days requested",
                     config.getMinimumBookingDays(), requestedDays));
         }
-        
+
         if (config.getMaximumBookingDays() != null && requestedDays > config.getMaximumBookingDays()) {
-            return createErrorResponse(String.format("Maximum booking period is %d days, but %d days requested", 
+            return createErrorResponse(String.format("Maximum booking period is %d days, but %d days requested",
                     config.getMaximumBookingDays(), requestedDays));
         }
 
@@ -332,21 +329,21 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     }
 
     @Transactional(readOnly = true)
-    private APIResponse<String> validateWholeDayBooking(AvailabilityDto availabilityDto, 
-                                                       com.lankatrails.lankatrails_backend.model.Service service,
-                                                       BookingConfiguration config) {
+    private APIResponse<String> validateWholeDayBooking(AvailabilityDto availabilityDto,
+                                                        com.lankatrails.lankatrails_backend.model.Service service,
+                                                        BookingConfiguration config) {
         // For whole day bookings, ensure the request spans the entire available day
         // Note: The default check-in/check-out times can be used for validation if needed
         // but for now we proceed with capacity validation
-        
+
         // Check capacity using configuration-driven logic
         return validateCapacityUsingConfiguration(service, config, availabilityDto);
     }
 
     @Transactional(readOnly = true)
-    private APIResponse<String> validateFixedTimeBooking(AvailabilityDto availabilityDto, 
-                                                        com.lankatrails.lankatrails_backend.model.Service service,
-                                                        BookingConfiguration config) {
+    private APIResponse<String> validateFixedTimeBooking(AvailabilityDto availabilityDto,
+                                                         com.lankatrails.lankatrails_backend.model.Service service,
+                                                         BookingConfiguration config) {
         // Fixed time bookings have predetermined duration
         if (config.getSlotDuration() != null) {
             long requestedMinutes = Duration.between(availabilityDto.getStartDateTime(), availabilityDto.getEndDateTime()).toMinutes();
@@ -359,9 +356,9 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     }
 
     @Transactional(readOnly = true)
-    private APIResponse<String> validateFlexibleHoursBooking(AvailabilityDto availabilityDto, 
-                                                           com.lankatrails.lankatrails_backend.model.Service service,
-                                                           BookingConfiguration config) {
+    private APIResponse<String> validateFlexibleHoursBooking(AvailabilityDto availabilityDto,
+                                                             com.lankatrails.lankatrails_backend.model.Service service,
+                                                             BookingConfiguration config) {
         // Flexible hours allow variable duration within availability windows
         APIResponse<String> timeSlotValidation = validateTimeSlotAgainstAvailability(availabilityDto, service);
         if (!timeSlotValidation.isSuccess()) {
@@ -372,9 +369,9 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     }
 
     @Transactional(readOnly = true)
-    private APIResponse<String> validateEventBasedBooking(AvailabilityDto availabilityDto, 
-                                                         com.lankatrails.lankatrails_backend.model.Service service,
-                                                         BookingConfiguration config) {
+    private APIResponse<String> validateEventBasedBooking(AvailabilityDto availabilityDto,
+                                                          com.lankatrails.lankatrails_backend.model.Service service,
+                                                          BookingConfiguration config) {
         // Event-based bookings are tied to specific events/schedules
         // For now, use standard capacity validation
         return validateCapacityUsingConfiguration(service, config, availabilityDto);
@@ -392,36 +389,57 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     /**
      * Configuration-driven capacity validation that works for any service type
      */
-    private APIResponse<String> validateCapacityUsingConfiguration(com.lankatrails.lankatrails_backend.model.Service service, 
-                                                                  BookingConfiguration config, 
-                                                                  AvailabilityDto availabilityDto) {
+    private APIResponse<String> validateCapacityUsingConfiguration(com.lankatrails.lankatrails_backend.model.Service service,
+                                                                   BookingConfiguration config,
+                                                                   AvailabilityDto availabilityDto) {
         // Default to 1 unit if not specified
         Integer requestedUnits = Optional.ofNullable(availabilityDto.getNoOfUnits()).orElse(1);
         int totalGuests = availabilityDto.getAdultCount() + availabilityDto.getChildCount();
 
         // Validate units requested against configuration limits
         if (config.getMinUnitsPerBooking() != null && requestedUnits < config.getMinUnitsPerBooking()) {
-            return createErrorResponse(String.format("Minimum %d units required, but %d requested", 
+            return createErrorResponse(String.format("Minimum %d units required, but %d requested",
                     config.getMinUnitsPerBooking(), requestedUnits));
         }
-        
+
         if (config.getMaxUnitsPerBooking() != null && requestedUnits > config.getMaxUnitsPerBooking()) {
-            return createErrorResponse(String.format("Maximum %d units allowed, but %d requested", 
+            return createErrorResponse(String.format("Maximum %d units allowed, but %d requested",
                     config.getMaxUnitsPerBooking(), requestedUnits));
         }
 
         // Check if enough units are available
         if (config.getTotalUnits() != null) {
-            Integer bookedUnits = bookingRepository.findBookedUnitsDuringPeriod(
-                    service.getServiceId(),
-                    availabilityDto.getStartDateTime(),
-                    availabilityDto.getEndDateTime(),
-                    BookingStatus.CONFIRMED
-            );
+            Integer bookedUnits;
+
+            // Use different overlap logic based on booking type
+            if (config.getBookingType() == com.lankatrails.lankatrails_backend.model.enums.BookingType.MULTI_DAY) {
+                // For multi-day services (like accommodations), only consider exact period matches as conflicts
+                // This allows adding trip items that fall within the accommodation period
+                bookedUnits = bookingRepository.findBookedUnitsForMultiDayExactMatch(
+                        service.getServiceId(),
+                        availabilityDto.getStartDateTime(),
+                        availabilityDto.getEndDateTime(),
+                        BookingStatus.CONFIRMED
+                );
+
+                log.info("Multi-day service - checking exact match conflicts. Service: {}, Period: {} to {}, Booked units: {}",
+                        service.getServiceId(), availabilityDto.getStartDateTime(), availabilityDto.getEndDateTime(), bookedUnits);
+            } else {
+                // For other booking types, use standard overlap detection
+                bookedUnits = bookingRepository.findBookedUnitsForNonMultiDay(
+                        service.getServiceId(),
+                        availabilityDto.getStartDateTime(),
+                        availabilityDto.getEndDateTime(),
+                        BookingStatus.CONFIRMED
+                );
+
+                log.info("Non-multi-day service - checking overlap conflicts. Service: {}, Period: {} to {}, Booked units: {}",
+                        service.getServiceId(), availabilityDto.getStartDateTime(), availabilityDto.getEndDateTime(), bookedUnits);
+            }
 
             int availableUnits = config.getTotalUnits() - bookedUnits;
             if (availableUnits < requestedUnits) {
-                return createErrorResponse(String.format("Only %d units available, but %d requested", 
+                return createErrorResponse(String.format("Only %d units available, but %d requested",
                         availableUnits, requestedUnits));
             }
         }
@@ -431,58 +449,58 @@ public class AvailabilityServiceImpl implements AvailabilityService {
             // If requireChildInfo is false, treat all guests as adults
             if (Boolean.FALSE.equals(config.getRequireChildInfo())) {
                 int maxAdultsForRequestedUnits = config.getUnitAdultCapacity() * requestedUnits;
-                
+
                 if (totalGuests > maxAdultsForRequestedUnits) {
                     // Check if extra capacity is allowed
                     if (Boolean.TRUE.equals(config.getAllowExtraCapacity())) {
                         int extraGuestsNeeded = totalGuests - maxAdultsForRequestedUnits;
                         int maxExtraAdults = Optional.ofNullable(config.getExtraAdultCapacityLimit()).orElse(0) * requestedUnits;
-                        
+
                         if (extraGuestsNeeded > maxExtraAdults) {
-                            return createErrorResponse(String.format("Requested %d units can accommodate max %d guests (including %d extra), but %d guests provided", 
+                            return createErrorResponse(String.format("Requested %d units can accommodate max %d guests (including %d extra), but %d guests provided",
                                     requestedUnits, maxAdultsForRequestedUnits + maxExtraAdults, maxExtraAdults, totalGuests));
                         }
                     } else {
-                        return createErrorResponse(String.format("Requested %d units can accommodate max %d guests, but %d guests provided", 
+                        return createErrorResponse(String.format("Requested %d units can accommodate max %d guests, but %d guests provided",
                                 requestedUnits, maxAdultsForRequestedUnits, totalGuests));
                     }
                 }
-            } 
+            }
             // If requireChildInfo is true, validate adults and children separately
             else if (Boolean.TRUE.equals(config.getRequireChildInfo()) && config.getUnitChildCapacity() != null) {
                 int maxAdultsForRequestedUnits = config.getUnitAdultCapacity() * requestedUnits;
                 int maxChildrenForRequestedUnits = config.getUnitChildCapacity() * requestedUnits;
-                
+
                 // Validate adult count
                 if (availabilityDto.getAdultCount() > maxAdultsForRequestedUnits) {
                     // Check if extra adult capacity is allowed
                     if (Boolean.TRUE.equals(config.getAllowExtraCapacity())) {
                         int extraAdultsNeeded = availabilityDto.getAdultCount() - maxAdultsForRequestedUnits;
                         int maxExtraAdults = Optional.ofNullable(config.getExtraAdultCapacityLimit()).orElse(0) * requestedUnits;
-                        
+
                         if (extraAdultsNeeded > maxExtraAdults) {
-                            return createErrorResponse(String.format("Requested %d units can accommodate max %d adults (including %d extra), but %d adults provided", 
+                            return createErrorResponse(String.format("Requested %d units can accommodate max %d adults (including %d extra), but %d adults provided",
                                     requestedUnits, maxAdultsForRequestedUnits + maxExtraAdults, maxExtraAdults, availabilityDto.getAdultCount()));
                         }
                     } else {
-                        return createErrorResponse(String.format("Requested %d units can accommodate max %d adults, but %d adults provided", 
+                        return createErrorResponse(String.format("Requested %d units can accommodate max %d adults, but %d adults provided",
                                 requestedUnits, maxAdultsForRequestedUnits, availabilityDto.getAdultCount()));
                     }
                 }
-                
+
                 // Validate child count
                 if (availabilityDto.getChildCount() > maxChildrenForRequestedUnits) {
                     // Check if extra child capacity is allowed
                     if (Boolean.TRUE.equals(config.getAllowExtraCapacity())) {
                         int extraChildrenNeeded = availabilityDto.getChildCount() - maxChildrenForRequestedUnits;
                         int maxExtraChildren = Optional.ofNullable(config.getExtraChildCapacityLimit()).orElse(0) * requestedUnits;
-                        
+
                         if (extraChildrenNeeded > maxExtraChildren) {
-                            return createErrorResponse(String.format("Requested %d units can accommodate max %d children (including %d extra), but %d children provided", 
+                            return createErrorResponse(String.format("Requested %d units can accommodate max %d children (including %d extra), but %d children provided",
                                     requestedUnits, maxChildrenForRequestedUnits + maxExtraChildren, maxExtraChildren, availabilityDto.getChildCount()));
                         }
                     } else {
-                        return createErrorResponse(String.format("Requested %d units can accommodate max %d children, but %d children provided", 
+                        return createErrorResponse(String.format("Requested %d units can accommodate max %d children, but %d children provided",
                                 requestedUnits, maxChildrenForRequestedUnits, availabilityDto.getChildCount()));
                     }
                 }
@@ -490,21 +508,21 @@ public class AvailabilityServiceImpl implements AvailabilityService {
             // If requireChildInfo is null or true but no child capacity is configured, fall back to combined validation
             else if (config.getUnitChildCapacity() != null) {
                 int maxGuestsForRequestedUnits = (config.getUnitAdultCapacity() + config.getUnitChildCapacity()) * requestedUnits;
-                
+
                 if (totalGuests > maxGuestsForRequestedUnits) {
                     // Check if extra capacity is allowed
                     if (Boolean.TRUE.equals(config.getAllowExtraCapacity())) {
                         int extraGuestsNeeded = totalGuests - maxGuestsForRequestedUnits;
                         int maxExtraAdults = Optional.ofNullable(config.getExtraAdultCapacityLimit()).orElse(0) * requestedUnits;
                         int maxExtraChildren = Optional.ofNullable(config.getExtraChildCapacityLimit()).orElse(0) * requestedUnits;
-                        
+
                         if (extraGuestsNeeded > maxExtraAdults + maxExtraChildren) {
-                            return createErrorResponse(String.format("Requested %d units can accommodate max %d guests (including %d extra), but %d guests provided", 
-                                    requestedUnits, maxGuestsForRequestedUnits + maxExtraAdults + maxExtraChildren, 
+                            return createErrorResponse(String.format("Requested %d units can accommodate max %d guests (including %d extra), but %d guests provided",
+                                    requestedUnits, maxGuestsForRequestedUnits + maxExtraAdults + maxExtraChildren,
                                     maxExtraAdults + maxExtraChildren, totalGuests));
                         }
                     } else {
-                        return createErrorResponse(String.format("Requested %d units can accommodate max %d guests, but %d guests provided", 
+                        return createErrorResponse(String.format("Requested %d units can accommodate max %d guests, but %d guests provided",
                                 requestedUnits, maxGuestsForRequestedUnits, totalGuests));
                     }
                 }
@@ -517,8 +535,8 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     /**
      * Validates if the requested time slot falls within available times and respects break times
      */
-    private APIResponse<String> validateTimeSlotAgainstAvailability(AvailabilityDto availabilityDto, 
-                                                                   com.lankatrails.lankatrails_backend.model.Service service) {
+    private APIResponse<String> validateTimeSlotAgainstAvailability(AvailabilityDto availabilityDto,
+                                                                    com.lankatrails.lankatrails_backend.model.Service service) {
         LocalDateTime requestedStart = availabilityDto.getStartDateTime();
         LocalDateTime requestedEnd = availabilityDto.getEndDateTime();
         DayOfWeek requestedDay = requestedStart.getDayOfWeek();
@@ -550,8 +568,8 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         LocalDateTime serviceEnd = LocalDateTime.of(requestedStart.toLocalDate(), availability.getCloseTime());
 
         if (requestedStart.isBefore(serviceStart) || requestedEnd.isAfter(serviceEnd)) {
-            return createErrorResponse(String.format("Requested time %s-%s is outside service hours %s-%s", 
-                    requestedStart.toLocalTime(), requestedEnd.toLocalTime(), 
+            return createErrorResponse(String.format("Requested time %s-%s is outside service hours %s-%s",
+                    requestedStart.toLocalTime(), requestedEnd.toLocalTime(),
                     availability.getOpenTime(), availability.getCloseTime()));
         }
 
@@ -583,10 +601,10 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         if (accommodation.getBookingConfiguration() != null) {
             return validateCapacityUsingConfiguration(accommodation, accommodation.getBookingConfiguration(), availabilityDto);
         }
-        
+
         // Legacy logic for backward compatibility
         Integer requestedUnits = Optional.ofNullable(availabilityDto.getNoOfUnits()).orElse(1);
-        
+
         Integer bookedRooms = bookingRepository.findBookedUnitsDuringPeriod(
                 accommodation.getServiceId(),
                 availabilityDto.getStartDateTime(),
@@ -609,7 +627,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         if (transport.getBookingConfiguration() != null) {
             return validateCapacityUsingConfiguration(transport, transport.getBookingConfiguration(), availabilityDto);
         }
-        
+
         // Legacy logic placeholder
         return createSuccessResponse("Legacy transport validation - consider updating to use BookingConfiguration");
     }
@@ -624,7 +642,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         if (activityService.getBookingConfiguration() != null) {
             return validateCapacityUsingConfiguration(activityService, activityService.getBookingConfiguration(), availabilityDto);
         }
-        
+
         // Legacy logic placeholder
         return createSuccessResponse("Legacy activity service validation - consider updating to use BookingConfiguration");
     }
@@ -639,7 +657,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         if (foodAndBeverage.getBookingConfiguration() != null) {
             return validateCapacityUsingConfiguration(foodAndBeverage, foodAndBeverage.getBookingConfiguration(), availabilityDto);
         }
-        
+
         // Legacy logic placeholder
         return createSuccessResponse("Legacy food and beverage validation - consider updating to use BookingConfiguration");
     }
@@ -654,14 +672,14 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         if (touristGuide.getBookingConfiguration() != null) {
             return validateCapacityUsingConfiguration(touristGuide, touristGuide.getBookingConfiguration(), availabilityDto);
         }
-        
+
         // Legacy logic placeholder
         return createSuccessResponse("Legacy tourist guide validation - consider updating to use BookingConfiguration");
     }
 
-    private APIResponse<AvailabilityResponse> validateTimeSlotBookingDetailed(AvailabilityDto availabilityDto, 
-                                                                             com.lankatrails.lankatrails_backend.model.Service service,
-                                                                             BookingConfiguration config) {
+    private APIResponse<AvailabilityResponse> validateTimeSlotBookingDetailed(AvailabilityDto availabilityDto,
+                                                                              com.lankatrails.lankatrails_backend.model.Service service,
+                                                                              BookingConfiguration config) {
         // TIME_SLOTS booking must be for the same day
         if (!availabilityDto.getStartDateTime().toLocalDate().equals(availabilityDto.getEndDateTime().toLocalDate())) {
             return createAvailabilityErrorResponse("Time slot bookings must be for the same day.");
@@ -671,7 +689,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         if (config.getSlotDuration() != null) {
             long requestedMinutes = Duration.between(availabilityDto.getStartDateTime(), availabilityDto.getEndDateTime()).toMinutes();
             if (requestedMinutes != config.getSlotDuration()) {
-                return createAvailabilityErrorResponse(String.format("Requested slot duration (%d minutes) does not match configured slot duration (%d minutes)", 
+                return createAvailabilityErrorResponse(String.format("Requested slot duration (%d minutes) does not match configured slot duration (%d minutes)",
                         requestedMinutes, config.getSlotDuration()));
             }
         }
@@ -686,19 +704,19 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         return validateCapacityDetailedUsingConfiguration(service, config, availabilityDto);
     }
 
-    private APIResponse<AvailabilityResponse> validateMultiDayBookingDetailed(AvailabilityDto availabilityDto, 
-                                                                             com.lankatrails.lankatrails_backend.model.Service service,
-                                                                             BookingConfiguration config) {
+    private APIResponse<AvailabilityResponse> validateMultiDayBookingDetailed(AvailabilityDto availabilityDto,
+                                                                              com.lankatrails.lankatrails_backend.model.Service service,
+                                                                              BookingConfiguration config) {
         // Validate booking days constraints
         long requestedDays = Duration.between(availabilityDto.getStartDateTime(), availabilityDto.getEndDateTime()).toDays();
-        
+
         if (config.getMinimumBookingDays() != null && requestedDays < config.getMinimumBookingDays()) {
-            return createAvailabilityErrorResponse(String.format("Minimum booking period is %d days, but %d days requested", 
+            return createAvailabilityErrorResponse(String.format("Minimum booking period is %d days, but %d days requested",
                     config.getMinimumBookingDays(), requestedDays));
         }
-        
+
         if (config.getMaximumBookingDays() != null && requestedDays > config.getMaximumBookingDays()) {
-            return createAvailabilityErrorResponse(String.format("Maximum booking period is %d days, but %d days requested", 
+            return createAvailabilityErrorResponse(String.format("Maximum booking period is %d days, but %d days requested",
                     config.getMaximumBookingDays(), requestedDays));
         }
 
@@ -706,15 +724,15 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         return validateCapacityDetailedUsingConfiguration(service, config, availabilityDto);
     }
 
-    private APIResponse<AvailabilityResponse> validateWholeDayBookingDetailed(AvailabilityDto availabilityDto, 
-                                                                             com.lankatrails.lankatrails_backend.model.Service service,
-                                                                             BookingConfiguration config) {
+    private APIResponse<AvailabilityResponse> validateWholeDayBookingDetailed(AvailabilityDto availabilityDto,
+                                                                              com.lankatrails.lankatrails_backend.model.Service service,
+                                                                              BookingConfiguration config) {
         return validateCapacityDetailedUsingConfiguration(service, config, availabilityDto);
     }
 
-    private APIResponse<AvailabilityResponse> validateFixedTimeBookingDetailed(AvailabilityDto availabilityDto, 
-                                                                              com.lankatrails.lankatrails_backend.model.Service service,
-                                                                              BookingConfiguration config) {
+    private APIResponse<AvailabilityResponse> validateFixedTimeBookingDetailed(AvailabilityDto availabilityDto,
+                                                                               com.lankatrails.lankatrails_backend.model.Service service,
+                                                                               BookingConfiguration config) {
         if (config.getSlotDuration() != null) {
             long requestedMinutes = Duration.between(availabilityDto.getStartDateTime(), availabilityDto.getEndDateTime()).toMinutes();
             if (requestedMinutes != config.getSlotDuration()) {
@@ -725,9 +743,9 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         return validateCapacityDetailedUsingConfiguration(service, config, availabilityDto);
     }
 
-    private APIResponse<AvailabilityResponse> validateFlexibleHoursBookingDetailed(AvailabilityDto availabilityDto, 
-                                                                                  com.lankatrails.lankatrails_backend.model.Service service,
-                                                                                  BookingConfiguration config) {
+    private APIResponse<AvailabilityResponse> validateFlexibleHoursBookingDetailed(AvailabilityDto availabilityDto,
+                                                                                   com.lankatrails.lankatrails_backend.model.Service service,
+                                                                                   BookingConfiguration config) {
         APIResponse<String> timeSlotValidation = validateTimeSlotAgainstAvailability(availabilityDto, service);
         if (!timeSlotValidation.isSuccess()) {
             return createAvailabilityErrorResponse(timeSlotValidation.getMessage());
@@ -736,9 +754,9 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         return validateCapacityDetailedUsingConfiguration(service, config, availabilityDto);
     }
 
-    private APIResponse<AvailabilityResponse> validateEventBasedBookingDetailed(AvailabilityDto availabilityDto, 
-                                                                               com.lankatrails.lankatrails_backend.model.Service service,
-                                                                               BookingConfiguration config) {
+    private APIResponse<AvailabilityResponse> validateEventBasedBookingDetailed(AvailabilityDto availabilityDto,
+                                                                                com.lankatrails.lankatrails_backend.model.Service service,
+                                                                                BookingConfiguration config) {
         return validateCapacityDetailedUsingConfiguration(service, config, availabilityDto);
     }
 
@@ -754,9 +772,9 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     /**
      * Configuration-driven detailed capacity validation that works for any service type
      */
-    private APIResponse<AvailabilityResponse> validateCapacityDetailedUsingConfiguration(com.lankatrails.lankatrails_backend.model.Service service, 
-                                                                                        BookingConfiguration config, 
-                                                                                        AvailabilityDto availabilityDto) {
+    private APIResponse<AvailabilityResponse> validateCapacityDetailedUsingConfiguration(com.lankatrails.lankatrails_backend.model.Service service,
+                                                                                         BookingConfiguration config,
+                                                                                         AvailabilityDto availabilityDto) {
         Integer requestedUnits = Optional.ofNullable(availabilityDto.getNoOfUnits()).orElse(1);
         int totalGuests = availabilityDto.getAdultCount() + availabilityDto.getChildCount();
 
@@ -764,26 +782,26 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         if (config.getMinUnitsPerBooking() != null && requestedUnits < config.getMinUnitsPerBooking()) {
             AvailabilityResponse response = AvailabilityResponse.builder()
                     .available(false)
-                    .message(String.format("Minimum %d units required, but %d requested", 
+                    .message(String.format("Minimum %d units required, but %d requested",
                             config.getMinUnitsPerBooking(), requestedUnits))
                     .requestedUnits(requestedUnits)
                     .build();
-            
+
             return APIResponse.<AvailabilityResponse>builder()
                     .success(false)
                     .message(response.getMessage())
                     .data(response)
                     .build();
         }
-        
+
         if (config.getMaxUnitsPerBooking() != null && requestedUnits > config.getMaxUnitsPerBooking()) {
             AvailabilityResponse response = AvailabilityResponse.builder()
                     .available(false)
-                    .message(String.format("Maximum %d units allowed, but %d requested", 
+                    .message(String.format("Maximum %d units allowed, but %d requested",
                             config.getMaxUnitsPerBooking(), requestedUnits))
                     .requestedUnits(requestedUnits)
                     .build();
-            
+
             return APIResponse.<AvailabilityResponse>builder()
                     .success(false)
                     .message(response.getMessage())
@@ -793,27 +811,48 @@ public class AvailabilityServiceImpl implements AvailabilityService {
 
         Integer totalUnits = config.getTotalUnits();
         Integer availableUnits = totalUnits;
-        
+
         // Check if enough units are available
         if (totalUnits != null) {
-            Integer bookedUnits = bookingRepository.findBookedUnitsDuringPeriod(
-                    service.getServiceId(),
-                    availabilityDto.getStartDateTime(),
-                    availabilityDto.getEndDateTime(),
-                    BookingStatus.CONFIRMED
-            );
+            Integer bookedUnits;
+
+            // Use different overlap logic based on booking type
+            if (config.getBookingType() == com.lankatrails.lankatrails_backend.model.enums.BookingType.MULTI_DAY) {
+                // For multi-day services (like accommodations), only consider exact period matches as conflicts
+                // This allows adding trip items that fall within the accommodation period
+                bookedUnits = bookingRepository.findBookedUnitsForMultiDayExactMatch(
+                        service.getServiceId(),
+                        availabilityDto.getStartDateTime(),
+                        availabilityDto.getEndDateTime(),
+                        BookingStatus.CONFIRMED
+                );
+
+                log.info("Multi-day service (detailed) - checking exact match conflicts. Service: {}, Period: {} to {}, Booked units: {}",
+                        service.getServiceId(), availabilityDto.getStartDateTime(), availabilityDto.getEndDateTime(), bookedUnits);
+            } else {
+                // For other booking types, use standard overlap detection
+                bookedUnits = bookingRepository.findBookedUnitsForNonMultiDay(
+                        service.getServiceId(),
+                        availabilityDto.getStartDateTime(),
+                        availabilityDto.getEndDateTime(),
+                        BookingStatus.CONFIRMED
+                );
+
+                log.info("Non-multi-day service (detailed) - checking overlap conflicts. Service: {}, Period: {} to {}, Booked units: {}",
+                        service.getServiceId(), availabilityDto.getStartDateTime(), availabilityDto.getEndDateTime(), bookedUnits);
+            }
 
             availableUnits = totalUnits - bookedUnits;
             if (availableUnits < requestedUnits) {
                 AvailabilityResponse response = AvailabilityResponse.builder()
                         .available(false)
-                        .message(String.format("Only %d units available, but %d requested", 
+                        .message(String.format("Only %d units available, but %d requested",
                                 availableUnits, requestedUnits))
                         .availableUnits(availableUnits)
                         .requestedUnits(requestedUnits)
                         .totalCapacity(totalUnits)
                         .build();
-                
+
                 return APIResponse.<AvailabilityResponse>builder()
                         .success(false)
                         .message(response.getMessage())
@@ -827,23 +866,23 @@ public class AvailabilityServiceImpl implements AvailabilityService {
             // If requireChildInfo is false, treat all guests as adults
             if (Boolean.FALSE.equals(config.getRequireChildInfo())) {
                 int maxAdultsForRequestedUnits = config.getUnitAdultCapacity() * requestedUnits;
-                
+
                 if (totalGuests > maxAdultsForRequestedUnits) {
                     // Check if extra capacity is allowed
                     if (Boolean.TRUE.equals(config.getAllowExtraCapacity())) {
                         int extraGuestsNeeded = totalGuests - maxAdultsForRequestedUnits;
                         int maxExtraAdults = Optional.ofNullable(config.getExtraAdultCapacityLimit()).orElse(0) * requestedUnits;
-                        
+
                         if (extraGuestsNeeded > maxExtraAdults) {
                             AvailabilityResponse response = AvailabilityResponse.builder()
                                     .available(false)
-                                    .message(String.format("Requested %d units can accommodate max %d guests (including %d extra), but %d guests provided", 
+                                    .message(String.format("Requested %d units can accommodate max %d guests (including %d extra), but %d guests provided",
                                             requestedUnits, maxAdultsForRequestedUnits + maxExtraAdults, maxExtraAdults, totalGuests))
                                     .availableUnits(availableUnits)
                                     .requestedUnits(requestedUnits)
                                     .totalCapacity(totalUnits)
                                     .build();
-                            
+
                             return APIResponse.<AvailabilityResponse>builder()
                                     .success(false)
                                     .message(response.getMessage())
@@ -853,13 +892,13 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                     } else {
                         AvailabilityResponse response = AvailabilityResponse.builder()
                                 .available(false)
-                                .message(String.format("Requested %d units can accommodate max %d guests, but %d guests provided", 
+                                .message(String.format("Requested %d units can accommodate max %d guests, but %d guests provided",
                                         requestedUnits, maxAdultsForRequestedUnits, totalGuests))
                                 .availableUnits(availableUnits)
                                 .requestedUnits(requestedUnits)
                                 .totalCapacity(totalUnits)
                                 .build();
-                        
+
                         return APIResponse.<AvailabilityResponse>builder()
                                 .success(false)
                                 .message(response.getMessage())
@@ -867,29 +906,29 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                                 .build();
                     }
                 }
-            } 
+            }
             // If requireChildInfo is true, validate adults and children separately
             else if (Boolean.TRUE.equals(config.getRequireChildInfo()) && config.getUnitChildCapacity() != null) {
                 int maxAdultsForRequestedUnits = config.getUnitAdultCapacity() * requestedUnits;
                 int maxChildrenForRequestedUnits = config.getUnitChildCapacity() * requestedUnits;
-                
+
                 // Validate adult count
                 if (availabilityDto.getAdultCount() > maxAdultsForRequestedUnits) {
                     // Check if extra adult capacity is allowed
                     if (Boolean.TRUE.equals(config.getAllowExtraCapacity())) {
                         int extraAdultsNeeded = availabilityDto.getAdultCount() - maxAdultsForRequestedUnits;
                         int maxExtraAdults = Optional.ofNullable(config.getExtraAdultCapacityLimit()).orElse(0) * requestedUnits;
-                        
+
                         if (extraAdultsNeeded > maxExtraAdults) {
                             AvailabilityResponse response = AvailabilityResponse.builder()
                                     .available(false)
-                                    .message(String.format("Requested %d units can accommodate max %d adults (including %d extra), but %d adults provided", 
+                                    .message(String.format("Requested %d units can accommodate max %d adults (including %d extra), but %d adults provided",
                                             requestedUnits, maxAdultsForRequestedUnits + maxExtraAdults, maxExtraAdults, availabilityDto.getAdultCount()))
                                     .availableUnits(availableUnits)
                                     .requestedUnits(requestedUnits)
                                     .totalCapacity(totalUnits)
                                     .build();
-                            
+
                             return APIResponse.<AvailabilityResponse>builder()
                                     .success(false)
                                     .message(response.getMessage())
@@ -899,13 +938,13 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                     } else {
                         AvailabilityResponse response = AvailabilityResponse.builder()
                                 .available(false)
-                                .message(String.format("Requested %d units can accommodate max %d adults, but %d adults provided", 
+                                .message(String.format("Requested %d units can accommodate max %d adults, but %d adults provided",
                                         requestedUnits, maxAdultsForRequestedUnits, availabilityDto.getAdultCount()))
                                 .availableUnits(availableUnits)
                                 .requestedUnits(requestedUnits)
                                 .totalCapacity(totalUnits)
                                 .build();
-                        
+
                         return APIResponse.<AvailabilityResponse>builder()
                                 .success(false)
                                 .message(response.getMessage())
@@ -913,24 +952,24 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                                 .build();
                     }
                 }
-                
+
                 // Validate child count
                 if (availabilityDto.getChildCount() > maxChildrenForRequestedUnits) {
                     // Check if extra child capacity is allowed
                     if (Boolean.TRUE.equals(config.getAllowExtraCapacity())) {
                         int extraChildrenNeeded = availabilityDto.getChildCount() - maxChildrenForRequestedUnits;
                         int maxExtraChildren = Optional.ofNullable(config.getExtraChildCapacityLimit()).orElse(0) * requestedUnits;
-                        
+
                         if (extraChildrenNeeded > maxExtraChildren) {
                             AvailabilityResponse response = AvailabilityResponse.builder()
                                     .available(false)
-                                    .message(String.format("Requested %d units can accommodate max %d children (including %d extra), but %d children provided", 
+                                    .message(String.format("Requested %d units can accommodate max %d children (including %d extra), but %d children provided",
                                             requestedUnits, maxChildrenForRequestedUnits + maxExtraChildren, maxExtraChildren, availabilityDto.getChildCount()))
                                     .availableUnits(availableUnits)
                                     .requestedUnits(requestedUnits)
                                     .totalCapacity(totalUnits)
                                     .build();
-                            
+
                             return APIResponse.<AvailabilityResponse>builder()
                                     .success(false)
                                     .message(response.getMessage())
@@ -940,13 +979,13 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                     } else {
                         AvailabilityResponse response = AvailabilityResponse.builder()
                                 .available(false)
-                                .message(String.format("Requested %d units can accommodate max %d children, but %d children provided", 
+                                .message(String.format("Requested %d units can accommodate max %d children, but %d children provided",
                                         requestedUnits, maxChildrenForRequestedUnits, availabilityDto.getChildCount()))
                                 .availableUnits(availableUnits)
                                 .requestedUnits(requestedUnits)
                                 .totalCapacity(totalUnits)
                                 .build();
-                        
+
                         return APIResponse.<AvailabilityResponse>builder()
                                 .success(false)
                                 .message(response.getMessage())
@@ -958,25 +997,25 @@ public class AvailabilityServiceImpl implements AvailabilityService {
             // If requireChildInfo is null or true but no child capacity is configured, fall back to combined validation
             else if (config.getUnitChildCapacity() != null) {
                 int maxGuestsForRequestedUnits = (config.getUnitAdultCapacity() + config.getUnitChildCapacity()) * requestedUnits;
-                
+
                 if (totalGuests > maxGuestsForRequestedUnits) {
                     // Check if extra capacity is allowed
                     if (Boolean.TRUE.equals(config.getAllowExtraCapacity())) {
                         int extraGuestsNeeded = totalGuests - maxGuestsForRequestedUnits;
                         int maxExtraAdults = Optional.ofNullable(config.getExtraAdultCapacityLimit()).orElse(0) * requestedUnits;
                         int maxExtraChildren = Optional.ofNullable(config.getExtraChildCapacityLimit()).orElse(0) * requestedUnits;
-                        
+
                         if (extraGuestsNeeded > maxExtraAdults + maxExtraChildren) {
                             AvailabilityResponse response = AvailabilityResponse.builder()
                                     .available(false)
-                                    .message(String.format("Requested %d units can accommodate max %d guests (including %d extra), but %d guests provided", 
-                                            requestedUnits, maxGuestsForRequestedUnits + maxExtraAdults + maxExtraChildren, 
+                                    .message(String.format("Requested %d units can accommodate max %d guests (including %d extra), but %d guests provided",
+                                            requestedUnits, maxGuestsForRequestedUnits + maxExtraAdults + maxExtraChildren,
                                             maxExtraAdults + maxExtraChildren, totalGuests))
                                     .availableUnits(availableUnits)
                                     .requestedUnits(requestedUnits)
                                     .totalCapacity(totalUnits)
                                     .build();
-                            
+
                             return APIResponse.<AvailabilityResponse>builder()
                                     .success(false)
                                     .message(response.getMessage())
@@ -986,13 +1025,13 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                     } else {
                         AvailabilityResponse response = AvailabilityResponse.builder()
                                 .available(false)
-                                .message(String.format("Requested %d units can accommodate max %d guests, but %d guests provided", 
+                                .message(String.format("Requested %d units can accommodate max %d guests, but %d guests provided",
                                         requestedUnits, maxGuestsForRequestedUnits, totalGuests))
                                 .availableUnits(availableUnits)
                                 .requestedUnits(requestedUnits)
                                 .totalCapacity(totalUnits)
                                 .build();
-                        
+
                         return APIResponse.<AvailabilityResponse>builder()
                                 .success(false)
                                 .message(response.getMessage())
@@ -1011,7 +1050,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                 .requestedUnits(requestedUnits)
                 .totalCapacity(totalUnits)
                 .build();
-        
+
         return createAvailabilitySuccessResponse(response);
     }
 
@@ -1025,14 +1064,14 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         if (accommodation.getBookingConfiguration() != null) {
             return validateCapacityDetailedUsingConfiguration(accommodation, accommodation.getBookingConfiguration(), availabilityDto);
         }
-        
+
         // Default response for legacy case
         AvailabilityResponse response = AvailabilityResponse.builder()
                 .available(true)
                 .message("Legacy accommodation validation - consider updating to use BookingConfiguration")
                 .requestedUnits(Optional.ofNullable(availabilityDto.getNoOfUnits()).orElse(1))
                 .build();
-        
+
         return createAvailabilitySuccessResponse(response);
     }
 
@@ -1042,14 +1081,14 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         if (transport.getBookingConfiguration() != null) {
             return validateCapacityDetailedUsingConfiguration(transport, transport.getBookingConfiguration(), availabilityDto);
         }
-        
+
         // Default response for legacy case
         AvailabilityResponse response = AvailabilityResponse.builder()
                 .available(true)
                 .message("Legacy transport validation - consider updating to use BookingConfiguration")
                 .requestedUnits(Optional.ofNullable(availabilityDto.getNoOfUnits()).orElse(1))
                 .build();
-        
+
         return createAvailabilitySuccessResponse(response);
     }
 
@@ -1059,14 +1098,14 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         if (activityService.getBookingConfiguration() != null) {
             return validateCapacityDetailedUsingConfiguration(activityService, activityService.getBookingConfiguration(), availabilityDto);
         }
-        
+
         // Default response for legacy case
         AvailabilityResponse response = AvailabilityResponse.builder()
                 .available(true)
                 .message("Legacy activity service validation - consider updating to use BookingConfiguration")
                 .requestedUnits(Optional.ofNullable(availabilityDto.getNoOfUnits()).orElse(1))
                 .build();
-        
+
         return createAvailabilitySuccessResponse(response);
     }
 
@@ -1076,14 +1115,14 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         if (foodAndBeverage.getBookingConfiguration() != null) {
             return validateCapacityDetailedUsingConfiguration(foodAndBeverage, foodAndBeverage.getBookingConfiguration(), availabilityDto);
         }
-        
+
         // Default response for legacy case
         AvailabilityResponse response = AvailabilityResponse.builder()
                 .available(true)
                 .message("Legacy food and beverage validation - consider updating to use BookingConfiguration")
                 .requestedUnits(Optional.ofNullable(availabilityDto.getNoOfUnits()).orElse(1))
                 .build();
-        
+
         return createAvailabilitySuccessResponse(response);
     }
 
@@ -1093,14 +1132,14 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         if (touristGuide.getBookingConfiguration() != null) {
             return validateCapacityDetailedUsingConfiguration(touristGuide, touristGuide.getBookingConfiguration(), availabilityDto);
         }
-        
+
         // Default response for legacy case
         AvailabilityResponse response = AvailabilityResponse.builder()
                 .available(true)
                 .message("Legacy tourist guide validation - consider updating to use BookingConfiguration")
                 .requestedUnits(Optional.ofNullable(availabilityDto.getNoOfUnits()).orElse(1))
                 .build();
-        
+
         return createAvailabilitySuccessResponse(response);
     }
 
@@ -1125,7 +1164,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                 .available(false)
                 .message(message)
                 .build();
-        
+
         return APIResponse.<AvailabilityResponse>builder()
                 .success(false)
                 .message(message)

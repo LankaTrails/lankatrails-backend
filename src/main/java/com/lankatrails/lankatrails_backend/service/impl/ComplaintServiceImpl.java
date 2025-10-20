@@ -97,6 +97,115 @@ public class ComplaintServiceImpl implements ComplaintService {
 
     @Override
     @Transactional
+    public APIResponse<String> addNewGeneralComplaint(ComplaintDTO complaintDTO) {
+        Tourist tourist = touristRepository.findByUserId(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Tourist", authUtils.loggedInUserId()));
+
+        // Prepare the general complaint (without service)
+        Complaint complaint = new Complaint();
+        complaint.setDescription(complaintDTO.getDescription());
+        complaint.setComplaintStatus(ComplaintStatus.PENDING);
+        complaint.setService(null); // General complaint - no specific service
+        complaint.setTourist(tourist);
+        complaint.setDateTime(LocalDateTime.now());
+        
+        // Save the complaint
+        Complaint savedComplaint = complaintRepository.save(complaint);
+        
+        // Prepare the complaint images
+        if (complaintDTO.getComplaintImgs() != null && !complaintDTO.getComplaintImgs().isEmpty()) {
+            for (ComplaintImgDTO complaintImg : complaintDTO.getComplaintImgs()) {
+                ComplaintImage img = new ComplaintImage();
+                img.setImageUrl(complaintImg.getImageUrl());
+                img.setComplaint(savedComplaint);
+                // Save the image
+                complaintImgRepository.save(img);
+            }
+        }
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("General complaint submitted successfully")
+                .data("")
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<List<ComplaintViewDTO>> getMyComplaints() {
+        try {
+            // Get the currently logged-in tourist
+            Tourist tourist = touristRepository.findByUserId(authUtils.loggedInUserId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Tourist", authUtils.loggedInUserId()));
+            
+            // Get all complaints for this tourist
+            List<Complaint> complaints = complaintRepository.findByTouristOrderByDateTimeDesc(tourist);
+            
+            if (complaints.isEmpty()) {
+                return APIResponse.<List<ComplaintViewDTO>>builder()
+                        .success(true)
+                        .message("No complaints found")
+                        .data(new ArrayList<>())
+                        .build();
+            }
+            
+            List<ComplaintViewDTO> complaintViewDTOs = new ArrayList<>();
+            
+            for (Complaint complaint : complaints) {
+                ComplaintViewDTO dto = new ComplaintViewDTO();
+                dto.setComplaintId(complaint.getComplaintId());
+                dto.setDescription(complaint.getDescription());
+                dto.setComplaintDateTime(complaint.getDateTime());
+                dto.setComplaintStatus(complaint.getComplaintStatus());
+                dto.setComplaintResult(complaint.getComplaintResult());
+                
+                // Set service information if available
+                if (complaint.getService() != null) {
+                    dto.setServiceName(complaint.getService().getServiceName());
+                }
+                
+                // Set complaint images
+                List<ComplaintImage> complaintImgs = complaintImgRepository.findByComplaint(complaint);
+                if (!complaintImgs.isEmpty()) {
+                    List<String> imageUrls = complaintImgs.stream()
+                            .map(ComplaintImage::getImageUrl)
+                            .toList();
+                    dto.setComplaintImgs(imageUrls);
+                }
+                
+                // Set admin feedback if complaint is resolved
+                if (complaint.getComplaintStatus() == ComplaintStatus.RESOLVED) {
+                    // Try to get admin feedback from resolve table
+                    // Note: You may need to adjust this based on your actual table structure
+                    dto.setAdminToTourist("Your complaint has been resolved");
+                }
+                
+                complaintViewDTOs.add(dto);
+            }
+            
+            return APIResponse.<List<ComplaintViewDTO>>builder()
+                    .success(true)
+                    .message("Complaints retrieved successfully")
+                    .data(complaintViewDTOs)
+                    .build();
+                    
+        } catch (ResourceNotFoundException e) {
+            return APIResponse.<List<ComplaintViewDTO>>builder()
+                    .success(false)
+                    .message(e.getMessage())
+                    .data(new ArrayList<>())
+                    .build();
+        } catch (Exception e) {
+            return APIResponse.<List<ComplaintViewDTO>>builder()
+                    .success(false)
+                    .message("Failed to retrieve complaints: " + e.getMessage())
+                    .data(new ArrayList<>())
+                    .build();
+        }
+    }
+
+    @Override
+    @Transactional
     public APIResponse<ComplaintInfoResponse> getAllComplaints() {
         List<Complaint> complaints = complaintRepository.findByComplaintStatusOrComplaintStatusOrComplaintStatus(ComplaintStatus.PENDING,ComplaintStatus.IN_PROGRESS,ComplaintStatus.RESOLVED);
         if (!complaints.isEmpty()){
