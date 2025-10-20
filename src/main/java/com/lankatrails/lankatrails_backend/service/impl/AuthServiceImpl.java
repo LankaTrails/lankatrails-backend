@@ -574,6 +574,7 @@ public class AuthServiceImpl implements AuthService {
 
         //set the necessary provider details
         ProviderViewInfoDTO providerViewInfoDTO = new ProviderViewInfoDTO();
+        providerViewInfoDTO.setProviderId(provider.getUserId());
         providerViewInfoDTO.setEmail(provider.getEmail());
         providerViewInfoDTO.setProfilePicUrl(provider.getProfilePictureUrl());
         providerViewInfoDTO.setStatus(provider.getStatus());
@@ -705,6 +706,14 @@ public class AuthServiceImpl implements AuthService {
         licenseResponse.setContent(prepareResponse);
         providerViewInfoDTO.setPendingLicenses(licenseResponse);
 
+        //contact person
+        providerViewInfoDTO.getContactPerson().setName(provider.getContactPerson().getName());
+        providerViewInfoDTO.getContactPerson().setEmail(provider.getContactPerson().getEmail());
+        providerViewInfoDTO.getContactPerson().setPosition(provider.getContactPerson().getPosition());
+        providerViewInfoDTO.getContactPerson().setIdentityDocumentUrl(provider.getContactPerson().getIdentityDocumentUrl());
+        providerViewInfoDTO.getContactPerson().setPhoneNumber(provider.getContactPerson().getPhoneNumber());
+
+
         //set the provider view response
         ProviderViewInfoResponse response = new ProviderViewInfoResponse();
         response.setContent(providerViewInfoDTO);
@@ -737,6 +746,7 @@ public class AuthServiceImpl implements AuthService {
             List<ProviderInfoDTO> responseList = new ArrayList<>();
             for (Provider provider : providers) {
                 ProviderInfoDTO providerInfoDTO = new ProviderInfoDTO();
+                providerInfoDTO.setProviderId(provider.getUserId());
                 providerInfoDTO.setBusinessName(provider.getBusinessName());
                 providerInfoDTO.setBusinessType(provider.getBusinessType());
                 providerInfoDTO.setBusinessRegistrationNumber(provider.getBusinessRegistrationNumber());
