@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -51,6 +52,7 @@ public class TripItemServiceImpl implements TripItemService {
     private TravelTimeService travelTimeService;
 
     @Override
+    @Transactional
     public APIResponse<String> addTripItem(Long tripId, TripItemDTO tripItemDTO) {
         log.info("Adding trip item to trip with ID: {}", tripId);
 
@@ -193,6 +195,7 @@ public class TripItemServiceImpl implements TripItemService {
                 com.lankatrails.lankatrails_backend.model.enums.BookingType.MULTI_DAY;
     }
 
+    @Transactional
     private APIResponse<String> checkTravelTimeFeasibility(TripItemDTO tripItemDTO, Trip trip) {
         // Check travel time feasibility with previous trip item
         Optional<TripItem> previousTripItemOpt = tripItemRepository
@@ -254,6 +257,7 @@ public class TripItemServiceImpl implements TripItemService {
     /**
      * Extract coordinates from a TripItem (either from Place or Service)
      */
+    @Transactional
     private Optional<Double[]> getLocationCoordinates(TripItem tripItem) {
         if (tripItem.getPlace() != null) {
             return Optional.of(new Double[]{
@@ -277,6 +281,7 @@ public class TripItemServiceImpl implements TripItemService {
     /**
      * Extract coordinates from a TripItemDTO (either from Place or Service)
      */
+    @Transactional
     private Optional<Double[]> getLocationCoordinates(TripItemDTO tripItemDTO) {
         if (tripItemDTO.getPlace() != null) {
             return Optional.of(new Double[]{
