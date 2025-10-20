@@ -1,7 +1,6 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
-import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.TripItemDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.AvailabilityResponse;
@@ -9,10 +8,7 @@ import com.lankatrails.lankatrails_backend.exception.IllegalParamsException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.TransportMode;
-import com.lankatrails.lankatrails_backend.repositories.PlaceRepository;
-import com.lankatrails.lankatrails_backend.repositories.ServiceRepository;
-import com.lankatrails.lankatrails_backend.repositories.TripItemRepository;
-import com.lankatrails.lankatrails_backend.repositories.TripRepository;
+import com.lankatrails.lankatrails_backend.repositories.*;
 import com.lankatrails.lankatrails_backend.service.BookingService;
 import com.lankatrails.lankatrails_backend.service.TravelTimeService;
 import com.lankatrails.lankatrails_backend.service.TripItemService;
@@ -38,6 +34,9 @@ public class TripItemServiceImpl implements TripItemService {
 
     @Autowired
     private TripItemRepository tripItemRepository;
+
+    @Autowired
+    private LocationRepository locationRepository;
 
     @Autowired
     private PlaceRepository placeRepository;
@@ -287,7 +286,9 @@ public class TripItemServiceImpl implements TripItemService {
         }
 
         if (tripItemDTO.getService() != null) {
-            LocationDTO serviceLocation = tripItemDTO.getService().getLocations().stream().findFirst()
+            Service service = serviceRepository.findById(tripItemDTO.getService().getServiceId())
+                    .orElseThrow(() -> new IllegalParamsException("Service not found with ID: " + tripItemDTO.getService().getServiceId()));
+            Location serviceLocation = service.getLocations().stream().findFirst()
                     .orElseThrow(() -> new IllegalParamsException("Service has no associated locations"));
             return Optional.of(new Double[]{
                     serviceLocation.getLatitude(),
