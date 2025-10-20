@@ -13,7 +13,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProviderViewInfoDTO {
-    private Long providerID;
+    private Long providerId;
     private String email;
     private String profilePicUrl;
     private UserStatus status;
