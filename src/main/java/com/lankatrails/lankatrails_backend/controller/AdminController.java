@@ -2,6 +2,7 @@ package com.lankatrails.lankatrails_backend.controller;
 
 import com.lankatrails.lankatrails_backend.dtos.BookingItemDto;
 import com.lankatrails.lankatrails_backend.dtos.request.AcceptRejectDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.ProviderInfoDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ApproveLicenseResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ProviderInfoResponse;
@@ -33,20 +34,20 @@ public class AdminController {
     }
 
     //Get all the licenses
-    @GetMapping("/approve-provider-service")
-    public ResponseEntity<APIResponse<ApproveLicenseResponse>> approveProviderService() {
-        APIResponse<ApproveLicenseResponse> response = authService.approveProviderService();
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
+//    @GetMapping("/approve-provider-service")
+//    public ResponseEntity<APIResponse<ApproveLicenseResponse>> approveProviderService() {
+//        APIResponse<ApproveLicenseResponse> response = authService.approveProviderService();
+//        return new ResponseEntity<>(response, HttpStatus.OK);
+//    }
 
-    //Load all the licenses
+    //Load a provider details
     @GetMapping("/approve-provider/service-category/{providerId}")
     public ResponseEntity<APIResponse<ProviderViewInfoResponse>> approveProviderServiceCategory(@PathVariable Long providerId) {
         APIResponse<ProviderViewInfoResponse> response = authService.loadAllRequestedProviders(providerId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    //load the basic provider details
+    //load all providers
     @GetMapping("/approve-provider/providers")
     public ResponseEntity<APIResponse<ProviderInfoResponse>> getProviderInfo() {
         APIResponse<ProviderInfoResponse> response = authService.getBasicProviderInfo();

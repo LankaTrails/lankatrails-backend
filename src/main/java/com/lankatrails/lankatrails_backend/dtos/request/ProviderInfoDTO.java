@@ -12,6 +12,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProviderInfoDTO {
+    private Long providerId;
     private String businessName;
     private BusinessType businessType;
     private String businessRegistrationNumber;
