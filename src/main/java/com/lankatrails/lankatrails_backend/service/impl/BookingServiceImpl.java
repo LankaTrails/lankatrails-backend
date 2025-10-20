@@ -1,6 +1,14 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
 import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
 import com.lankatrails.lankatrails_backend.dtos.BookingItemDto;
 import com.lankatrails.lankatrails_backend.dtos.ProviderDto;
 import com.lankatrails.lankatrails_backend.dtos.request.BookingRequestDTO;
@@ -269,7 +277,7 @@ public class BookingServiceImpl implements BookingService {
     @Transactional
     public APIResponse<String> cancelItem(Long tripItemId) {
         log.info("Canceling booking for trip item with ID: {}", tripItemId);
-
+        
         try {
             // Find the trip item
             TripItem tripItem = tripItemRepository.findById(tripItemId)
@@ -277,7 +285,7 @@ public class BookingServiceImpl implements BookingService {
 
             // Get the current user
             Long currentUserId = authUtils.loggedInUserId();
-
+            
             // Find the trip participant for the current user
             TripParticipant tripParticipant = tripParticipantRepository
                     .findByTourist_UserId(currentUserId)
@@ -296,7 +304,7 @@ public class BookingServiceImpl implements BookingService {
             // If the trip item has a booking, delete it first
             if (tripItem.getBooking() != null) {
                 Booking booking = tripItem.getBooking();
-
+                
                 // Check if booking is already canceled
                 if (booking.getBookingStatus() == BookingStatus.CANCELLED) {
                     return APIResponse.<String>builder()
@@ -305,12 +313,12 @@ public class BookingServiceImpl implements BookingService {
                             .data(null)
                             .build();
                 }
-
+                
                 // Delete the booking first
                 bookingRepository.delete(booking);
                 log.info("Deleted booking for trip item ID: {}", tripItemId);
             }
-
+            
             // Delete the trip item from the trip_items table
             tripItemRepository.delete(tripItem);
 
@@ -320,7 +328,7 @@ public class BookingServiceImpl implements BookingService {
                     .message("Service removed from trip successfully")
                     .data("Trip item removed for ID: " + tripItemId)
                     .build();
-
+                    
         } catch (ResourceNotFoundException | BadRequestException e) {
             log.error("Error canceling booking for trip item ID {}: {}", tripItemId, e.getMessage());
             return APIResponse.<String>builder()
