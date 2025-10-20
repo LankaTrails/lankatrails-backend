@@ -97,6 +97,41 @@ public class ComplaintServiceImpl implements ComplaintService {
 
     @Override
     @Transactional
+    public APIResponse<String> addNewGeneralComplaint(ComplaintDTO complaintDTO) {
+        Tourist tourist = touristRepository.findByUserId(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Tourist", authUtils.loggedInUserId()));
+
+        // Prepare the general complaint (without service)
+        Complaint complaint = new Complaint();
+        complaint.setDescription(complaintDTO.getDescription());
+        complaint.setComplaintStatus(ComplaintStatus.PENDING);
+        complaint.setService(null); // General complaint - no specific service
+        complaint.setTourist(tourist);
+        complaint.setDateTime(LocalDateTime.now());
+        
+        // Save the complaint
+        Complaint savedComplaint = complaintRepository.save(complaint);
+        
+        // Prepare the complaint images
+        if (complaintDTO.getComplaintImgs() != null && !complaintDTO.getComplaintImgs().isEmpty()) {
+            for (ComplaintImgDTO complaintImg : complaintDTO.getComplaintImgs()) {
+                ComplaintImage img = new ComplaintImage();
+                img.setImageUrl(complaintImg.getImageUrl());
+                img.setComplaint(savedComplaint);
+                // Save the image
+                complaintImgRepository.save(img);
+            }
+        }
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("General complaint submitted successfully")
+                .data("")
+                .build();
+    }
+
+    @Override
+    @Transactional
     public APIResponse<ComplaintInfoResponse> getAllComplaints() {
         List<Complaint> complaints = complaintRepository.findByComplaintStatusOrComplaintStatusOrComplaintStatus(ComplaintStatus.PENDING,ComplaintStatus.IN_PROGRESS,ComplaintStatus.RESOLVED);
         if (!complaints.isEmpty()){

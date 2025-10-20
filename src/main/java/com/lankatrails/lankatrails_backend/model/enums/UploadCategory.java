@@ -12,7 +12,8 @@ public enum UploadCategory {
     IDENTIFICATION("identification"),
     LICENCE("licence"),
     CHAT_IMAGE("chat-images"),
-    CHAT_FILE("chat-files");
+    CHAT_FILE("chat-files"),
+    COMPLAINT_IMAGES("complaint-images");
 
 
     private final String directory;
