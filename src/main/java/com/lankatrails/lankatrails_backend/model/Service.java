@@ -43,26 +43,26 @@ public class Service {
 
     @ManyToOne
     @JoinColumn(name = "category_id")
-    private  Category category;
+    private Category category;
 
     @OneToMany(mappedBy = "service")
-    private Set<TabsSection> tabs=new HashSet<>();
+    private Set<TabsSection> tabs = new HashSet<>();
 
 
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
-          name = "service_policy",
-          joinColumns = @JoinColumn(name = "service_id"),
-          inverseJoinColumns = @JoinColumn(name = "policy_id")
+            name = "service_policy",
+            joinColumns = @JoinColumn(name = "service_id"),
+            inverseJoinColumns = @JoinColumn(name = "policy_id")
 
     )
-    private Set<PolicySection> policies=new HashSet<>();
+    private Set<PolicySection> policies = new HashSet<>();
 
     @ManyToMany
     @JoinTable(
-          name = "service_location",
-          joinColumns = @JoinColumn(name = "service_id"),
-          inverseJoinColumns = @JoinColumn(name = "location_id")
+            name = "service_location",
+            joinColumns = @JoinColumn(name = "service_id"),
+            inverseJoinColumns = @JoinColumn(name = "location_id")
     )
     private Set<Location> locations = new HashSet<>();
 
@@ -90,4 +90,7 @@ public class Service {
 
     @OneToMany(mappedBy = "service")
     private List<Warning> warning;
+
+    @OneToMany(mappedBy = "service")
+    private List<ExternalBooking> externalBookings;
 }

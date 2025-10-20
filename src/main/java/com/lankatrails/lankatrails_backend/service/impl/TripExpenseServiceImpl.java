@@ -469,7 +469,7 @@ public class TripExpenseServiceImpl implements TripExpenseService {
 
         // Validate expense is through the app
         if (existingExpense.getIsThroughApp()) {
-            throw new BadRequestException(" Expenses created through the app can't be updated");
+            throw new BadRequestException(" Expenses created through the app can't be deleted");
         }
 
         tripExpenseRepository.delete(existingExpense);
