@@ -13,11 +13,14 @@ import com.lankatrails.lankatrails_backend.model.License;
 import com.lankatrails.lankatrails_backend.model.Provider;
 import com.lankatrails.lankatrails_backend.model.enums.ApprovalStatus;
 import com.lankatrails.lankatrails_backend.model.enums.ServiceCategory;
+import com.lankatrails.lankatrails_backend.model.enums.UploadCategory;
 import com.lankatrails.lankatrails_backend.repositories.CategoryRepository;
 import com.lankatrails.lankatrails_backend.repositories.LicenseRepository;
 import com.lankatrails.lankatrails_backend.repositories.ProviderRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ProviderService;
+import com.lankatrails.lankatrails_backend.service.utils.FileUploadService;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,6 +34,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class ProviderServiceImpl implements ProviderService {
     @Autowired
     private AuthUtils authUtils;
@@ -46,6 +50,9 @@ public class ProviderServiceImpl implements ProviderService {
 
     @Autowired
     private LicenseRepository licenseRepository;
+
+    @Autowired
+    private FileUploadService fileUploadService;
 
     @Override
     public APIResponse<BusinessResponseDTO> getBusinessDetails() {
@@ -136,9 +143,41 @@ public class ProviderServiceImpl implements ProviderService {
     @Override
     public APIResponse<String> licenseRenewal(List<LicenseDTO> licenseDTO, List<MultipartFile> licenseFiles) {
         Provider provider = providerRepository.findByUserId(authUtils.loggedInUserId()).orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
+
         //Add all the licenses to the license repository
         if (!licenseDTO.isEmpty()) {
-            for (LicenseDTO license : licenseDTO) {
+            // Handle license files upload
+            List<LicenseDTO> licenses = new ArrayList<>(licenseDTO);
+            if (licenseFiles != null && !licenseFiles.isEmpty()) {
+                if (licenseFiles.size() != licenses.size()) {
+                    return APIResponse.<String>builder()
+                            .success(false)
+                            .message("Number of license files must match the number of licenses")
+                            .data("")
+                            .build();
+                }
+
+                for (int i = 0; i < licenseFiles.size(); i++) {
+                    LicenseDTO license = licenses.get(i);
+                    MultipartFile licenseFile = licenseFiles.get(i);
+
+                    // Upload file and set URL
+                    String fileUrl = fileUploadService.storeFile(licenseFile, UploadCategory.LICENCE, license.getCategory().getDisplayName().toLowerCase());
+                    license.setLicenseUrl(fileUrl);
+                    log.info("License file uploaded successfully for license number {}: {}", license.getLicenseNumber(), license.getLicenseUrl());
+
+                    // Additional validation
+                    if (license.getExpiryDate().isBefore(java.time.LocalDate.now())) {
+                        return APIResponse.<String>builder()
+                                .success(false)
+                                .message(String.format("License %s expired on %s", license.getLicenseNumber(), license.getExpiryDate()))
+                                .data("")
+                                .build();
+                    }
+                }
+            }
+
+            for (LicenseDTO license : licenses) {
                 Category category = categoryRepository.findByCategoryName(license.getCategory()).orElseThrow(() -> new ResourceNotFoundException("Category", license.getCategory().getDisplayName()));
                 License setLicense = new License();
                 setLicense.setLicenseNumber(license.getLicenseNumber());
@@ -184,9 +223,41 @@ public class ProviderServiceImpl implements ProviderService {
 
     public APIResponse<String> requestApproval(List<LicenseDTO> licenseDTO, List<MultipartFile> licenseFiles) {
         Provider provider = providerRepository.findByUserId(authUtils.loggedInUserId()).orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
+
         //Add all the licenses to the license repository
         if (!licenseDTO.isEmpty()) {
-            for (LicenseDTO license : licenseDTO) {
+            // Handle license files upload
+            List<LicenseDTO> licenses = new ArrayList<>(licenseDTO);
+            if (licenseFiles != null && !licenseFiles.isEmpty()) {
+                if (licenseFiles.size() != licenses.size()) {
+                    return APIResponse.<String>builder()
+                            .success(false)
+                            .message("Number of license files must match the number of licenses")
+                            .data("")
+                            .build();
+                }
+
+                for (int i = 0; i < licenseFiles.size(); i++) {
+                    LicenseDTO license = licenses.get(i);
+                    MultipartFile licenseFile = licenseFiles.get(i);
+
+                    // Upload file and set URL
+                    String fileUrl = fileUploadService.storeFile(licenseFile, UploadCategory.LICENCE, license.getCategory().getDisplayName().toLowerCase());
+                    license.setLicenseUrl(fileUrl);
+                    log.info("License file uploaded successfully for license number {}: {}", license.getLicenseNumber(), license.getLicenseUrl());
+
+                    // Additional validation
+                    if (license.getExpiryDate().isBefore(java.time.LocalDate.now())) {
+                        return APIResponse.<String>builder()
+                                .success(false)
+                                .message(String.format("License %s expired on %s", license.getLicenseNumber(), license.getExpiryDate()))
+                                .data("")
+                                .build();
+                    }
+                }
+            }
+
+            for (LicenseDTO license : licenses) {
                 Category category = categoryRepository.findByCategoryName(license.getCategory()).orElseThrow(() -> new ResourceNotFoundException("Category", license.getCategory().getDisplayName()));
                 License setLicense = new License();
                 setLicense.setLicenseNumber(license.getLicenseNumber());
@@ -195,7 +266,7 @@ public class ProviderServiceImpl implements ProviderService {
                 setLicense.setCategory(category);
                 setLicense.setProvider(provider);
 
-                //Update the status of the provider's respective category to RENEWAL
+                //Update the status of the provider's respective category to PENDING
                 if (category.getCategoryName() == ServiceCategory.ACCOMMODATION) {
                     provider.setAccommodationApprovalStatus(ApprovalStatus.PENDING);
                 } else if (category.getCategoryName() == ServiceCategory.TOUR_GUIDE) {
