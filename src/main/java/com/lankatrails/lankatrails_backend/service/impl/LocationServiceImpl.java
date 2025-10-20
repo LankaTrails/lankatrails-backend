@@ -24,7 +24,7 @@ public class LocationServiceImpl implements LocationService {
     @Override
     @Transactional
     public APIResponse<List<LocationDTO>> getAllCities() {
-        List<Location> cities = locationRepository.findFirstLocationPerCity(); // This method should return a list of LocationDTOs
+        List<Location> cities = locationRepository.findByLocationType(LocationType.CITY); // This method should return a list of LocationDTOs
         if (cities.isEmpty()) {
             return APIResponse.<List<LocationDTO>>builder()
                     .success(false)
