@@ -174,7 +174,7 @@ public class TripExpenseServiceImpl implements TripExpenseService {
         tripExpense.setExpenseDateTime(LocalDateTime.now());
         tripExpense.setTrip(trip);
         tripExpense.setCreatedByParticipant(loggedInParticipant);
-//        tripExpense.setShares(expenseShares);
+        tripExpense.setAmount(BigDecimal.valueOf(totalExpenseAmount)); // Set the amount field
         tripExpense.setTotalExpenseAmount(totalExpenseAmount);
 
         // Update category spent amount
@@ -242,6 +242,11 @@ public class TripExpenseServiceImpl implements TripExpenseService {
         // Validate expense exists
         TripExpense existingExpense = tripExpenseRepository.findById(expenseId)
                 .orElseThrow(() -> new BadRequestException("Expense not found for the given id"));
+
+        // Validate expense is through the app
+        if (existingExpense.getIsThroughApp()) {
+            throw new BadRequestException(" Expenses created through the app can't be updated");
+        }
 
         Trip trip = existingExpense.getTrip();
 
@@ -345,6 +350,7 @@ public class TripExpenseServiceImpl implements TripExpenseService {
         // Update expense entity
         existingExpense.setExpenseName(expenseDTO.getExpenseName());
         existingExpense.setBudgetCategory(newCategory);
+        existingExpense.setAmount(BigDecimal.valueOf(newTotalAmount)); // Set the amount field
         existingExpense.setTotalExpenseAmount(newTotalAmount);
 
         // Update budget categories spent amounts
@@ -461,6 +467,11 @@ public class TripExpenseServiceImpl implements TripExpenseService {
         TripExpense existingExpense = tripExpenseRepository.findById(expenseId)
                 .orElseThrow(() -> new BadRequestException("Expense not found for the given id"));
 
+        // Validate expense is through the app
+        if (existingExpense.getIsThroughApp()) {
+            throw new BadRequestException(" Expenses created through the app can't be updated");
+        }
+
         tripExpenseRepository.delete(existingExpense);
 
         return new APIResponse<>(true, "Expense deleted successfully", "Expense deleted successfully for expense ID: " + expenseId);
@@ -489,6 +500,7 @@ public class TripExpenseServiceImpl implements TripExpenseService {
             responseDTO.setTotalExpenseAmount(expense.getTotalExpenseAmount()); // Set total expense amount
             responseDTO.setBudgetCategory(expense.getBudgetCategory().name());
             responseDTO.setTripId(expense.getTrip().getTripId());
+            responseDTO.setIsThroughApp(expense.getIsThroughApp());
             responseDTO.setExpenseDateTime(expense.getExpenseDateTime()); // Set the expense date/time
 
             // Set created by participant
@@ -546,10 +558,11 @@ public class TripExpenseServiceImpl implements TripExpenseService {
 
     /**
      * Helper method to update trip's total spent amount
+     * Note: This method currently calculates the total dynamically from expenses
+     * If the Trip entity has a totalSpentAmount field, this method should be updated accordingly
      */
     private void updateTripTotalSpentAmount(Trip trip, BigDecimal additionalAmount) {
-        BigDecimal currentTotal = getTotalSpentAmount(trip);
-        // Note: This method assumes the Trip entity will have proper methods to handle total spent amount
-        // For now, we'll calculate it dynamically from expenses
+        // Currently, we calculate the total spent amount dynamically from expenses
+        // If needed, update Trip entity to maintain a totalSpentAmount field
     }
 }

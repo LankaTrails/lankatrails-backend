@@ -1,12 +1,29 @@
 package com.lankatrails.lankatrails_backend.model;
 
-import com.lankatrails.lankatrails_backend.model.enums.BudgetCategory;
-import jakarta.persistence.*;
-import lombok.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.lankatrails.lankatrails_backend.model.enums.BudgetCategory;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "trip_expenses")
@@ -30,6 +47,10 @@ public class TripExpense {
     @Enumerated(EnumType.STRING)
     @Column(name = "category", nullable = false, columnDefinition = "VARCHAR(20)")
     private BudgetCategory budgetCategory;
+
+    @Builder.Default
+    @Column(name = "is_through_app", nullable = false)
+    private Boolean isThroughApp = false;
 
     @Column(name = "expense_date_time", nullable = false)
     private LocalDateTime expenseDateTime;
