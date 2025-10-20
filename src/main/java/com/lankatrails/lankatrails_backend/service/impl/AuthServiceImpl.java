@@ -574,7 +574,7 @@ public class AuthServiceImpl implements AuthService {
 
         //set the necessary provider details
         ProviderViewInfoDTO providerViewInfoDTO = new ProviderViewInfoDTO();
-        providerViewInfoDTO.setProviderID(provider.getUserId());
+        providerViewInfoDTO.setProviderId(provider.getUserId());
         providerViewInfoDTO.setEmail(provider.getEmail());
         providerViewInfoDTO.setProfilePicUrl(provider.getProfilePictureUrl());
         providerViewInfoDTO.setStatus(provider.getStatus());
