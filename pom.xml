@@ -21,7 +21,7 @@
 		<commons.validator.version>1.7</commons.validator.version>
 		<modelmapper.version>3.2.0</modelmapper.version>
 		<bucket4j.version>7.6.0</bucket4j.version>
-		<caffeine.version>3.1.8</caffeine.version>
+		<caffeine.version>3.2.2</caffeine.version>
 	</properties>
 
 	<dependencies>
