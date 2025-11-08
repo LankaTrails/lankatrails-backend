@@ -19,7 +19,7 @@
 		<springdoc.version>2.1.0</springdoc.version>
 		<log4j.version>2.20.0</log4j.version>
 		<commons.validator.version>1.7</commons.validator.version>
-		<modelmapper.version>3.2.0</modelmapper.version>
+		<modelmapper.version>3.2.5</modelmapper.version>
 		<bucket4j.version>7.6.0</bucket4j.version>
 		<caffeine.version>3.1.8</caffeine.version>
 	</properties>
