@@ -86,7 +86,7 @@
 		<dependency>
 			<groupId>org.hibernate.orm</groupId>
 			<artifactId>hibernate-spatial</artifactId>
-			<version>6.5.2.Final</version> <!-- ✅ Match Hibernate version in Spring Boot 3.5.0 -->
+			<version>6.6.33.Final</version> <!-- ✅ Match Hibernate version in Spring Boot 3.5.0 -->
 		</dependency>
 
 
