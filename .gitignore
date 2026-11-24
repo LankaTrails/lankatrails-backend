@@ -61,3 +61,7 @@ build/
 /uploads
 
 .env
+# Docker env files contain real credentials; only *.example templates are committed
+docker/.env*
+!docker/.env*.example
+docker/logs/
