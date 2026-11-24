@@ -1,2 +1,24 @@
-/mvnw text eol=lf
+# Normalize line endings: LF in the repo and working tree on every OS.
+* text=auto eol=lf
+
+# Windows scripts keep CRLF
 *.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.pdf binary
+*.jar binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.mp4 binary
+
+# Keep Maven wrapper script LF so it runs on macOS/Linux
+/mvnw text eol=lf
