@@ -20,6 +20,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -83,11 +85,17 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Value("${app.public-api-url}")
+    private String publicApiUrl;
+
 
     private void sendVerificationEmail(User user) {
         String jwtToken = jwtUtils.generateEmailVerificationJwt(user);
 
-        String verificationUrl = String.format("http://localhost:8080/api/auth/verify-email?token=%s", jwtToken);
+        String verificationUrl = UriComponentsBuilder.fromUriString(publicApiUrl)
+                .path("/api/auth/verify-email")
+                .queryParam("token", jwtToken)
+                .toUriString();
 
         Map<String, Object> params = new HashMap<>();
 //        params.put("name", user.getFirstName());
@@ -327,8 +335,7 @@ public class AuthServiceImpl implements AuthService {
     public APIResponse<UserProfileDto> getLoggedUserProfile(HttpServletRequest request) {
         log.info("Fetching logged user profile for request: {}", request.getRequestURI());
 
-        String jwtToken = jwtUtils.getJwtToken(request);
-        String email = jwtUtils.getUserNameFromJwtToken(jwtToken);
+        String email = authUtills.loggedInEmail();
         if (email == null) {
             log.warn("Failed to fetch user profile: Email not found in JWT token.");
             throw new UnauthorizedException("Email not found in JWT token.");
@@ -428,7 +435,7 @@ public class AuthServiceImpl implements AuthService {
         log.info("Attempting to refresh token for request: {}", request.getRequestURI());
 
         String refreshToken = jwtUtils.getRefreshToken(request);
-        String email = jwtUtils.getUserNameFromJwtToken(refreshToken);
+        String email = jwtUtils.getUserNameFromJwtToken(refreshToken, JwtUtils.TYPE_REFRESH);
         if (email == null) {
             log.warn("Email not found in refresh token.");
             throw new UnauthorizedException("Email not found in refresh token.");
@@ -498,14 +505,15 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public APIResponse<String> verifyEmail(String token) {
-        log.info("Verifying email with token: {}", token);
+        log.info("Verifying email");
 
         if (token == null || token.isEmpty()) {
             log.error("Email verification failed: Token is null or empty.");
             throw new BadRequestException("Email verification token is required.", "token", null);
         }
 
-        String email = jwtUtils.getUserNameFromJwtToken(token);
+        // Only genuine email-verification tokens are accepted (not access or refresh tokens)
+        String email = jwtUtils.getUserNameFromJwtToken(token, JwtUtils.TYPE_EMAIL_VERIFICATION);
         if (email == null) {
             log.error("Email verification failed: Invalid token.");
             throw new UnauthorizedException("Invalid email verification token.");
