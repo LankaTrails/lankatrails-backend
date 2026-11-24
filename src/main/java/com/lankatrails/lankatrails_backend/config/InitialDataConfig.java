@@ -3,13 +3,23 @@ package com.lankatrails.lankatrails_backend.config;
 import com.lankatrails.lankatrails_backend.model.*;
 import com.lankatrails.lankatrails_backend.model.enums.*;
 import com.lankatrails.lankatrails_backend.repositories.*;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.util.StringUtils;
 
+@Slf4j
 @Configuration
 public class InitialDataConfig {
+
+    @Value("${app.admin.email:}")
+    private String adminEmail;
+
+    @Value("${app.admin.password:}")
+    private String adminPassword;
 
     @Bean
     CommandLineRunner initData(UserRepository userRepository,
@@ -35,9 +45,13 @@ public class InitialDataConfig {
 
     private void initAdmin(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         if (!userRepository.existsByRole(UserRole.ROLE_ADMIN)) {
+            if (!StringUtils.hasText(adminEmail) || !StringUtils.hasText(adminPassword)) {
+                log.warn("No admin account exists and ADMIN_EMAIL / ADMIN_PASSWORD are not set; skipping admin creation");
+                return;
+            }
             Admin admin = new Admin();
-            admin.setEmail("admin@lankatrails.com");
-            admin.setPassword(passwordEncoder.encode("Admin@123"));
+            admin.setEmail(adminEmail.trim().toLowerCase());
+            admin.setPassword(passwordEncoder.encode(adminPassword));
             admin.setFirstName("System");
             admin.setLastName("Administrator");
             admin.setRole(UserRole.ROLE_ADMIN);
@@ -45,7 +59,7 @@ public class InitialDataConfig {
             admin.setPreferences(new UserPreferences());
 
             userRepository.save(admin);
-            System.out.println("Initial admin user created");
+            log.info("Initial admin user created: {}", admin.getEmail());
         }
     }
 
