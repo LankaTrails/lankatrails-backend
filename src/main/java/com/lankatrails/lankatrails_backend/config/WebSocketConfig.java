@@ -32,6 +32,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Value("${spring.rabbitmq.password}")
     private String password;
 
+    @Value("${app.cors.allowed-origins}")
+    private String[] allowedOrigins;
+
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.setApplicationDestinationPrefixes("/app");
@@ -47,16 +50,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // It is recommended to externalize allowed origins to application.properties
+        // Same origin list as REST CORS (app.cors.allowed-origins / CORS_ALLOWED_ORIGINS)
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns(
-                        "https://*.lankatrails.com",
-                        "https://lankatrails.com",
-                        "http://localhost:3000",
-                        "http://localhost:8081",
-                        "http://localhost:8082",
-                        "http://localhost:5500"
-                )
+                .setAllowedOriginPatterns(allowedOrigins)
                 .withSockJS();
     }
 
