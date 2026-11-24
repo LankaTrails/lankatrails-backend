@@ -9,6 +9,7 @@ import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.TransportService;
 import com.lankatrails.lankatrails_backend.service.impl.PolicyImpl;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -49,6 +50,7 @@ public class TransportController {
         return new ResponseEntity<>(transportResponseDTO, HttpStatus.OK);
     }
 
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @PutMapping("/transport/{id}")
     public ResponseEntity<TransportResponseDTO> updateTransport(
             @PathVariable Long id,
@@ -83,12 +85,14 @@ public class TransportController {
 
     }
 
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @PutMapping("/transport/deactivate/{id}")
     public ResponseEntity<APIResponse<String>> deleteTransport(@PathVariable Long id) {
         APIResponse<String> response = transportService.deactivateService(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @PutMapping("/transport/activate/{id}")
     public ResponseEntity<APIResponse<String>> activateService(@PathVariable Long id) {
         APIResponse<String> response = transportService.activateService(id);
@@ -114,6 +118,7 @@ public class TransportController {
 
     }
 
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @PutMapping(value = "/transport/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<APIResponse<String>> updateTransport(
             @PathVariable Long id,

@@ -11,6 +11,7 @@ import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ProviderService;
 import com.lankatrails.lankatrails_backend.service.impl.PolicyImpl;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -87,6 +88,7 @@ public class ProviderController {
 
     }
 
+    @PreAuthorize("@ownership.isPolicyOwner(#id)")
     @GetMapping("/delete/policy")
     public ResponseEntity<APIResponse<String>> removePolicy(@PathVariable Long id) {
         APIResponse<String> response = policyImplementation.removePolicies(id);

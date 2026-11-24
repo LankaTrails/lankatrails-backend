@@ -335,6 +335,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
         if (policyCheck == null) {
             //Policy doesn't exist
+            policies.setId(null); // never trust a client-supplied id on create
             policies.setProvider(provider);
             policies.getServices().add(service);
             service.getPolicies().add(policies);
@@ -375,6 +376,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
         if (policyCheck == null) {
             //Policy doesn't exist
+            policies.setId(null); // never trust a client-supplied id on create
             policies.setProvider(provider);
             policies.setCategory(category);
             policySectionRepository.save(policies);
@@ -450,6 +452,7 @@ public class ActivityServiceServiceImpl implements ActivityServiceService {
         ActivityService service = activityServiceRepository.findById(Id)
                 .orElseThrow(() -> new ResourceNotFoundException("Activity Service", Id));
 
+        tabsSection.setId(null); // never trust a client-supplied id on create
         tabsSection.setService(service);
         tabsSectionRepository.save(tabsSection);
 

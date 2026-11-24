@@ -362,6 +362,7 @@ public class TouristGuideImpl implements TouristGuideService {
         PolicySection policyCheck = policySectionRepository.findByHeading(policies.getHeading());
         if (policyCheck == null) {
             //Policy doesn't exist
+            policies.setId(null); // never trust a client-supplied id on create
             policies.setProvider(provider);
             policies.setCategory(category);
             policySectionRepository.save(policies);

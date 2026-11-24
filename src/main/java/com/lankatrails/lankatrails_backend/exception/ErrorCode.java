@@ -16,6 +16,7 @@ public enum ErrorCode {
     USER_NOT_FOUND("AUTH_004", "User not found"),
     UNAUTHORIZED("AUTH_005", "Unauthorized access"),
     USER_PENDING_APPROVAL("AUTH_006", "User pending approval"),
+    ACCESS_DENIED("AUTH_007", "Access denied"),
 
     // Resource Errors
     RESOURCE_NOT_FOUND("RESOURCE_001", "Resource not found"),

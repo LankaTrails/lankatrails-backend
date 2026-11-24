@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.security.service.OwnershipService;
 import com.lankatrails.lankatrails_backend.dtos.request.TabSectionRequest;
 import com.lankatrails.lankatrails_backend.model.Service;
 import com.lankatrails.lankatrails_backend.model.TabsSection;
@@ -18,6 +19,9 @@ import java.util.stream.Collectors;
 @org.springframework.stereotype.Service
 @Slf4j
 public class TabsImpl implements Tabs {
+
+    @Autowired
+    private OwnershipService ownershipService;
     @Autowired
     TabsSectionRepository tabsSectionRepository;
 
@@ -66,6 +70,7 @@ public class TabsImpl implements Tabs {
                     // If the tab has an ID, update the existing tab
                     TabsSection existingTab = tabsSectionRepository.findById(tab.getId())
                             .orElseThrow(() -> new IllegalArgumentException("Tab not found with ID: " + tab.getId()));
+                    ownershipService.assertTabBelongsTo(existingTab, lastServiceAdded);
                     existingTab.setHeading(tab.getHeading());
                     existingTab.setContent(tab.getContent());
                     tabsSectionRepository.save(existingTab);
@@ -136,7 +141,10 @@ public class TabsImpl implements Tabs {
             for (TabSectionRequest tab : tabsReq) {
                 if (tab.getId() != null) {
                     log.debug("Deleting tab with ID: {}", tab.getId());
-                    tabsSectionRepository.deleteById(tab.getId());
+                    tabsSectionRepository.findById(tab.getId()).ifPresent(existing -> {
+                        ownershipService.assertOwnsTab(existing);
+                        tabsSectionRepository.delete(existing);
+                    });
                 }
             }
         }
