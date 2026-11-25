@@ -1,5 +1,7 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.exception.PaymentGatewayException;
+import com.lankatrails.lankatrails_backend.exception.BaseException;
 import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -107,6 +109,9 @@ public class BookingServiceImpl implements BookingService {
         Service serviceWithLock = serviceRepository.findByIdWithLock(tripItem.getService().getServiceId())
                 .orElseThrow(() -> new ResourceNotFoundException("ServiceID", tripItem.getService().getServiceId()));
 
+        // Refuse before creating a booking if the provider cannot be paid (409 instead of a failed booking)
+        paymentService.assertProviderCanReceivePayments(serviceWithLock.getProvider());
+
         AvailabilityDto availabilityDto = AvailabilityDto.builder()
                 .startDateTime(tripItem.getStartTime())
                 .endDateTime(tripItem.getEndTime())
@@ -168,7 +173,11 @@ public class BookingServiceImpl implements BookingService {
                 bookingRepository.save(newBooking);
 
                 log.error("Error creating payment intent for booking ID: " + newBooking.getBookingId(), e);
-                throw new RuntimeException("Failed to create payment intent: " + e.getMessage());
+                if (e instanceof BaseException baseException) {
+                    throw baseException; // keep its status (e.g. 409) instead of turning it into a 500
+                }
+                throw new PaymentGatewayException("Failed to create payment intent: " + e.getMessage(),
+                        "Payment could not be started. Please try again.");
             }
         }
 

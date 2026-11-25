@@ -1,5 +1,8 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import org.springframework.beans.factory.annotation.Value;
+import com.lankatrails.lankatrails_backend.exception.ErrorCode;
+import com.lankatrails.lankatrails_backend.exception.ConflictException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -43,6 +46,25 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Transactional
 public class PaymentServiceImpl implements PaymentService {
+    /** ISO currency used for every charge; service prices are stored in this currency. */
+    @Value("${stripe.currency:lkr}")
+    private String currency;
+
+    /** Platform commission as a fraction of the booking total. */
+    @Value("${stripe.commission-rate:0.10}")
+    private BigDecimal commissionRate;
+
+    @Override
+    public void assertProviderCanReceivePayments(Provider provider) {
+        if (provider == null) {
+            throw new BadRequestException("Provider not found for the service");
+        }
+        if (provider.getStripeAccountId() == null || provider.getStripeAccountId().isBlank()) {
+            throw new ConflictException(ErrorCode.PAYMENTS_NOT_ENABLED,
+                    "Provider " + provider.getUserId() + " has no Stripe Connect account",
+                    "This provider has not finished setting up payments yet, so it cannot be booked online");
+        }
+    }
 
     @Autowired
     BookingRepository bookingRepository;
@@ -72,9 +94,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new BadRequestException("Booking not found"));
 
         Provider provider = booking.getTripItem().getService().getProvider();
-        if (provider == null) {
-            throw new BadRequestException("Provider not found for the service");
-        }
+        assertProviderCanReceivePayments(provider);
 
         BigDecimal totalAmount = booking.getTotalPrice();
         BigDecimal commission = calculateCommission(totalAmount);
@@ -84,10 +104,10 @@ public class PaymentServiceImpl implements PaymentService {
         long providerAmountInCents = providerAmount.multiply(BigDecimal.valueOf(100)).longValue();
         long commissionInCents = commission.multiply(BigDecimal.valueOf(100)).longValue();
 
-        // Create PaymentIntent with Stripe API (pseudo-code)
+        // Destination charge: the provider's connected account receives the payment minus our fee
         Map<String, Object> params = Map.of(
                 "amount", amountInCents,
-                "currency", "USD",
+                "currency", currency,
                 "payment_method_types", List.of("card"),
                 "application_fee_amount", commissionInCents,
                 "transfer_data", Map.of("destination", provider.getStripeAccountId()),
@@ -101,7 +121,7 @@ public class PaymentServiceImpl implements PaymentService {
             Payment payment = Payment.builder()
                     .paymentIntentId(paymentIntent.getId())
                     .status(PaymentStatus.PENDING)
-                    .currency("usd")
+                    .currency(currency)
                     .amount(totalAmount)
                     .commission(commission)
                     .providerAmount(providerAmount)
@@ -305,7 +325,7 @@ public class PaymentServiceImpl implements PaymentService {
     private BigDecimal calculateCommission(BigDecimal totalAmount) {
         // Implement your commission calculation logic
         // This could be a percentage or fixed amount
-        return totalAmount.multiply(BigDecimal.valueOf(0.10)); // 10% commission
+        return totalAmount.multiply(commissionRate);
     }
 
 
