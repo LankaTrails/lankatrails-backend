@@ -1,0 +1,13 @@
+# Development image for lankatrails-backend.
+# The source tree is bind-mounted at /app by docker-compose.dev.yml; nothing is copied in.
+# docker/dev-entrypoint.sh recompiles on change and Spring Boot DevTools restarts the app.
+FROM maven:3.9-eclipse-temurin-21
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+EXPOSE 8080
+
+CMD ["sh", "/app/docker/dev-entrypoint.sh"]

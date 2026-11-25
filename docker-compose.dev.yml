@@ -1,16 +1,104 @@
-# Local development infrastructure for lankatrails-backend.
+# LankaTrails development stack: every service runs in Docker on one network.
 #
-#   cp .env.example .env          # once; fill in secrets
-#   docker compose -f docker-compose.dev.yml up -d
-#   ./mvnw spring-boot:run
+#   cp .env.example .env                                   # backend + infra settings (secrets)
+#   cp ../lankatrails-admin-dashboard/.env.example ../lankatrails-admin-dashboard/.env
+#   cp ../lankatrails-provider-dashboard/.env.example ../lankatrails-provider-dashboard/.env
+#   docker compose -f docker-compose.dev.yml up --build
 #
-# Compose reads the same .env as Spring Boot (spring-dotenv), so credentials,
-# hosts and ports stay aligned with application.properties. Every port is bound
-# to 127.0.0.1 so nothing is exposed on the local network.
+#   Backend API          http://localhost:8080   (Java changes recompile + restart automatically)
+#   Admin dashboard      http://localhost:5173   (Vite HMR)
+#   Provider dashboard   http://localhost:5174   (Vite HMR)
+#   RabbitMQ management  http://localhost:15672
+#
+# The dashboards are expected next to this repo (../lankatrails-*-dashboard); override with
+# ADMIN_DASHBOARD_DIR / PROVIDER_DASHBOARD_DIR. Data-store ports are published on 127.0.0.1
+# only, for local DB tools. The API is published on all interfaces so the Expo app on a phone
+# can reach it at http://<your-LAN-IP>:8080/api.
 
 name: lankatrails
 
+x-dashboard: &dashboard
+  environment:
+    # Bind mounts from macOS/Windows do not always deliver file events; poll instead.
+    CHOKIDAR_USEPOLLING: "true"
+  restart: unless-stopped
+
 services:
+  # ---------------------------------------------------------------- applications
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Container-network addresses. These override anything in .env so the backend always
+      # talks to the services below.
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:-lankatrails}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      MONGODB_URI: mongodb://mongodb:27017/lankatrails
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-lankatrails}
+      REDIS_SSL_ENABLED: "false"
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_STOMP_PORT: "61613"
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-lankatrails}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-lankatrails}
+      UPLOAD_ROOT_PATH: /app/uploads
+    ports:
+      - "${API_PORT:-8080}:8080"
+    volumes:
+      - .:/app
+      - maven_repo:/root/.m2
+      # Container build output stays out of the host's target/ (IDE builds)
+      - backend_target:/app/target
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      # First start downloads Maven dependencies
+      start_period: 240s
+    restart: unless-stopped
+
+  admin-dashboard:
+    <<: *dashboard
+    build:
+      context: ${ADMIN_DASHBOARD_DIR:-../lankatrails-admin-dashboard}
+      dockerfile: Dockerfile.dev
+    ports:
+      - "127.0.0.1:5173:5173"
+    volumes:
+      - ${ADMIN_DASHBOARD_DIR:-../lankatrails-admin-dashboard}:/app
+      - admin_node_modules:/app/node_modules
+
+  provider-dashboard:
+    <<: *dashboard
+    build:
+      context: ${PROVIDER_DASHBOARD_DIR:-../lankatrails-provider-dashboard}
+      dockerfile: Dockerfile.dev
+    ports:
+      - "127.0.0.1:5174:5174"
+    volumes:
+      - ${PROVIDER_DASHBOARD_DIR:-../lankatrails-provider-dashboard}:/app
+      - provider_node_modules:/app/node_modules
+
+  # ---------------------------------------------------------------- data stores
   postgres:
     # The official PostGIS image is amd64-only; Docker Desktop emulates it on Apple Silicon.
     image: postgis/postgis:16-3.4
@@ -20,7 +108,7 @@ services:
       POSTGRES_USER: ${DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
-      - "127.0.0.1:${DB_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -28,13 +116,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
 
   mongodb:
     image: mongo:7
     environment:
       MONGO_INITDB_DATABASE: lankatrails
     ports:
-      - "127.0.0.1:${MONGODB_PORT:-27017}:27017"
+      - "127.0.0.1:${MONGODB_HOST_PORT:-27017}:27017"
     volumes:
       - mongodb_data:/data/db
     healthcheck:
@@ -42,6 +131,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
@@ -49,7 +139,7 @@ services:
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-lankatrails}
     ports:
-      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+      - "127.0.0.1:${REDIS_HOST_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -57,31 +147,36 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
 
   rabbitmq:
-    # AMQP (5672) for Spring AMQP, STOMP (61613) for the WebSocket broker relay,
-    # management UI on http://localhost:15672
+    # AMQP 5672 (Spring AMQP), STOMP 61613 (WebSocket broker relay), management UI 15672
     image: rabbitmq:3.13-management-alpine
     environment:
-      # Not "guest": RabbitMQ only allows guest over loopback, and container traffic is not loopback.
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-lankatrails}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-lankatrails}
       RABBITMQ_DEFAULT_VHOST: /
     ports:
-      - "127.0.0.1:${RABBITMQ_PORT:-5672}:5672"
-      - "127.0.0.1:${RABBITMQ_STOMP_PORT:-61613}:61613"
-      - "127.0.0.1:${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:61613:61613"
+      - "127.0.0.1:15672:15672"
     volumes:
       - ./docker/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+      - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/conf.d/90-dev.conf:ro
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
       timeout: 10s
       retries: 10
+    restart: unless-stopped
 
 volumes:
   postgres_data:
   mongodb_data:
   redis_data:
   rabbitmq_data:
+  maven_repo:
+  backend_target:
+  admin_node_modules:
+  provider_node_modules:
