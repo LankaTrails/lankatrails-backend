@@ -16,6 +16,7 @@ import java.util.Optional;
 @Repository
 public interface ServiceRepository extends JpaRepository<Service, Long> {
 
+    // Use findNearbyServices(...) to get distinct services.
     @Query("""
                 SELECT s, function('ST_Distance',
                     l.coordinates,
@@ -30,12 +31,16 @@ public interface ServiceRepository extends JpaRepository<Service, Long> {
                 ) = true
                 ORDER BY distance
             """)
-    List<Service> findNearbyServices(
+    List<Object[]> findNearbyServiceRows(
             @Param("lat") double lat,
             @Param("lng") double lng,
             @Param("radiusMeters") double radiusMeters
     );
 
+    /** Services with at least one location within the radius, nearest first, without duplicates. */
+    default List<Service> findNearbyServices(double lat, double lng, double radiusMeters) {
+        return distinctServices(findNearbyServiceRows(lat, lng, radiusMeters));
+    }
 
     // 2. Fixed search using explicit text casting with ILIKE
 //    @Query("""
@@ -112,8 +117,14 @@ public interface ServiceRepository extends JpaRepository<Service, Long> {
     );
 
 
+    // PostgreSQL rejects SELECT DISTINCT with an ORDER BY expression that is not selected, so the
+    // distance is selected and duplicates are removed in findNearbyServicesByProviderCategory(...).
     @Query("""
-                SELECT DISTINCT s FROM Service s
+                SELECT s, function('ST_Distance',
+                    l.coordinates,
+                    function('ST_SetSRID', function('ST_MakePoint', :lng, :lat), 4326)
+                ) AS distance
+                FROM Service s
                 JOIN s.locations l
                 WHERE function('ST_DWithin',
                     l.coordinates,
@@ -122,18 +133,30 @@ public interface ServiceRepository extends JpaRepository<Service, Long> {
                 ) = true
                 AND (:providerId IS NULL OR s.provider.id = :providerId)
                 AND (:categoryId IS NULL OR s.category.id = :categoryId)
-                ORDER BY function('ST_Distance',
-                    l.coordinates,
-                    function('ST_SetSRID', function('ST_MakePoint', :lng, :lat), 4326)
-                )
+                ORDER BY distance
             """)
-    List<Service> findNearbyServicesByProviderCategory(
+    List<Object[]> findNearbyServiceRowsByProviderCategory(
             @Param("lat") double lat,
             @Param("lng") double lng,
             @Param("radiusMeters") double radiusMeters,
             @Param("providerId") Long providerId,
             @Param("categoryId") Long categoryId
     );
+
+    default List<Service> findNearbyServicesByProviderCategory(double lat, double lng, double radiusMeters,
+                                                              Long providerId, Long categoryId) {
+        return distinctServices(findNearbyServiceRowsByProviderCategory(lat, lng, radiusMeters, providerId, categoryId));
+    }
+
+    /** Keeps the first (nearest) row per service, preserving order. Rows are {@code [Service, distance]}. */
+    static List<Service> distinctServices(List<Object[]> rows) {
+        java.util.Map<Long, Service> byId = new java.util.LinkedHashMap<>();
+        for (Object[] row : rows) {
+            Service service = (Service) row[0];
+            byId.putIfAbsent(service.getServiceId(), service);
+        }
+        return new java.util.ArrayList<>(byId.values());
+    }
 
 
     List<Service> findByProviderAndCategory(Provider provider, Category category);
