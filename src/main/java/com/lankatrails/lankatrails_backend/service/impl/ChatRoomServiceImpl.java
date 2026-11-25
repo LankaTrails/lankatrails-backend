@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import org.springframework.security.access.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -121,6 +122,9 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     public APIResponse<ChatRoomDto> getChatRoomById(Long roomId) {
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new BadRequestException("Chat room with ID " + roomId + " does not exist"));
+        if (!isUserInRoom(authUtils.loggedInUserId(), roomId)) {
+            throw new AccessDeniedException("You are not a member of this chat room");
+        }
 
         return APIResponse.<ChatRoomDto>builder()
                 .success(true)
@@ -163,6 +167,9 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
         if (chatRoom == null) {
             throw new BadRequestException("Group chat room for trip with ID " + tripId + " does not exist");
+        }
+        if (!isUserInRoom(authUtils.loggedInUserId(), chatRoom.getRoomId())) {
+            throw new AccessDeniedException("You are not a member of this trip's chat");
         }
 
         GroupChatRoomDto chatRoomDto = modelMapper.map(chatRoom, GroupChatRoomDto.class);
