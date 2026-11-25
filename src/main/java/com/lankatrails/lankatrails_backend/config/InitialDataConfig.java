@@ -56,7 +56,12 @@ public class InitialDataConfig {
             admin.setLastName("Administrator");
             admin.setRole(UserRole.ROLE_ADMIN);
             admin.setStatus(UserStatus.ACTIVE);
-            admin.setPreferences(new UserPreferences());
+            // Created from configuration, not sign-up, so there is no verification email to click
+            admin.setEmailVerified(true);
+            // Both sides of the one-to-one must be set: user_preferences.user_id is NOT NULL
+            UserPreferences preferences = new UserPreferences();
+            preferences.setUser(admin);
+            admin.setPreferences(preferences);
 
             userRepository.save(admin);
             log.info("Initial admin user created: {}", admin.getEmail());
