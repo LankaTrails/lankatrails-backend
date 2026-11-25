@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.controller;
 
+import com.lankatrails.lankatrails_backend.dtos.request.ContactPersonDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.LicenseDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
@@ -89,9 +90,18 @@ public class ProviderController {
     }
 
     @PreAuthorize("@ownership.isPolicyOwner(#id)")
-    @GetMapping("/delete/policy")
+    @DeleteMapping("/delete/policy/{id}")
     public ResponseEntity<APIResponse<String>> removePolicy(@PathVariable Long id) {
         APIResponse<String> response = policyImplementation.removePolicies(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    // Updates the logged-in provider's contact person; the identity document is optional
+    @PutMapping(value = "/contact-person", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<APIResponse<ContactPersonDTO>> updateContactPerson(
+            @RequestPart("contactPerson") ContactPersonDTO contactPerson,
+            @RequestPart(value = "identityDocument", required = false) MultipartFile identityDocument) {
+        APIResponse<ContactPersonDTO> response = providerService.updateContactPerson(contactPerson, identityDocument);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

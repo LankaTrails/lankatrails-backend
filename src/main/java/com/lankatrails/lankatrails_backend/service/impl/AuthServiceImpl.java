@@ -1,5 +1,9 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.model.License;
+import com.lankatrails.lankatrails_backend.dtos.request.LicenseDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.ApproveLicenseDTO;
+import com.lankatrails.lankatrails_backend.service.utils.LicenseMapper;
 import com.lankatrails.lankatrails_backend.dtos.UserPreferencesDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.dtos.response.*;
@@ -567,11 +571,33 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public APIResponse<ApproveLicenseResponse> approveProviderService() {
-        Provider provider = providerRepository.findByUserId(authUtills.loggedInUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtills.loggedInUserId()));
+    @Transactional(readOnly = true)
+    // Admin review: a provider's licences grouped by service category, each with that category's approval status
+    public APIResponse<ApproveLicenseResponse> approveProviderService(Long providerId) {
+        Provider provider = providerRepository.findByUserId(providerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", providerId));
 
-        return null;
+        ApproveLicenseDTO grouped = new ApproveLicenseDTO(
+                new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+        for (License license : licenseRepository.findByProvider_UserId(provider.getUserId())) {
+            LicenseDTO dto = LicenseMapper.toDto(license);
+            if (dto.getCategory() == null) {
+                continue;
+            }
+            switch (dto.getCategory()) {
+                case ACCOMMODATION -> grouped.getAccommodation().add(dto);
+                case ACTIVITY -> grouped.getActivity().add(dto);
+                case TRANSPORT -> grouped.getTransport().add(dto);
+                case TOUR_GUIDE -> grouped.getTourGuide().add(dto);
+                case FOOD_BEVERAGE -> grouped.getFoodBeverage().add(dto);
+            }
+        }
+
+        return APIResponse.<ApproveLicenseResponse>builder()
+                .success(true)
+                .message("Loaded provider licences")
+                .data(new ApproveLicenseResponse(grouped))
+                .build();
     }
 
     @Override

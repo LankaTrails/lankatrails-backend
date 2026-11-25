@@ -190,11 +190,16 @@ public class PolicyImpl implements Policies {
     }
 
     @Override
+    @Transactional
     public APIResponse<String> removePolicies(Long id){
-        policySectionRepository.findById(id)
+        PolicySection policy = policySectionRepository.findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("Policy",id));
-//        policySectionRepository.findByPolicy_PolicyId(id);
-        policySectionRepository.deleteById(id);
+        // PolicySection is the inverse side of Service.policies, so the join rows must be removed first
+        for (Service service : new java.util.ArrayList<>(policy.getServices())) {
+            service.getPolicies().remove(policy);
+        }
+        policy.getServices().clear();
+        policySectionRepository.delete(policy);
         return APIResponse.<String>builder()
                 .success(true)
                 .message("Policy removed successfully")

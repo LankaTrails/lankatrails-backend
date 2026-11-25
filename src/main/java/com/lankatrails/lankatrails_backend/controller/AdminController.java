@@ -34,11 +34,11 @@ public class AdminController {
     }
 
     //Get all the licenses
-//    @GetMapping("/approve-provider-service")
-//    public ResponseEntity<APIResponse<ApproveLicenseResponse>> approveProviderService() {
-//        APIResponse<ApproveLicenseResponse> response = authService.approveProviderService();
-//        return new ResponseEntity<>(response, HttpStatus.OK);
-//    }
+    @GetMapping("/approve-provider-service/{providerId}")
+    public ResponseEntity<APIResponse<ApproveLicenseResponse>> approveProviderService(@PathVariable Long providerId) {
+        APIResponse<ApproveLicenseResponse> response = authService.approveProviderService(providerId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 
     //Load a provider details
     @GetMapping("/approve-provider/service-category/{providerId}")
@@ -56,7 +56,10 @@ public class AdminController {
 
     //Approve or Reject request
     @PutMapping("/approve-provider/providers/{providerId}")
-    public ResponseEntity<APIResponse<String>> approveOrReject(@RequestBody AcceptRejectDTO acceptRejectDTO) {
+    public ResponseEntity<APIResponse<String>> approveOrReject(@PathVariable Long providerId,
+                                                               @RequestBody AcceptRejectDTO acceptRejectDTO) {
+        // The provider in the path is authoritative
+        acceptRejectDTO.setProviderId(providerId);
         APIResponse<String> approvalStatus = authService.approveOrRejectRequest(acceptRejectDTO);
         return new ResponseEntity<>(approvalStatus, HttpStatus.OK);
     }
