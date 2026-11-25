@@ -33,7 +33,10 @@ public class ComplaintController {
 
     //Add a new complaint by the tourist
     @PostMapping("/tourist/make-complaint/{serviceId}")
-    public ResponseEntity<APIResponse<String>> makeComplaint(ComplaintDTO complaintDTO){
+    public ResponseEntity<APIResponse<String>> makeComplaint(@PathVariable Long serviceId,
+                                                             @RequestBody ComplaintDTO complaintDTO){
+        // The path decides which service the complaint is about
+        complaintDTO.setServiceId(serviceId);
         APIResponse<String> response = complaintService.addNewComplaint(complaintDTO);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
@@ -114,7 +117,7 @@ public class ComplaintController {
     }
 
     //handle the complaint
-    @PutMapping("/admin/complaints/")
+    @PutMapping({"/admin/complaints", "/admin/complaints/"})
     public ResponseEntity<APIResponse<String>> handleComplaint(@RequestBody ComplaintHandleRequestDTO complaintHandleRequestDTO){
         APIResponse<String> response = complaintService.handleComplaint(complaintHandleRequestDTO);
         return new ResponseEntity<>(response,HttpStatus.OK);

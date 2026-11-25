@@ -1,5 +1,9 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.service.payment.ComplaintRefundService;
+import com.lankatrails.lankatrails_backend.exception.BadRequestException;
+import com.lankatrails.lankatrails_backend.exception.ConflictException;
+import com.lankatrails.lankatrails_backend.model.enums.RefundStatus;
 import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ComplaintInfoResponse;
@@ -61,6 +65,9 @@ public class ComplaintServiceImpl implements ComplaintService {
     @Autowired
     AuthUtils authUtils;
 
+    @Autowired
+    ComplaintRefundService complaintRefundService;
+
     @Override
     @Transactional
     public APIResponse<String> addNewComplaint(ComplaintDTO complaintDTO) {
@@ -76,10 +83,24 @@ public class ComplaintServiceImpl implements ComplaintService {
         complaint.setService(service);
         complaint.setTourist(tourist);
         complaint.setDateTime(LocalDateTime.now());
+        // Link the booking (needed to refund it later); it must be the tourist's own booking of this service
+        if (complaintDTO.getBookingId() != null) {
+            Booking booking = bookingRepository.findById(complaintDTO.getBookingId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Booking", complaintDTO.getBookingId()));
+            boolean ownBooking = booking.getTripParticipant() != null
+                    && booking.getTripParticipant().getTourist() != null
+                    && tourist.getUserId().equals(booking.getTripParticipant().getTourist().getUserId());
+            boolean sameService = booking.getTripItem() != null && booking.getTripItem().getService() != null
+                    && service.getServiceId().equals(booking.getTripItem().getService().getServiceId());
+            if (!ownBooking || !sameService) {
+                throw new BadRequestException("Booking does not belong to this tourist and service", "bookingId", complaintDTO.getBookingId());
+            }
+            complaint.setBooking(booking);
+        }
         //save the complaint
         Complaint savedComplaint = complaintRepository.save(complaint);
         //prepare the complaint images
-        for(ComplaintImgDTO complaintImg : complaintDTO.getComplaintImgs()){
+        for(ComplaintImgDTO complaintImg : Optional.ofNullable(complaintDTO.getComplaintImgs()).orElse(List.of())){
             ComplaintImage img = new ComplaintImage();
             img.setImageUrl(complaintImg.getImageUrl());
             img.setComplaint(savedComplaint);
@@ -299,52 +320,62 @@ public class ComplaintServiceImpl implements ComplaintService {
     }
 
     @Override
-    public APIResponse<String> handleComplaint(ComplaintHandleRequestDTO complaintHandleRequestDTO) {
-        Service service = serviceRepository.findById(complaintHandleRequestDTO.getServiceId())
-                .orElseThrow(()->new ResourceNotFoundException("Service", complaintHandleRequestDTO.getServiceId()));
-        Tourist tourist = touristRepository.findByUserId(complaintHandleRequestDTO.getUserId())
-                .orElseThrow(()-> new ResourceNotFoundException("Tourist", complaintHandleRequestDTO.getUserId()));
-        Complaint complaint = complaintRepository.findById(complaintHandleRequestDTO.getComplaintId())
-                .orElseThrow(()->new ResourceNotFoundException("Complaint", complaintHandleRequestDTO.getComplaintId()));
+    @Transactional
+    public APIResponse<String> handleComplaint(ComplaintHandleRequestDTO request) {
+        if (request.getComplaintId() == null) {
+            throw new BadRequestException("complaintId is required", "complaintId", null);
+        }
+        if (request.getComplaintResult() == null) {
+            throw new BadRequestException("complaintResult is required", "complaintResult", null);
+        }
+        Complaint complaint = complaintRepository.findById(request.getComplaintId())
+                .orElseThrow(() -> new ResourceNotFoundException("Complaint", request.getComplaintId()));
+        if (complaint.getComplaintStatus() == ComplaintStatus.RESOLVED) {
+            throw new ConflictException("Complaint " + complaint.getComplaintId() + " is already resolved",
+                    "This complaint has already been resolved");
+        }
 
-        complaint.setComplaintStatus(ComplaintStatus.RESOLVED);
-
-        if (complaintHandleRequestDTO.getComplaintType()== ComplaintType.PROVIDER_FAULT && complaintHandleRequestDTO.getWarningStatus()){
-            //increase the no of warnings if it is a provider's fault
-            service.setWarnings(service.getWarnings() + 1);
-            //save the warning
+        // The service always comes from the complaint itself, never from the request
+        Service service = complaint.getService();
+        if (request.getComplaintType() == ComplaintType.PROVIDER_FAULT
+                && Boolean.TRUE.equals(request.getWarningStatus()) && service != null) {
+            service.setWarnings((service.getWarnings() == null ? 0 : service.getWarnings()) + 1);
             Warning warning = new Warning();
-            warning.setWarning(complaintHandleRequestDTO.getWarningReason());
+            warning.setWarning(request.getWarningReason());
             warning.setService(service);
             warningRepository.save(warning);
         }
 
-        if(complaintHandleRequestDTO.getComplaintResult() == ComplaintResult.REFUND_FROM_PROVIDER){
-            //get the resolved criteria set
-            ComplaintResolve complaintResolve = complaintResolveRepository.findById(complaintHandleRequestDTO.getResolveId())
-                    .orElseThrow(()->new ResourceNotFoundException("Complaint Resolve", complaintHandleRequestDTO.getServiceId()));
-            //Set the resolved category
-            complaint.setComplaintResolve(complaintResolve);
-            //refund the provider's money
-        }else if (complaintHandleRequestDTO.getComplaintResult() == ComplaintResult.REFUND_FROM_COMPANY){
-            //get the resolved criteria set
-            ComplaintResolve complaintResolve = complaintResolveRepository.findById(complaintHandleRequestDTO.getResolveId())
-                    .orElseThrow(()->new ResourceNotFoundException("Complaint Resolve", complaintHandleRequestDTO.getServiceId()));
-            //Set the resolved category
-            complaint.setComplaintResolve(complaintResolve);
-            //refund the entire amount from the company
-        }else if (complaintHandleRequestDTO.getComplaintResult() == ComplaintResult.REJECT){
-            //get the rejected criteria set
-            ComplaintReject complaintReject = complaintRejectRepository.findById(complaintHandleRequestDTO.getRejectId())
-                    .orElseThrow(()->new ResourceNotFoundException("Complaint Resolve", complaintHandleRequestDTO.getServiceId()));
-            //Set why rejected
-            complaint.setComplaintReject(complaintReject);
-            //No need of refund
-
+        ComplaintResult result = request.getComplaintResult();
+        complaint.setComplaintResult(result);
+        String message;
+        switch (result) {
+            case REFUND_FROM_PROVIDER, REFUND_FROM_COMPANY -> {
+                if (request.getResolveId() != null) {
+                    complaint.setComplaintResolve(complaintResolveRepository.findById(request.getResolveId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Complaint Resolve", request.getResolveId())));
+                }
+                complaintRefundService.refund(complaint, result);
+                message = "Complaint resolved and refund issued";
+            }
+            case REJECT -> {
+                if (request.getRejectId() != null) {
+                    complaint.setComplaintReject(complaintRejectRepository.findById(request.getRejectId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Complaint Reject", request.getRejectId())));
+                }
+                message = "Complaint rejected";
+            }
+            default -> throw new BadRequestException("Unsupported complaint result: " + result, "complaintResult", null);
         }
+
+        complaint.setComplaintStatus(ComplaintStatus.RESOLVED);
         complaintRepository.save(complaint);
 
-        return null;
+        return APIResponse.<String>builder()
+                .success(true)
+                .message(message)
+                .data("")
+                .build();
     }
 
     @Override
@@ -379,22 +410,40 @@ public class ComplaintServiceImpl implements ComplaintService {
     }
 
     @Override
-    public APIResponse<String> updateRefundStatus(Long id,ComplaintViewDTO complaintViewDTO) {
+    @Transactional
+    public APIResponse<String> updateRefundStatus(Long id, ComplaintViewDTO complaintViewDTO) {
         Complaint complaint = complaintRepository.findById(id)
-                .orElseThrow(()-> new ResourceNotFoundException("Complaint",id));
-//        log.info("RefundResult"+complaintViewDTO.getRefundReason());
-        complaint.setComplaintResult(complaint.getComplaintResult());
-        complaint.setRefundStatus(complaintViewDTO.getRefundStatus());
+                .orElseThrow(() -> new ResourceNotFoundException("Complaint", id));
+
+        String message = "Complaint updated";
+        if (complaintViewDTO.getRefundStatus() == RefundStatus.REFUNDED) {
+            if (complaint.getRefundStatus() == RefundStatus.REFUNDED) {
+                message = "Complaint was already refunded";
+            } else {
+                ComplaintResult result = complaintViewDTO.getComplaintResult() != null
+                        ? complaintViewDTO.getComplaintResult()
+                        : complaint.getComplaintResult();
+                if (result == null) {
+                    throw new BadRequestException("Set the complaint result before issuing a refund", "complaintResult", null);
+                }
+                complaint.setComplaintResult(result);
+                // Issues the real Stripe refund and marks the complaint REFUNDED
+                complaintRefundService.refund(complaint, result);
+                message = "Refund issued";
+            }
+        }
+
         complaint.setRefundReason(complaintViewDTO.getRefundReason());
         complaint.setComplaintStatus(ComplaintStatus.RESOLVED);
         complaintRepository.save(complaint);
 
         return APIResponse.<String>builder()
                 .success(true)
-                .message("Successfully updated the Refund"+complaintViewDTO.getRefundStatus())
+                .message(message)
                 .data("")
                 .build();
     }
+
     public APIResponse<String> sendProviderFeedbackEmail(Long id,ComplaintViewDTO complaintViewDTO) {
         Complaint complaint = complaintRepository.findById(id)
                 .orElseThrow(()-> new ResourceNotFoundException("Complaint",id));
