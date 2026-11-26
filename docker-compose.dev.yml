@@ -98,6 +98,23 @@ services:
       - ${PROVIDER_DASHBOARD_DIR:-../lankatrails-provider-dashboard}:/app
       - provider_node_modules:/app/node_modules
 
+  # Expo / Metro for the tourist app. Opt-in: docker compose --profile mobile up mobile-app
+  # Checks: docker compose run --rm --no-deps mobile-app npx tsc --noEmit
+  mobile-app:
+    profiles: ["mobile"]
+    build:
+      context: ${MOBILE_APP_DIR:-../lankatrails-mobile-app}
+      dockerfile: Dockerfile.dev
+    environment:
+      # Phones reach Metro through the host; set this to your machine's LAN IP
+      REACT_NATIVE_PACKAGER_HOSTNAME: ${MOBILE_PACKAGER_HOST:-127.0.0.1}
+      CI: ${MOBILE_CI:-false}
+    ports:
+      - "${MOBILE_METRO_BIND:-127.0.0.1}:8081:8081"
+    volumes:
+      - ${MOBILE_APP_DIR:-../lankatrails-mobile-app}:/app
+      - mobile_node_modules:/app/node_modules
+
   # ---------------------------------------------------------------- data stores
   postgres:
     # The official PostGIS image is amd64-only; Docker Desktop emulates it on Apple Silicon.
@@ -180,3 +197,4 @@ volumes:
   backend_target:
   admin_node_modules:
   provider_node_modules:
+  mobile_node_modules:
