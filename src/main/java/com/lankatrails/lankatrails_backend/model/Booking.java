@@ -56,6 +56,7 @@ public class Booking {
     private BookingStatus bookingStatus;
 
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private Set<Payment> payments = new java.util.HashSet<>();
 
     @Column(name = "updated_at")

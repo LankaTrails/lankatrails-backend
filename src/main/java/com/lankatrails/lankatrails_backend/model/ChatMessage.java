@@ -34,6 +34,7 @@ public class ChatMessage {
 
     private Long serviceCardId; // nullable, for SERVICE_CARD messageType
 
+    @Builder.Default
     private Instant sentAt = Instant.now();
 
     private Map<Long, Instant> readBy; // userId -> timestamp

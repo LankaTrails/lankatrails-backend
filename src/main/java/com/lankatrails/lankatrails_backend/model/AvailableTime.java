@@ -39,5 +39,6 @@ public class AvailableTime {
     private Service service;
 
     @OneToMany(mappedBy = "availableTime", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<BreakTime> breakTimes = new ArrayList<>();
 }

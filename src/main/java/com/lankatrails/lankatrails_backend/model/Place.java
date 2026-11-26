@@ -40,9 +40,11 @@ public class Place {
     private Double rating;
 
     @OneToMany(mappedBy = "place", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<TripItem> tripItems = new HashSet<>();
 
     @ManyToMany(mappedBy = "favouritePlaces", fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<Tourist> tourists = new HashSet<>();
 
     //Auto-set coordinates before saving or updating

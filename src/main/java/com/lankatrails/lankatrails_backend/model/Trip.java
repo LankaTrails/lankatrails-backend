@@ -41,12 +41,15 @@ public class Trip {
     @JoinTable(name = "trip_locations",
             joinColumns = @JoinColumn(name = "trip_id"),
             inverseJoinColumns = @JoinColumn(name = "location_id"))
+    @Builder.Default
     private List<Location> locations = new ArrayList<>();
 
     @Column(name = "number_of_adults", nullable = false)
+    @Builder.Default
     private Integer numberOfAdults = 1;
 
     @Column(name = "number_of_children", nullable = false)
+    @Builder.Default
     private Integer numberOfChildren = 0;
 
     @Enumerated(EnumType.STRING)
@@ -54,18 +57,22 @@ public class Trip {
     private TripStatus tripStatus;
 
     @Column(name = "total_budget", scale = 2)
+    @Builder.Default
     private BigDecimal totalBudget = BigDecimal.ZERO;
 
     @Column(name = "total_budget_limit", scale = 2)
+    @Builder.Default
     private BigDecimal totalBudgetLimit = BigDecimal.ZERO;
 
     @Column(name = "total_distance")
+    @Builder.Default
     private Double totalDistance = 0.0;
 
     @OneToOne(mappedBy = "trip", fetch = FetchType.LAZY)
     private GroupChatRoom chatRoom;
 
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @Builder.Default
     private Set<TripParticipant> participants = new HashSet<>();
 
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

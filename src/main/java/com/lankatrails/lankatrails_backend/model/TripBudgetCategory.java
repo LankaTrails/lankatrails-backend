@@ -27,6 +27,7 @@ public class TripBudgetCategory {
     private BigDecimal limitAmount;
 
     @Column(name = "spent_amount", nullable = false)
+    @Builder.Default
     private BigDecimal spentAmount = BigDecimal.valueOf(0.0);
 
     @ManyToOne(fetch = FetchType.LAZY)

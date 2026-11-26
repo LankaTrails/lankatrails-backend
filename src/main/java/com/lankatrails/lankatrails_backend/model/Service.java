@@ -2,6 +2,7 @@ package com.lankatrails.lankatrails_backend.model;
 
 import com.lankatrails.lankatrails_backend.model.enums.ServiceStatus;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -46,6 +47,7 @@ public class Service {
     private Category category;
 
     @OneToMany(mappedBy = "service")
+    @Builder.Default
     private Set<TabsSection> tabs = new HashSet<>();
 
 
@@ -56,6 +58,7 @@ public class Service {
             inverseJoinColumns = @JoinColumn(name = "policy_id")
 
     )
+    @Builder.Default
     private Set<PolicySection> policies = new HashSet<>();
 
     @ManyToMany
@@ -64,18 +67,23 @@ public class Service {
             joinColumns = @JoinColumn(name = "service_id"),
             inverseJoinColumns = @JoinColumn(name = "location_id")
     )
+    @Builder.Default
     private Set<Location> locations = new HashSet<>();
 
     @OneToMany(mappedBy = "service", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Image> images = new ArrayList<>();
 
     @OneToMany(mappedBy = "service")
+    @Builder.Default
     private Set<TripItem> tripItems = new HashSet<>();
 
     @ManyToMany(mappedBy = "favouriteServices")
+    @Builder.Default
     private Set<Tourist> tourists = new HashSet<>();
 
     @OneToMany(mappedBy = "service")
+    @Builder.Default
     private List<AvailableTime> availableTimes = new ArrayList<>();
 
     @OneToOne
@@ -86,6 +94,7 @@ public class Service {
     @JoinColumn(name = "price_config_id", nullable = false)
     private PriceConfiguration priceConfiguration;
     @OneToMany(mappedBy = "service")
+    @Builder.Default
     private Set<RateAndReview> reviews = new HashSet<>();
 
     @OneToMany(mappedBy = "service")

@@ -31,6 +31,7 @@ public class TripParticipant {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "trip_role", nullable = false, columnDefinition = "VARCHAR(20)")
+    @Builder.Default
     private TripRole tripRole = TripRole.MEMBER;
 
     @Column(name = "joined_at", nullable = false)
@@ -38,21 +39,25 @@ public class TripParticipant {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "invited_by_tourist_id", referencedColumnName = "user_id")
-    private Tourist invitedBy = null;
+    private Tourist invitedBy;
 
     @ElementCollection(targetClass = TripPrivilege.class, fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
     @CollectionTable(name = "trip_participant_privileges", joinColumns = @JoinColumn(name = "participant_id"))
     @Column(name = "privilege")
+    @Builder.Default
     private Set<TripPrivilege> privileges = new HashSet<>();
 
     @ManyToMany(mappedBy = "participants")
+    @Builder.Default
     private Set<GroupChatRoom> chatRooms = new HashSet<>();
 
     @OneToMany(mappedBy = "tripParticipant")
+    @Builder.Default
     private Set<Booking> bookings = new HashSet<>();
 
     @OneToMany(mappedBy = "tripParticipant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<TripExpenseShare> expenseShares = new HashSet<>();
 
 }
