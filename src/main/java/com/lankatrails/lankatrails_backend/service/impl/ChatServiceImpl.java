@@ -1,5 +1,8 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.dtos.ReadReceiptEvent;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import com.lankatrails.lankatrails_backend.dtos.ChatFilesDto;
 import com.lankatrails.lankatrails_backend.dtos.request.ServiceDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
@@ -48,12 +51,18 @@ public class ChatServiceImpl implements ChatService {
     private final DirectChatRoomRepository directChatRoomRepository;
     private final ServicesForAll servicesForAll;
     private final FileUploadService fileUploadService;
+    private final SimpMessagingTemplate messagingTemplate;
+
+    /** Read receipts go to their own topic so clients never render them as chat messages. */
+    public static String readReceiptTopic(Long roomId) {
+        return "/topic/read." + roomId;
+    }
 
     @Override
     public void processMessage(ChatMessageDto dto, Long userId, MultipartFile file) {
         // 1. Check room membership
         if (!chatRoomService.isUserInRoom(userId, dto.getChatRoomId())) {
-            throw new BadRequestException("User is not part of the chat room");
+            throw new AccessDeniedException("User is not part of the chat room");
         }
 
         dto.setSenderId(userId);
@@ -107,8 +116,10 @@ public class ChatServiceImpl implements ChatService {
                         : null)
                 .build();
 
-        // 5. Save message
-        messageRepository.save(msg);
+        // 5. Save message; the id lets recipients send read receipts for it
+        ChatMessage saved = messageRepository.save(msg);
+        dto.setId(saved.getId());
+        dto.setSentAt(saved.getSentAt());
 
         // 6. Send via RabbitMQ
         rabbitTemplate.convertAndSend(
@@ -122,7 +133,7 @@ public class ChatServiceImpl implements ChatService {
     @Transactional
     public APIResponse<List<ChatMessageDto>> getMessagesForRoom(Long roomId) {
         if (!chatRoomService.isUserInRoom(authUtils.loggedInUserId(), roomId)) {
-            throw new BadRequestException("User is not part of this chat room");
+            throw new AccessDeniedException("User is not part of this chat room");
         }
 
         List<ChatMessage> messages = messageRepository.findByChatRoomIdOrderBySentAtAsc(roomId);
@@ -146,7 +157,7 @@ public class ChatServiceImpl implements ChatService {
     public APIResponse<List<ChatMessageDto>> getMessagesBetweenUsers(Long user1Id, Long user2Id) {
         Long loggedIn = authUtils.loggedInUserId();
         if (!loggedIn.equals(user1Id) && !loggedIn.equals(user2Id)) {
-            throw new UnauthorizedException("You are not part of this conversation");
+            throw new AccessDeniedException("You are not part of this conversation");
         }
 
         ChatRoom chatRoom = directChatRoomRepository.findByProvider_UserIdAndTourist_UserId(user1Id, user2Id)
@@ -170,7 +181,7 @@ public class ChatServiceImpl implements ChatService {
         
         // Check if user is part of the chat room
         if (!chatRoomService.isUserInRoom(userId, message.getChatRoomId())) {
-            throw new BadRequestException("User is not part of this chat room");
+            throw new AccessDeniedException("User is not part of this chat room");
         }
 
         // Don't mark own messages as read
@@ -187,10 +198,12 @@ public class ChatServiceImpl implements ChatService {
             message.setReadBy(new HashMap<>());
         }
 
-        // Mark as read if not already read
+        // Mark as read if not already read, and tell the room
         if (!message.getReadBy().containsKey(userId)) {
-            message.getReadBy().put(userId, Instant.now());
+            Instant readAt = Instant.now();
+            message.getReadBy().put(userId, readAt);
             messageRepository.save(message);
+            broadcastReadReceipt(message.getChatRoomId(), userId, List.of(message.getId()), readAt);
         }
 
         return APIResponse.<String>builder()
@@ -208,7 +221,7 @@ public class ChatServiceImpl implements ChatService {
         }
         // Check if user is part of the chat room
         if (!chatRoomService.isUserInRoom(userId, roomId)) {
-            throw new BadRequestException("User is not part of this chat room");
+            throw new AccessDeniedException("User is not part of this chat room");
         }
 
         // Get all messages in the room that are not sent by this user and not yet read by this user
@@ -226,6 +239,8 @@ public class ChatServiceImpl implements ChatService {
 
         if (!unreadMessages.isEmpty()) {
             messageRepository.saveAll(unreadMessages);
+            broadcastReadReceipt(roomId, userId,
+                    unreadMessages.stream().map(ChatMessage::getId).toList(), readTime);
         }
 
         return APIResponse.<String>builder()
@@ -233,6 +248,15 @@ public class ChatServiceImpl implements ChatService {
                 .message("All messages in the room marked as read")
                 .data(null)
                 .build();
+    }
+
+    private void broadcastReadReceipt(Long roomId, Long readerId, List<String> messageIds, Instant readAt) {
+        messagingTemplate.convertAndSend(readReceiptTopic(roomId), ReadReceiptEvent.builder()
+                .roomId(roomId)
+                .readerId(readerId)
+                .messageIds(messageIds)
+                .readAt(readAt)
+                .build());
     }
 
     private Map<Long, ServiceDTO> fetchServiceCards(List<ChatMessage> messages) {

@@ -34,7 +34,7 @@ public class ChatRoomController {
         log.info("Fetching chat room with ID: {}", roomId);
         APIResponse<ChatRoomDto> response = chatRoomService.getChatRoomById(roomId);
         log.info("Fetched chat room: {}", response.getData());
-        return ResponseEntity.status(HttpStatus.FOUND)
+        return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
     }
 

@@ -1,5 +1,12 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.model.Location;
+import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.ProviderProfileUpdateRequest;
+import org.springframework.util.StringUtils;
+import com.lankatrails.lankatrails_backend.exception.BadRequestException;
+import com.lankatrails.lankatrails_backend.model.ContactPerson;
+import com.lankatrails.lankatrails_backend.service.utils.LicenseMapper;
 import com.lankatrails.lankatrails_backend.dtos.request.BusinessDetailDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.ContactPersonDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.LicenseDTO;
@@ -391,11 +398,50 @@ public class ProviderServiceImpl implements ProviderService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public APIResponse<LicenseResponseDTO> getLicense(Long id) {
         License license = licenseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("License", id));
-        //find the provider details
-        return null;
+
+        return APIResponse.<LicenseResponseDTO>builder()
+                .success(true)
+                .message("Loaded licence")
+                .data(new LicenseResponseDTO(List.of(LicenseMapper.toDto(license))))
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<ContactPersonDTO> updateContactPerson(ContactPersonDTO request, MultipartFile identityDocument) {
+        if (request == null || !StringUtils.hasText(request.getName())) {
+            throw new BadRequestException("Contact person name is required", "name", null);
+        }
+        Provider provider = providerRepository.findByUserId(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
+
+        ContactPerson contactPerson = provider.getContactPerson() != null ? provider.getContactPerson() : new ContactPerson();
+        contactPerson.setName(request.getName().trim());
+        contactPerson.setEmail(request.getEmail());
+        contactPerson.setPhoneNumber(request.getPhoneNumber());
+        contactPerson.setPosition(request.getPosition());
+        if (identityDocument != null && !identityDocument.isEmpty()) {
+            contactPerson.setIdentityDocumentUrl(
+                    fileUploadService.storeFile(identityDocument, UploadCategory.IDENTIFICATION, null));
+        }
+        provider.setContactPerson(contactPerson); // cascades
+        providerRepository.save(provider);
+
+        ContactPersonDTO response = new ContactPersonDTO();
+        response.setName(contactPerson.getName());
+        response.setEmail(contactPerson.getEmail());
+        response.setPhoneNumber(contactPerson.getPhoneNumber());
+        response.setPosition(contactPerson.getPosition());
+        response.setIdentityDocumentUrl(contactPerson.getIdentityDocumentUrl());
+        return APIResponse.<ContactPersonDTO>builder()
+                .success(true)
+                .message("Contact person updated")
+                .data(response)
+                .build();
     }
 
     @Override
@@ -450,5 +496,43 @@ public class ProviderServiceImpl implements ProviderService {
             case ACTIVITY -> provider.getActivityApprovalStatus();
             default -> null;
         };
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<String> updateProfile(ProviderProfileUpdateRequest request, MultipartFile profilePicture,
+                                             MultipartFile coverImage) {
+        Provider provider = providerRepository.findByUserId(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
+
+        provider.setBusinessName(request.getBusinessName().trim());
+        provider.setBusinessDescription(request.getBusinessDescription());
+
+        LocationDTO loc = request.getLocation();
+        if (loc != null && loc.getLatitude() != null && loc.getLongitude() != null) {
+            Location location = provider.getLocation() != null ? provider.getLocation() : new Location();
+            location.setFormattedAddress(loc.getFormattedAddress());
+            location.setCity(loc.getCity());
+            location.setDistrict(loc.getDistrict());
+            location.setProvince(loc.getProvince());
+            location.setCountry(loc.getCountry());
+            location.setPostalCode(loc.getPostalCode());
+            location.setLatitude(loc.getLatitude());
+            location.setLongitude(loc.getLongitude()); // coordinates are derived on save
+            provider.setLocation(location);
+        }
+        if (profilePicture != null && !profilePicture.isEmpty()) {
+            provider.setProfilePictureUrl(fileUploadService.storeFile(profilePicture, UploadCategory.PROFILE_PICTURE, null));
+        }
+        if (coverImage != null && !coverImage.isEmpty()) {
+            provider.setCoverImageUrl(fileUploadService.storeFile(coverImage, UploadCategory.COVER_PICTURE, null));
+        }
+        providerRepository.save(provider);
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Profile updated")
+                .data("")
+                .build();
     }
 }

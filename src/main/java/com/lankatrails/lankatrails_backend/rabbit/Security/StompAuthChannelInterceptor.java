@@ -128,6 +128,13 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
                 return chatRoomService.isUserInRoom(userId, roomId);
             }
 
+            // Check for read receipts: /topic/read.{roomId}
+            String readPrefix = "/topic/read.";
+            if (destination.startsWith(readPrefix)) {
+                Long roomId = Long.parseLong(destination.substring(readPrefix.length()));
+                return chatRoomService.isUserInRoom(userId, roomId);
+            }
+
             // Check for user-specific error messages: /user/queue/errors
             // This should only be accessible by the authenticated user themselves
             if (destination.equals("/user/queue/errors")) {

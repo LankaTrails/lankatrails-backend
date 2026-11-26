@@ -1,5 +1,7 @@
 package com.lankatrails.lankatrails_backend.service;
 
+import com.lankatrails.lankatrails_backend.dtos.request.ProviderProfileUpdateRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.ContactPersonDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.LicenseDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.BusinessResponseDTO;
@@ -20,6 +22,10 @@ public interface ProviderService {
     APIResponse<LicenseResponseDTO> getLicenses();
 
     APIResponse<LicenseResponseDTO> getLicense(Long id);
+
+    APIResponse<ContactPersonDTO> updateContactPerson(ContactPersonDTO contactPerson, MultipartFile identityDocument);
+
+    APIResponse<String> updateProfile(ProviderProfileUpdateRequest request, MultipartFile profilePicture, MultipartFile coverImage);
 
     APIResponse<Set<LicenseResponse>> getLicenseForProvider();
 }

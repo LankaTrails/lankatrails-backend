@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.security.service.OwnershipService;
 import com.lankatrails.lankatrails_backend.dtos.request.PolicySectionRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.exception.PolicyExistsException;
@@ -34,6 +35,9 @@ public class PolicyImpl implements Policies {
     ProviderRepository providerRepository;
 
     private Boolean status;
+
+    @Autowired
+    private OwnershipService ownershipService;
     @Transactional
     public Set<PolicySection> addPolicies(List<PolicySectionRequest> requests, Category category, Service service) {
 
@@ -186,11 +190,16 @@ public class PolicyImpl implements Policies {
     }
 
     @Override
+    @Transactional
     public APIResponse<String> removePolicies(Long id){
-        policySectionRepository.findById(id)
+        PolicySection policy = policySectionRepository.findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("Policy",id));
-//        policySectionRepository.findByPolicy_PolicyId(id);
-        policySectionRepository.deleteById(id);
+        // PolicySection is the inverse side of Service.policies, so the join rows must be removed first
+        for (Service service : new java.util.ArrayList<>(policy.getServices())) {
+            service.getPolicies().remove(policy);
+        }
+        policy.getServices().clear();
+        policySectionRepository.delete(policy);
         return APIResponse.<String>builder()
                 .success(true)
                 .message("Policy removed successfully")
@@ -209,6 +218,7 @@ public class PolicyImpl implements Policies {
                 // Update existing
                 PolicySection existingPolicy = policySectionRepository.findById(policy.getId())
                         .orElseThrow(() -> new IllegalArgumentException("Policy not found with ID: " + policy.getId()));
+                ownershipService.assertPolicyBelongsTo(existingPolicy, service);
 
                 existingPolicy.setHeading(policy.getHeading());
                 existingPolicy.setPolicy(policy.getPolicy());
@@ -246,6 +256,7 @@ public class PolicyImpl implements Policies {
             if (policy.getId() != null) {
                 PolicySection existingPolicy = policySectionRepository.findById(policy.getId())
                         .orElseThrow(() -> new IllegalArgumentException("Policy not found with ID: " + policy.getId()));
+                ownershipService.assertPolicyBelongsTo(existingPolicy, service);
 
                 // Remove the association from both sides
                 service.getPolicies().remove(existingPolicy);

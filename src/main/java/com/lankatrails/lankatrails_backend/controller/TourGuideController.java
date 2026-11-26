@@ -11,6 +11,7 @@ import com.lankatrails.lankatrails_backend.service.ServicesForAll;
 import com.lankatrails.lankatrails_backend.service.TouristGuideService;
 import com.lankatrails.lankatrails_backend.service.impl.PolicyImpl;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -66,6 +67,7 @@ public class TourGuideController {
         return new ResponseEntity<>(touristGuideRequestDTO, HttpStatus.CREATED);
     }
 
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @GetMapping("/delete/{id}")
     public String deleteTourGuide(@PathVariable Long id) {
         Boolean removeStatus = servicesForAll.removeService(id);
@@ -76,6 +78,7 @@ public class TourGuideController {
 
     }
 
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @PostMapping("/tour-guide/update/{id}")
     public ResponseEntity<TouristGuideResponseDTO> updateTourGuide(@PathVariable Long id, @RequestBody TouristGuideRequestDTO requestDTO) {
         TouristGuideResponseDTO touristGuideResponseDTO = touristGuideService.updateTourGuide(id, requestDTO);
@@ -101,6 +104,7 @@ public class TourGuideController {
 
     }
 
+    @PreAuthorize("@ownership.isServiceOwner(#Id)")
     @PutMapping(value = "/tour-guide/update/{Id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<APIResponse<String>> updateAccommodation
             (
@@ -127,12 +131,14 @@ public class TourGuideController {
 
     }
 
+    @PreAuthorize("@ownership.isServiceOwner(#Id)")
     @PutMapping("/tour-guide/deactivate/{Id}")
     public ResponseEntity<APIResponse<String>> deactivateService(@PathVariable Long Id) {
         APIResponse<String> response = touristGuideService.deactivateService(Id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @PreAuthorize("@ownership.isServiceOwner(#Id)")
     @PutMapping("/tour-guide/activate/{Id}")
     public ResponseEntity<APIResponse<String>> activateService(@PathVariable Long Id) {
         APIResponse<String> response = touristGuideService.activateService(Id);

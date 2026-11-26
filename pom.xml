@@ -15,6 +15,8 @@
 	<description>Backend system for LankaTrails tourism platform</description>
 
 	<properties>
+		<!-- Tests tagged "integration" need live infrastructure; run them with -Pintegration -->
+		<test.excludedGroups>integration</test.excludedGroups>
 		<java.version>21</java.version>
 		<springdoc.version>2.1.0</springdoc.version>
 		<log4j.version>2.20.0</log4j.version>
@@ -221,11 +223,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-redis</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-cache</artifactId>
-		</dependency>
-
 		<!-- Development -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -275,6 +272,13 @@
 				</configuration>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<excludedGroups>${test.excludedGroups}</excludedGroups>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
@@ -288,5 +292,15 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<!-- ./mvnw test -Pintegration : also runs tests that need PostgreSQL, Redis, MongoDB and RabbitMQ -->
+		<profile>
+			<id>integration</id>
+			<properties>
+				<test.excludedGroups></test.excludedGroups>
+			</properties>
+		</profile>
+	</profiles>
 
 </project>

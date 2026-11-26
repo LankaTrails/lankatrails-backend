@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.security.service;
 
+import com.lankatrails.lankatrails_backend.security.jwt.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -11,14 +12,14 @@ import java.time.Duration;
 public class RefreshTokenRedisService {
 
     private final RedisTemplate<String, String> redisTemplate;
-    private final Duration refreshTokenTtl = Duration.ofDays(7);
+    private final JwtUtils jwtUtils;
 
     private String getKey(String email) {
         return "refresh:" + email;
     }
 
     public void storeToken(String email, String refreshToken) {
-        redisTemplate.opsForValue().set(getKey(email), refreshToken, refreshTokenTtl);
+        redisTemplate.opsForValue().set(getKey(email), refreshToken, Duration.ofMillis(jwtUtils.getJwtRefreshExpirationMs()));
     }
 
     public boolean validateRefreshToken(String email, String providedToken) {

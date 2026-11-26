@@ -23,16 +23,28 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
 public class JwtUtils {
+    /** Every token carries a "type" claim so one kind can never be used as another. */
+    public static final String CLAIM_TYPE = "type";
+    public static final String TYPE_ACCESS = "ACCESS";
+    public static final String TYPE_REFRESH = "REFRESH";
+    public static final String TYPE_EMAIL_VERIFICATION = "EMAIL_VERIFICATION";
+
     @Value("${spring.app.jwtSecret}")
     private String jwtSecret;
 
     @Value("${spring.app.jwtExpirationMs}")
-    private int jwtExpirationMs;
+    private long jwtExpirationMs;
+
+    /** Single source of truth for refresh lifetime: JWT expiry, cookie max-age and Redis TTL. */
+    @Getter
+    @Value("${spring.app.jwtRefreshExpirationMs}")
+    private long jwtRefreshExpirationMs;
 
     @Value("${spring.app.emailVerificationTokenExpirationMs}")
     private int emailVerificationTokenExpirationMs;
@@ -50,6 +62,7 @@ public class JwtUtils {
                 .issuedAt(new Date())
                 .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .claim("roles", userDetails.getAuthorities())
+                .claim(CLAIM_TYPE, TYPE_ACCESS)
                 .signWith(key())
                 .compact();
     }
@@ -59,8 +72,8 @@ public class JwtUtils {
                 .id(UUID.randomUUID().toString()) // Generate a unique ID for the refresh token
                 .subject(userDetails.getEmail())
                 .issuedAt(new Date())
-                .expiration(new Date((new Date()).getTime() + jwtExpirationMs * 24L)) // 24x longer expiry
-                .claim("roles", userDetails.getAuthorities())
+                .expiration(new Date((new Date()).getTime() + jwtRefreshExpirationMs))
+                .claim(CLAIM_TYPE, TYPE_REFRESH)
                 .signWith(key())
                 .compact();
     }
@@ -78,13 +91,15 @@ public class JwtUtils {
         return null;
     }
 
+    // Path "/" (not "/api") so the session also reaches /uploads, where private documents
+    // are opened directly by the dashboards.
     public ResponseCookie generateJwtCookie(String jwt) {
         return ResponseCookie.from(jwtCookie, jwt)
-                .path("/api")
+                .path("/")
                 .httpOnly(true)
                 .secure(true)
-                .sameSite("Lax")// "Lax" is more compatible with modern browsers
-                .maxAge(24 * 60 * 60)// 1 day
+                .sameSite("Lax")
+                .maxAge(jwtExpirationMs / 1000) // same lifetime as the access token
                 .build();
     }
 
@@ -93,14 +108,14 @@ public class JwtUtils {
                 .path("/api/auth/refresh-token")
                 .httpOnly(true)
                 .secure(true)
-                .sameSite("Strict")// "Strict" is more secure for refresh tokens
-                .maxAge(7 * 24 * 60 * 60)// 7 days  
+                .sameSite("Strict")
+                .maxAge(jwtRefreshExpirationMs / 1000) // same lifetime as the refresh token
                 .build();
     }
 
     public ResponseCookie getCleanJwtCookie() {
         return ResponseCookie.from(jwtCookie, null)
-                .path("/api")
+                .path("/")
                 .build();
     }
 
@@ -110,40 +125,42 @@ public class JwtUtils {
                 .build();
     }
 
-    public String getUserNameFromJwtToken(String token) {
+    /**
+     * Returns the subject (email) only if the token is correctly signed, not expired
+     * and of the expected type; otherwise {@code null}.
+     */
+    public String getUserNameFromJwtToken(String token, String expectedType) {
+        Claims claims = parseClaims(token);
+        if (claims == null || !expectedType.equals(claims.get(CLAIM_TYPE, String.class))) {
+            return null;
+        }
+        return claims.getSubject();
+    }
+
+    public boolean validateJwtToken(String token, String expectedType) {
+        return getUserNameFromJwtToken(token, expectedType) != null;
+    }
+
+    private Claims parseClaims(String token) {
+        if (!StringUtils.hasText(token)) {
+            return null;
+        }
         try {
-            Claims claims = Jwts.parser()
+            return Jwts.parser()
                     .verifyWith((SecretKey) key())
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
-
-            return claims.getSubject();
-        } catch (Exception e) {
-            log.error("Cannot extract username from token", e);
-            return null;
+        } catch (ExpiredJwtException e) {
+            log.debug("JWT token is expired: {}", e.getMessage());
+        } catch (JwtException | IllegalArgumentException e) {
+            log.warn("Invalid JWT token: {}", e.getMessage());
         }
+        return null;
     }
 
     private Key key() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
-    }
-
-    public boolean validateJwtToken(String authToken) {
-        try {
-            System.out.println("Validate");
-            Jwts.parser().verifyWith((SecretKey) key()).build().parseSignedClaims(authToken);
-            return true;
-        } catch (MalformedJwtException e) {
-            log.error("Invalid JWT token: {}", e.getMessage());
-        } catch (ExpiredJwtException e) {
-            log.error("JWT token is expired: {}", e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            log.error("JWT token is unsupported: {}", e.getMessage());
-        } catch (IllegalArgumentException e) {
-            log.error("JWT claims string is empty: {}", e.getMessage());
-        }
-        return false;
     }
 
     public String getRefreshTokenFromCookies(HttpServletRequest request) {
@@ -177,16 +194,18 @@ public class JwtUtils {
         return null;
     }
 
-    public String getJwtToken(HttpServletRequest request) {
+    /** Access token from the cookie or the Authorization header, or {@code null} if absent. */
+    public String findJwtToken(HttpServletRequest request) {
         String jwt = getJwtFromCookies(request);
-
-        // If not found in cookies or empty, try Authorization header
-        if (jwt == null || jwt.isEmpty()) {
+        if (!StringUtils.hasText(jwt)) {
             jwt = getJwtFromHeader(request);
         }
+        return StringUtils.hasText(jwt) ? jwt : null;
+    }
 
-        // Final validation
-        if (jwt == null || jwt.isEmpty()) {
+    public String getJwtToken(HttpServletRequest request) {
+        String jwt = findJwtToken(request);
+        if (jwt == null) {
             log.warn("JWT token not found in cookies or Authorization header");
             throw new UnauthorizedException("Authentication required: No valid JWT found");
         }
@@ -216,7 +235,7 @@ public class JwtUtils {
                 .id(UUID.randomUUID().toString()) // Generate a unique ID for the token
                 .subject(user.getEmail())
                 .claim("userId", user.getUserId())
-                .claim("type", "EMAIL_VERIFICATION")
+                .claim(CLAIM_TYPE, TYPE_EMAIL_VERIFICATION)
                 .issuedAt(new Date())
                 .expiration(new Date((new Date()).getTime() + emailVerificationTokenExpirationMs))
                 .signWith(key())  // You could have a separate key

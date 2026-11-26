@@ -1,5 +1,9 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.model.License;
+import com.lankatrails.lankatrails_backend.dtos.request.LicenseDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.ApproveLicenseDTO;
+import com.lankatrails.lankatrails_backend.service.utils.LicenseMapper;
 import com.lankatrails.lankatrails_backend.dtos.UserPreferencesDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.*;
 import com.lankatrails.lankatrails_backend.dtos.response.*;
@@ -20,6 +24,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -83,11 +89,17 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Value("${app.public-api-url}")
+    private String publicApiUrl;
+
 
     private void sendVerificationEmail(User user) {
         String jwtToken = jwtUtils.generateEmailVerificationJwt(user);
 
-        String verificationUrl = String.format("http://localhost:8080/api/auth/verify-email?token=%s", jwtToken);
+        String verificationUrl = UriComponentsBuilder.fromUriString(publicApiUrl)
+                .path("/api/auth/verify-email")
+                .queryParam("token", jwtToken)
+                .toUriString();
 
         Map<String, Object> params = new HashMap<>();
 //        params.put("name", user.getFirstName());
@@ -241,22 +253,10 @@ public class AuthServiceImpl implements AuthService {
     public APIResponse<LoginResponse> authenticateUser(LoginRequest request, HttpServletRequest httpServletRequest) {
         log.info("Attempting login for email: {}", request.getEmail());
 
-        // Fetch user by email to check if verified before authenticating
+        // Unknown email, wrong password and account-state errors are only revealed after the
+        // password checks out, so the endpoint cannot be used to probe which emails exist.
         User user = userRepository.findByEmail(request.getEmail().toLowerCase())
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + request.getEmail()));
-
-        // Check if email is verified
-        if (!user.getEmailVerified()) {
-            log.warn("Login failed: Email not verified for {}", request.getEmail());
-            throw new BadCredentialsException("Please verify your email before logging in.");
-        }
-
-        String clientType = httpServletRequest.getHeader("Client-Type");
-
-        if ("MOBILE".equalsIgnoreCase(clientType) && user.getRole() != UserRole.ROLE_TOURIST) {
-            log.warn("Mobile login attempt blocked for non-tourist user {}", user.getEmail());
-            throw new UnauthorizedException("Only tourist accounts are allowed on the mobile app.");
-        }
+                .orElseThrow(() -> new BadCredentialsException("Invalid email or password."));
 
         // Perform authentication (Spring Security)
         Authentication authentication;
@@ -267,6 +267,22 @@ public class AuthServiceImpl implements AuthService {
         } catch (AuthenticationException ex) {
             log.error("Authentication failed for {}: {}", request.getEmail(), ex.getMessage());
             throw new BadCredentialsException("Invalid email or password.");
+        }
+
+        if (!user.getEmailVerified()) {
+            log.warn("Login failed: Email not verified for {}", request.getEmail());
+            throw new BadCredentialsException("Please verify your email before logging in.");
+        }
+
+        String clientType = httpServletRequest.getHeader("Client-Type");
+        if ("MOBILE".equalsIgnoreCase(clientType) && user.getRole() != UserRole.ROLE_TOURIST) {
+            log.warn("Mobile login attempt blocked for non-tourist user {}", user.getEmail());
+            throw new UnauthorizedException("Only tourist accounts are allowed on the mobile app.");
+        }
+
+        if (user.getStatus() == UserStatus.DISABLED) {
+            log.warn("Login failed: account deactivated for {}", request.getEmail());
+            throw new BadCredentialsException("This account has been deactivated.");
         }
 
         if (user.getStatus() == UserStatus.PENDING) {
@@ -327,8 +343,7 @@ public class AuthServiceImpl implements AuthService {
     public APIResponse<UserProfileDto> getLoggedUserProfile(HttpServletRequest request) {
         log.info("Fetching logged user profile for request: {}", request.getRequestURI());
 
-        String jwtToken = jwtUtils.getJwtToken(request);
-        String email = jwtUtils.getUserNameFromJwtToken(jwtToken);
+        String email = authUtills.loggedInEmail();
         if (email == null) {
             log.warn("Failed to fetch user profile: Email not found in JWT token.");
             throw new UnauthorizedException("Email not found in JWT token.");
@@ -428,7 +443,7 @@ public class AuthServiceImpl implements AuthService {
         log.info("Attempting to refresh token for request: {}", request.getRequestURI());
 
         String refreshToken = jwtUtils.getRefreshToken(request);
-        String email = jwtUtils.getUserNameFromJwtToken(refreshToken);
+        String email = jwtUtils.getUserNameFromJwtToken(refreshToken, JwtUtils.TYPE_REFRESH);
         if (email == null) {
             log.warn("Email not found in refresh token.");
             throw new UnauthorizedException("Email not found in refresh token.");
@@ -498,14 +513,15 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public APIResponse<String> verifyEmail(String token) {
-        log.info("Verifying email with token: {}", token);
+        log.info("Verifying email");
 
         if (token == null || token.isEmpty()) {
             log.error("Email verification failed: Token is null or empty.");
             throw new BadRequestException("Email verification token is required.", "token", null);
         }
 
-        String email = jwtUtils.getUserNameFromJwtToken(token);
+        // Only genuine email-verification tokens are accepted (not access or refresh tokens)
+        String email = jwtUtils.getUserNameFromJwtToken(token, JwtUtils.TYPE_EMAIL_VERIFICATION);
         if (email == null) {
             log.error("Email verification failed: Invalid token.");
             throw new UnauthorizedException("Invalid email verification token.");
@@ -559,11 +575,33 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public APIResponse<ApproveLicenseResponse> approveProviderService() {
-        Provider provider = providerRepository.findByUserId(authUtills.loggedInUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtills.loggedInUserId()));
+    @Transactional(readOnly = true)
+    // Admin review: a provider's licences grouped by service category, each with that category's approval status
+    public APIResponse<ApproveLicenseResponse> approveProviderService(Long providerId) {
+        Provider provider = providerRepository.findByUserId(providerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", providerId));
 
-        return null;
+        ApproveLicenseDTO grouped = new ApproveLicenseDTO(
+                new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+        for (License license : licenseRepository.findByProvider_UserId(provider.getUserId())) {
+            LicenseDTO dto = LicenseMapper.toDto(license);
+            if (dto.getCategory() == null) {
+                continue;
+            }
+            switch (dto.getCategory()) {
+                case ACCOMMODATION -> grouped.getAccommodation().add(dto);
+                case ACTIVITY -> grouped.getActivity().add(dto);
+                case TRANSPORT -> grouped.getTransport().add(dto);
+                case TOUR_GUIDE -> grouped.getTourGuide().add(dto);
+                case FOOD_BEVERAGE -> grouped.getFoodBeverage().add(dto);
+            }
+        }
+
+        return APIResponse.<ApproveLicenseResponse>builder()
+                .success(true)
+                .message("Loaded provider licences")
+                .data(new ApproveLicenseResponse(grouped))
+                .build();
     }
 
     @Override
@@ -706,12 +744,16 @@ public class AuthServiceImpl implements AuthService {
         licenseResponse.setContent(prepareResponse);
         providerViewInfoDTO.setPendingLicenses(licenseResponse);
 
-        //contact person
-        providerViewInfoDTO.getContactPerson().setName(provider.getContactPerson().getName());
-        providerViewInfoDTO.getContactPerson().setEmail(provider.getContactPerson().getEmail());
-        providerViewInfoDTO.getContactPerson().setPosition(provider.getContactPerson().getPosition());
-        providerViewInfoDTO.getContactPerson().setIdentityDocumentUrl(provider.getContactPerson().getIdentityDocumentUrl());
-        providerViewInfoDTO.getContactPerson().setPhoneNumber(provider.getContactPerson().getPhoneNumber());
+        //contact person (the DTO field starts out null, so build it here)
+        if (provider.getContactPerson() != null) {
+            ContactPersonDTO contactPersonDTO = new ContactPersonDTO();
+            contactPersonDTO.setName(provider.getContactPerson().getName());
+            contactPersonDTO.setEmail(provider.getContactPerson().getEmail());
+            contactPersonDTO.setPosition(provider.getContactPerson().getPosition());
+            contactPersonDTO.setIdentityDocumentUrl(provider.getContactPerson().getIdentityDocumentUrl());
+            contactPersonDTO.setPhoneNumber(provider.getContactPerson().getPhoneNumber());
+            providerViewInfoDTO.setContactPerson(contactPersonDTO);
+        }
 
 
         //set the provider view response
@@ -752,14 +794,14 @@ public class AuthServiceImpl implements AuthService {
                 providerInfoDTO.setBusinessRegistrationNumber(provider.getBusinessRegistrationNumber());
                 providerInfoDTO.setStatus(provider.getStatus());
                 providerInfoDTO.setEmail(provider.getEmail());
-                providerInfoDTO.setCity(provider.getLocation().getCity());
+                providerInfoDTO.setCity(provider.getLocation() != null ? provider.getLocation().getCity() : null);
                 responseList.add(providerInfoDTO);
 
             }
             response.setContent(responseList);
             return APIResponse.<ProviderInfoResponse>builder()
                     .success(true)
-                    .message("No pending provider service approvals")
+                    .message("Providers awaiting service approval")
                     .data(response)
                     .build();
         }

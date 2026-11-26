@@ -40,20 +40,24 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        try {
-            String jwt = jwtUtils.getJwtToken(request);
-            if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
-                authenticateUser(jwt, request);
+        // Anonymous requests simply continue; the security rules decide whether that is allowed
+        // and AuthEntryPointJwt answers 401 when it is not.
+        String jwt = jwtUtils.findJwtToken(request);
+        if (jwt != null) {
+            String username = jwtUtils.getUserNameFromJwtToken(jwt, JwtUtils.TYPE_ACCESS);
+            if (username != null) {
+                try {
+                    authenticateUser(username, request);
+                } catch (Exception e) {
+                    log.warn("Cannot set user authentication: {}", e.getMessage());
+                }
             }
-        } catch (Exception e) {
-            log.error("Cannot set user authentication: {}", e.getMessage());
         }
 
         filterChain.doFilter(request, response);
     }
 
-    private void authenticateUser(String jwt, HttpServletRequest request) {
-        String username = jwtUtils.getUserNameFromJwtToken(jwt);
+    private void authenticateUser(String username, HttpServletRequest request) {
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
         UsernamePasswordAuthenticationToken authentication =
@@ -66,13 +70,13 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
-    // This method can be used to authenticate a user based on JWT token
+    // Used by the STOMP CONNECT interceptor; only access tokens are accepted.
     public Authentication authenticateUser(String jwt) {
-        if (!jwtUtils.validateJwtToken(jwt)) {
+        String username = jwtUtils.getUserNameFromJwtToken(jwt, JwtUtils.TYPE_ACCESS);
+        if (username == null) {
             throw new BadRequestException("Invalid token");
         }
 
-        String username = jwtUtils.getUserNameFromJwtToken(jwt);
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
         if (userDetails == null) {

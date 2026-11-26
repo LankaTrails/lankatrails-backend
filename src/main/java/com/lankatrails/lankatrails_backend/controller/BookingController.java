@@ -4,6 +4,7 @@ import com.lankatrails.lankatrails_backend.dtos.AvailabilityDto;
 import com.lankatrails.lankatrails_backend.dtos.BookingItemDto;
 import com.lankatrails.lankatrails_backend.dtos.request.PaymentRequestDto;
 import com.lankatrails.lankatrails_backend.service.PaymentService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -78,6 +79,7 @@ public class BookingController {
     }
 
     //get all bookings in a day for food-beverage
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @GetMapping("/provider/booking/food-beverage/{id}")
     public ResponseEntity<APIResponse<BookingResponseDTO>> getFoodBeverageBookings(@PathVariable Long id, @RequestBody AvailabilityDto availabilityDto) {
         APIResponse<BookingResponseDTO> loadBookings = bookingService.getBookingsOnTheDay(availabilityDto, id);
@@ -85,6 +87,7 @@ public class BookingController {
     }
 
     //get all bookings in a day for transportation
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @GetMapping("/provider/booking/transport/{id}")
     public ResponseEntity<APIResponse<BookingResponseDTO>> getTransportBookings(@PathVariable Long id, @RequestBody AvailabilityDto availabilityDto) {
         APIResponse<BookingResponseDTO> loadBookings = bookingService.getBookingsOnTheDay(availabilityDto, id);
@@ -92,6 +95,7 @@ public class BookingController {
     }
 
     //get all bookings in a day for accommodation
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @GetMapping("/provider/booking/accommodation/{id}")
     public ResponseEntity<APIResponse<BookingResponseDTO>> getAccommodationBookings(@PathVariable Long id, @RequestBody AvailabilityDto availabilityDto) {
         APIResponse<BookingResponseDTO> loadBookings = bookingService.getBookingsOnTheDay(availabilityDto, id);
@@ -99,6 +103,7 @@ public class BookingController {
     }
 
     //get all bookings in a day for tour-guide
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @GetMapping("/provider/booking/tour-guide/{id}")
     public ResponseEntity<APIResponse<BookingResponseDTO>> getTourGuideBookings(@PathVariable Long id, @RequestBody AvailabilityDto availabilityDto) {
         APIResponse<BookingResponseDTO> loadBookings = bookingService.getBookingsOnTheDay(availabilityDto, id);
@@ -106,12 +111,14 @@ public class BookingController {
     }
 
     //get all bookings in a day for activity-provider
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @GetMapping("/provider/booking/activity-provider/{id}")
     public ResponseEntity<APIResponse<BookingResponseDTO>> getActivityBookings(@PathVariable Long id, @RequestBody AvailabilityDto availabilityDto) {
         APIResponse<BookingResponseDTO> loadBookings = bookingService.getBookingsOnTheDay(availabilityDto, id);
         return ResponseEntity.status(loadBookings.isSuccess() ? HttpStatus.OK : HttpStatus.BAD_REQUEST).body(loadBookings);
     }
 
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @GetMapping("/provider/booking/{id}/{from}/{to}")
     public ResponseEntity<APIResponse<List<BookingItemDto>>> getBookings(@PathVariable Long id, @PathVariable LocalDateTime from, @PathVariable LocalDateTime to) {
         APIResponse<List<BookingItemDto>> loadBookings = bookingService.getBookings(id, from, to);

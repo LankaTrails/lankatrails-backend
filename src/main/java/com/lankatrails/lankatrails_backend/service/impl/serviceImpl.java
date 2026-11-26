@@ -41,10 +41,12 @@ public class serviceImpl implements ServicesForAll {
     @Autowired
     ModelMapper modelMapper;
 
+    @Transactional
     public Boolean removeService(Long id){
         Service service=serviceRepository.findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("Service",id));
         service.setStatus(ServiceStatus.INACTIVE);
+        serviceRepository.save(service);
         return true;
 
     }

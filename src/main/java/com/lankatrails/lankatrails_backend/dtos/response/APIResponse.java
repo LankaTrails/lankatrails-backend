@@ -12,7 +12,7 @@ public class APIResponse<T> {
     private boolean success;
     private String message;
     private T data;
-    private Object details = null;
+    private Object details;
 
     public APIResponse(boolean b, String s, T data) {
         this.success = b;

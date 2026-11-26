@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.security.service.OwnershipService;
 import com.lankatrails.lankatrails_backend.dtos.request.ImageRequestDTO;
 import com.lankatrails.lankatrails_backend.model.Image;
 import com.lankatrails.lankatrails_backend.model.Service;
@@ -20,6 +21,9 @@ public class ImageServiceImpl implements ImageService {
 
     @Autowired
     private ImageRepository imageRepository;
+
+    @Autowired
+    private OwnershipService ownershipService;
 
     @Override
     public void uploadImagesForService(List<MultipartFile> images, Service service) {
@@ -56,6 +60,7 @@ public class ImageServiceImpl implements ImageService {
 
         List<Image> imagesToDelete = imageRepository.findAllById(imageIds);
         if (!imagesToDelete.isEmpty()) {
+            imagesToDelete.forEach(ownershipService::assertOwnsImage);
             for (Image image : imagesToDelete) {
                 fileUploadService.deleteFile(image.getImageUrl(), UploadCategory.SERVICE_PICTURE, "service");
             }

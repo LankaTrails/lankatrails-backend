@@ -60,6 +60,7 @@ public class Location {
     private LocationType locationType; // e.g., DISTRICT, CITY, GUIDE_AREA, ATTRACTION, POINT_OF_INTEREST
 
     @ManyToMany(mappedBy = "locations",cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<Service> services = new HashSet<>();
 
     @ManyToMany(mappedBy = "locations", fetch = FetchType.LAZY)

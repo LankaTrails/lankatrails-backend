@@ -1,6 +1,13 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import com.lankatrails.lankatrails_backend.security.service.RefreshTokenRedisService;
+import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
+import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
+import com.lankatrails.lankatrails_backend.dtos.request.DeactivateAccountRequest;
 import com.lankatrails.lankatrails_backend.dtos.UserPreferencesDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.UserPreferencesUpdateRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.*;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
@@ -33,6 +40,12 @@ public class UserServiceimpl implements UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private RefreshTokenRedisService refreshTokenRedisService;
 
     @Autowired
     private TouristRepository touristRepository;
@@ -120,17 +133,56 @@ public class UserServiceimpl implements UserService {
     }
 
     @Override
-    public APIResponse<UserPreferencesDTO> updateUserPreferences(UserPreferencesDTO preference) {
+    public APIResponse<UserPreferencesDTO> updateUserPreferences(UserPreferencesUpdateRequest request) {
         User user = userRepository.findById(authUtils.loggedInUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("UserID", authUtils.loggedInUserId()));
 
-        user.setPreferences(modelMapper.map(preference, UserPreferences.class));
+        // Update the existing row in place; replacing it lost the user link and failed on user_id
+        UserPreferences preferences = user.getPreferences();
+        if (preferences == null) {
+            preferences = new UserPreferences();
+            preferences.setUser(user);
+            user.setPreferences(preferences);
+        }
+        applyIfPresent(request.getPreferredCurrency(), preferences::setPreferredCurrency);
+        applyIfPresent(request.getTimeZone(), preferences::setTimeZone);
+        applyIfPresent(request.getLanguage(), preferences::setLanguage);
+        applyIfPresent(request.getIs24Hour(), preferences::setIs24Hour);
+        applyIfPresent(request.getMeasurementSystem(), preferences::setMeasurementSystem);
+        applyIfPresent(request.getNotificationsEnabled(), preferences::setNotificationsEnabled);
+        applyIfPresent(request.getEmailNotifications(), preferences::setEmailNotifications);
+        applyIfPresent(request.getPushNotifications(), preferences::setPushNotifications);
+        applyIfPresent(request.getSmsNotifications(), preferences::setSmsNotifications);
         userRepository.save(user);
 
         return APIResponse.<UserPreferencesDTO>builder()
                 .success(true)
                 .message("User preferences updated successfully")
-                .data(preference)
+                .data(modelMapper.map(preferences, UserPreferencesDTO.class))
+                .build();
+    }
+
+    private static <T> void applyIfPresent(T value, java.util.function.Consumer<T> setter) {
+        if (value != null) setter.accept(value);
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<String> deactivateAccount(DeactivateAccountRequest request) {
+        User user = userRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new BadCredentialsException("Password is incorrect.");
+        }
+        user.setStatus(UserStatus.DISABLED);
+        userRepository.save(user);
+        refreshTokenRedisService.deleteToken(user.getEmail());
+        log.info("Account {} deactivated. Reason: {}", user.getUserId(),
+                request.getReason() == null || request.getReason().isBlank() ? "(none given)" : request.getReason());
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Account deactivated")
+                .data("")
                 .build();
     }
 }

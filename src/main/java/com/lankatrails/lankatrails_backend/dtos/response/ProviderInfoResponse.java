@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -13,5 +14,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProviderInfoResponse {
-    private List<ProviderInfoDTO> content;
+    // Never null, so clients always get [] when there is nothing to show
+    private List<ProviderInfoDTO> content = new ArrayList<>();
 }

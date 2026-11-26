@@ -5,11 +5,13 @@ import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -69,6 +71,38 @@ public class GlobalExceptionHandler {
                         .userMessage("Invalid request parameters")
                         .path(getRequestPath(request))
                         .fieldErrors(errors)
+                        .build()
+        );
+    }
+
+    // Method-security denials (@PreAuthorize, ownership checks) are raised inside the
+    // DispatcherServlet, so without this they would fall through to the 500 handler.
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(
+            AccessDeniedException ex, WebRequest request) {
+        log.warn("Access denied on {}: {}", getRequestPath(request), ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                ErrorResponse.builder()
+                        .status(HttpStatus.FORBIDDEN.value())
+                        .code(ErrorCode.ACCESS_DENIED.name())
+                        .message("Access denied")
+                        .userMessage("You do not have permission to perform this action")
+                        .path(getRequestPath(request))
+                        .build()
+        );
+    }
+
+    // Missing static files (e.g. /uploads/...) and unmapped paths are 404s, not server errors.
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResource(
+            NoResourceFoundException ex, WebRequest request) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                ErrorResponse.builder()
+                        .status(HttpStatus.NOT_FOUND.value())
+                        .code(ErrorCode.RESOURCE_NOT_FOUND.name())
+                        .message("Resource not found")
+                        .userMessage("The requested resource was not found")
+                        .path(getRequestPath(request))
                         .build()
         );
     }

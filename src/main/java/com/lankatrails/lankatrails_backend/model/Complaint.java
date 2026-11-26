@@ -39,6 +39,9 @@ public class Complaint {
 
     private String refundReason;
 
+    /** Stripe refund id once the refund has been issued. */
+    private String stripeRefundId;
+
     private String adminToTourist;
 
     private String adminToProvider;

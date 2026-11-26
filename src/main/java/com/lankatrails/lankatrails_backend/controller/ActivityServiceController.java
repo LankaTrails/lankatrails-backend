@@ -10,6 +10,7 @@ import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.ActivityServiceService;
 import com.lankatrails.lankatrails_backend.service.impl.PolicyImpl;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -84,6 +85,7 @@ public class ActivityServiceController {
     }
 
 
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @PutMapping("/activity-service/delete/{id}")
     public ResponseEntity<APIResponse<ActivityServiceRequest>> removeActivityService(@PathVariable Long id) {
         APIResponse<ActivityServiceRequest> activityServiceResponse = activityServiceService.removeActivityService(id);
@@ -113,6 +115,7 @@ public class ActivityServiceController {
     }
 
 
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @PutMapping("/provider/activity-service/update/{id}")
     public ResponseEntity<APIResponse<String>> updateActivityService
             (
@@ -124,6 +127,7 @@ public class ActivityServiceController {
     }
 
     //For Tabs
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @PostMapping("/{id}/tabs")
     public ResponseEntity<ActivityServiceRequest> addTab
     (
@@ -136,6 +140,7 @@ public class ActivityServiceController {
 
     }
 
+    @PreAuthorize("@ownership.isTabOwner(#id)")
     @GetMapping("/delete/tabs/{id}")
     public ResponseEntity<APIResponse<String>> removeTabs(@PathVariable Long id) {
         APIResponse<String> response = activityServiceService.removeTabs(id);
@@ -143,6 +148,7 @@ public class ActivityServiceController {
     }
 
     //For Policies
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @PostMapping("/{id}/policies")
     public ResponseEntity<APIResponse<String>> addPolicies(@PathVariable Long id, @RequestBody PolicySection policies) {
         APIResponse<String> responseDTO = activityServiceService.addNewPolicy(id, policies);
@@ -156,6 +162,7 @@ public class ActivityServiceController {
         return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
     }
 
+    @PreAuthorize("@ownership.isPolicyOwner(#id)")
     @GetMapping("/delete/policy/{id}")
     public ResponseEntity<APIResponse<String>> removePolicy(@PathVariable Long id) {
         APIResponse<String> response = activityServiceService.removePolicies(id);
@@ -176,6 +183,7 @@ public class ActivityServiceController {
     }
 
 
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @PutMapping(value = "/provider/activity-service/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<APIResponse<String>> updateActivityService
             (
@@ -201,12 +209,14 @@ public class ActivityServiceController {
         }
     }
 
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @PutMapping("/provider/activity-service/deactivate/{id}")
     public ResponseEntity<APIResponse<String>> deactivateService(@PathVariable Long id) {
         APIResponse<String> response = activityServiceService.deactivateService(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @PutMapping("/provider/activity-service/activate/{id}")
     public ResponseEntity<APIResponse<String>> activateService(@PathVariable Long id) {
         APIResponse<String> response = activityServiceService.activateService(id);

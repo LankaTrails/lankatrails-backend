@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -76,7 +77,7 @@ public class FileUploadService {
             throw new IllegalArgumentException("No files to upload");
         }
 
-        Set<Image> images = Set.of();
+        Set<Image> images = new HashSet<>(); // Set.of() is immutable and add() would throw
         for (MultipartFile file : files) {
             String fileUrl = storeFile(file, category, null);
             Image image = new Image();

@@ -13,6 +13,8 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class TabsSection {
+    public static final int CONTENT_MAX_LENGTH = 20_000;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -21,7 +23,10 @@ public class TabsSection {
     @NotBlank(message = "Heading cannot be empty")
     private String heading;
 
+    // Rich HTML from the dashboard editor; varchar(255) truncated real descriptions
     @NotBlank(message = "Content cannot be empty")
+    @Size(max = TabsSection.CONTENT_MAX_LENGTH, message = "Content is too long")
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     @ManyToOne

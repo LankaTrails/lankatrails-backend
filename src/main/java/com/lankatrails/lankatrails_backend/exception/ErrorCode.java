@@ -16,6 +16,7 @@ public enum ErrorCode {
     USER_NOT_FOUND("AUTH_004", "User not found"),
     UNAUTHORIZED("AUTH_005", "Unauthorized access"),
     USER_PENDING_APPROVAL("AUTH_006", "User pending approval"),
+    ACCESS_DENIED("AUTH_007", "Access denied"),
 
     // Resource Errors
     RESOURCE_NOT_FOUND("RESOURCE_001", "Resource not found"),
@@ -24,6 +25,12 @@ public enum ErrorCode {
     SERVICE_ALREADY_EXISTS("RESOURCE_004","Service already in use"),
     POLICY_HEADING_ALREADY_EXISTS("RESOURCE_005","Policy heading already exists"),
     LICENSE_EXPIRED("RESOURCE_006","License has Expired"),
+    CONFLICT("RESOURCE_007", "Request conflicts with the current state"),
+
+    // Payment Errors
+    PAYMENTS_NOT_ENABLED("PAYMENT_001", "Provider cannot receive payments yet"),
+    REFUND_NOT_POSSIBLE("PAYMENT_002", "Refund cannot be issued"),
+    PAYMENT_GATEWAY_ERROR("PAYMENT_003", "Payment provider error"),
     // System Errors
     INTERNAL_ERROR("SYSTEM_001", "Internal server error"),
 

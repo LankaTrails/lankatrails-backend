@@ -9,6 +9,7 @@ import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.service.FoodBeverageService;
 import com.lankatrails.lankatrails_backend.service.impl.PolicyImpl;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -93,6 +94,7 @@ public class FoodBeverageController {
 
     }
 
+    @PreAuthorize("@ownership.isServiceOwner(#Id)")
     @PutMapping(value = "/food-beverage/update/{Id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<APIResponse<String>> updateAccommodation
             (
@@ -119,12 +121,14 @@ public class FoodBeverageController {
 
     }
 
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @PutMapping("/food-beverage/deactivate/{id}")
     public ResponseEntity<APIResponse<String>> deactivateService(@PathVariable Long id) {
         APIResponse<String> response = foodBeverageService.deactivateService(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @PreAuthorize("@ownership.isServiceOwner(#id)")
     @PutMapping("/food-beverage/activate/{id}")
     public ResponseEntity<APIResponse<String>> activateService(@PathVariable Long id) {
         APIResponse<String> response = foodBeverageService.activateService(id);

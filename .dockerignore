@@ -1,0 +1,10 @@
+.git
+.idea
+.vscode
+target
+logs
+uploads
+docker/.env*
+docker/logs
+.env
+hs_err_pid*.log
