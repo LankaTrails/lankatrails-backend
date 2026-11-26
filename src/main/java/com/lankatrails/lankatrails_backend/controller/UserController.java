@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.controller;
 
+import com.lankatrails.lankatrails_backend.dtos.request.DeactivateAccountRequest;
 import com.lankatrails.lankatrails_backend.dtos.UserPreferencesDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ProfilePicResponse;
@@ -23,6 +24,12 @@ public class UserController {
     @PostMapping(value = "/{userId}/add-profile-picture", consumes = "multipart/form-data")
     public APIResponse<ProfilePicResponse> addProfilePicture(@PathVariable Long userId, MultipartFile profilePicture) {
         return userService.addProfilePicture(userId, profilePicture);
+    }
+
+    /** The logged-in user disables their own account (password required). */
+    @PostMapping("/deactivate")
+    public ResponseEntity<APIResponse<String>> deactivateAccount(@Valid @RequestBody DeactivateAccountRequest request) {
+        return ResponseEntity.ok(userService.deactivateAccount(request));
     }
 
     @PutMapping("/user-preferences")

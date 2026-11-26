@@ -14,6 +14,12 @@ import java.util.Optional;
 
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
+
+    /** Every booking for any of the provider's services, with the service and tourist loaded. */
+    @Query("SELECT b FROM Booking b JOIN FETCH b.tripItem ti JOIN FETCH ti.service s " +
+            "LEFT JOIN FETCH b.tripParticipant tp LEFT JOIN FETCH tp.tourist " +
+            "WHERE s.provider.userId = :providerId")
+    List<Booking> findAllForProvider(@Param("providerId") Long providerId);
     List<Booking> findByStartDateTimeAndEndDateTimeAndTripItem_Service_ServiceIdAndBookingStatus(
             LocalDateTime startDateTime,
             LocalDateTime endDateTime,

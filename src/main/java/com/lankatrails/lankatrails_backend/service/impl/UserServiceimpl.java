@@ -1,5 +1,11 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import com.lankatrails.lankatrails_backend.security.service.RefreshTokenRedisService;
+import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
+import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
+import com.lankatrails.lankatrails_backend.dtos.request.DeactivateAccountRequest;
 import com.lankatrails.lankatrails_backend.dtos.UserPreferencesDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.*;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
@@ -33,6 +39,12 @@ public class UserServiceimpl implements UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private RefreshTokenRedisService refreshTokenRedisService;
 
     @Autowired
     private TouristRepository touristRepository;
@@ -131,6 +143,26 @@ public class UserServiceimpl implements UserService {
                 .success(true)
                 .message("User preferences updated successfully")
                 .data(preference)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<String> deactivateAccount(DeactivateAccountRequest request) {
+        User user = userRepository.findById(authUtils.loggedInUserId())
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new BadCredentialsException("Password is incorrect.");
+        }
+        user.setStatus(UserStatus.DISABLED);
+        userRepository.save(user);
+        refreshTokenRedisService.deleteToken(user.getEmail());
+        log.info("Account {} deactivated. Reason: {}", user.getUserId(),
+                request.getReason() == null || request.getReason().isBlank() ? "(none given)" : request.getReason());
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Account deactivated")
+                .data("")
                 .build();
     }
 }

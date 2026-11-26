@@ -1,5 +1,6 @@
 package com.lankatrails.lankatrails_backend.service;
 
+import com.lankatrails.lankatrails_backend.dtos.request.DeactivateAccountRequest;
 import com.lankatrails.lankatrails_backend.dtos.UserPreferencesDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ProfilePicResponse;
@@ -13,4 +14,7 @@ public interface UserService {
     APIResponse<ProfilePicResponse> addProfilePicture(Long userId, MultipartFile profilePicture);
 
     APIResponse<UserPreferencesDTO> updateUserPreferences(UserPreferencesDTO preference);
+
+    /** Disables the logged-in account after confirming its password and revokes its refresh token. */
+    APIResponse<String> deactivateAccount(DeactivateAccountRequest request);
 }

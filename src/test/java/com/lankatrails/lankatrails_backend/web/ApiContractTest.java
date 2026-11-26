@@ -29,6 +29,7 @@ import com.lankatrails.lankatrails_backend.service.AuthService;
 import com.lankatrails.lankatrails_backend.service.BookingService;
 import com.lankatrails.lankatrails_backend.service.ChatService;
 import com.lankatrails.lankatrails_backend.service.ComplaintService;
+import com.lankatrails.lankatrails_backend.service.ProviderInsightsService;
 import com.lankatrails.lankatrails_backend.service.ProviderService;
 import com.lankatrails.lankatrails_backend.service.TypingService;
 import com.lankatrails.lankatrails_backend.service.impl.PolicyImpl;
@@ -100,6 +101,7 @@ class ApiContractTest {
     @MockitoBean private AuthUtils authUtils;
     @MockitoBean private PolicyImpl policyImpl;
     @MockitoBean private ProviderService providerService;
+    @MockitoBean private ProviderInsightsService providerInsightsService;
     @MockitoBean private ProviderRepository providerRepository;
     @MockitoBean private UserDetailsServiceImpl userDetailsService;
     @MockitoBean private ServiceRepository serviceRepository;

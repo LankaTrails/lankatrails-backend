@@ -281,6 +281,11 @@ public class AuthServiceImpl implements AuthService {
             throw new BadCredentialsException("Invalid email or password.");
         }
 
+        if (user.getStatus() == UserStatus.DISABLED) {
+            log.warn("Login failed: account deactivated for {}", request.getEmail());
+            throw new BadCredentialsException("This account has been deactivated.");
+        }
+
         if (user.getStatus() == UserStatus.PENDING) {
             log.warn("Login failed: User account is pending approval for {}", request.getEmail());
             throw new UserPendingApprovalException("Your account is pending approval. Please wait for admin approval.");

@@ -161,6 +161,8 @@ public interface ServiceRepository extends JpaRepository<Service, Long> {
 
     List<Service> findByProviderAndCategory(Provider provider, Category category);
 
+    List<Service> findByProvider_UserId(Long providerId);
+
     List<Service> findByCategoryAndProvider(Category category, Provider provider);
 
     // Pessimistic locking to prevent race conditions during booking

@@ -1,5 +1,8 @@
 package com.lankatrails.lankatrails_backend.service.impl;
 
+import com.lankatrails.lankatrails_backend.model.Location;
+import com.lankatrails.lankatrails_backend.dtos.request.LocationDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.ProviderProfileUpdateRequest;
 import org.springframework.util.StringUtils;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.model.ContactPerson;
@@ -493,5 +496,43 @@ public class ProviderServiceImpl implements ProviderService {
             case ACTIVITY -> provider.getActivityApprovalStatus();
             default -> null;
         };
+    }
+
+    @Override
+    @Transactional
+    public APIResponse<String> updateProfile(ProviderProfileUpdateRequest request, MultipartFile profilePicture,
+                                             MultipartFile coverImage) {
+        Provider provider = providerRepository.findByUserId(authUtils.loggedInUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", authUtils.loggedInUserId()));
+
+        provider.setBusinessName(request.getBusinessName().trim());
+        provider.setBusinessDescription(request.getBusinessDescription());
+
+        LocationDTO loc = request.getLocation();
+        if (loc != null && loc.getLatitude() != null && loc.getLongitude() != null) {
+            Location location = provider.getLocation() != null ? provider.getLocation() : new Location();
+            location.setFormattedAddress(loc.getFormattedAddress());
+            location.setCity(loc.getCity());
+            location.setDistrict(loc.getDistrict());
+            location.setProvince(loc.getProvince());
+            location.setCountry(loc.getCountry());
+            location.setPostalCode(loc.getPostalCode());
+            location.setLatitude(loc.getLatitude());
+            location.setLongitude(loc.getLongitude()); // coordinates are derived on save
+            provider.setLocation(location);
+        }
+        if (profilePicture != null && !profilePicture.isEmpty()) {
+            provider.setProfilePictureUrl(fileUploadService.storeFile(profilePicture, UploadCategory.PROFILE_PICTURE, null));
+        }
+        if (coverImage != null && !coverImage.isEmpty()) {
+            provider.setCoverImageUrl(fileUploadService.storeFile(coverImage, UploadCategory.COVER_PICTURE, null));
+        }
+        providerRepository.save(provider);
+
+        return APIResponse.<String>builder()
+                .success(true)
+                .message("Profile updated")
+                .data("")
+                .build();
     }
 }
