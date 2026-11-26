@@ -740,12 +740,16 @@ public class AuthServiceImpl implements AuthService {
         licenseResponse.setContent(prepareResponse);
         providerViewInfoDTO.setPendingLicenses(licenseResponse);
 
-        //contact person
-        providerViewInfoDTO.getContactPerson().setName(provider.getContactPerson().getName());
-        providerViewInfoDTO.getContactPerson().setEmail(provider.getContactPerson().getEmail());
-        providerViewInfoDTO.getContactPerson().setPosition(provider.getContactPerson().getPosition());
-        providerViewInfoDTO.getContactPerson().setIdentityDocumentUrl(provider.getContactPerson().getIdentityDocumentUrl());
-        providerViewInfoDTO.getContactPerson().setPhoneNumber(provider.getContactPerson().getPhoneNumber());
+        //contact person (the DTO field starts out null, so build it here)
+        if (provider.getContactPerson() != null) {
+            ContactPersonDTO contactPersonDTO = new ContactPersonDTO();
+            contactPersonDTO.setName(provider.getContactPerson().getName());
+            contactPersonDTO.setEmail(provider.getContactPerson().getEmail());
+            contactPersonDTO.setPosition(provider.getContactPerson().getPosition());
+            contactPersonDTO.setIdentityDocumentUrl(provider.getContactPerson().getIdentityDocumentUrl());
+            contactPersonDTO.setPhoneNumber(provider.getContactPerson().getPhoneNumber());
+            providerViewInfoDTO.setContactPerson(contactPersonDTO);
+        }
 
 
         //set the provider view response
