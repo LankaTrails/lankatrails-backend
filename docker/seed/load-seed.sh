@@ -21,6 +21,7 @@ fi
 
 # Placeholder images and documents referenced by the seed (served from /uploads)
 mkdir -p uploads
+find uploads -name 'demo-*.svg' -type f -delete   # placeholders from earlier seed versions
 cp -R docker/seed/uploads/. uploads/
 
 DEMO_PASSWORD="$password" $compose exec -T -e DEMO_PASSWORD postgres \

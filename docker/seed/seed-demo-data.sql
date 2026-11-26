@@ -9,7 +9,10 @@
 \set ON_ERROR_STOP on
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- \o keeps psql from echoing the password, which set_config returns as its result row
+\o /dev/null
 SELECT set_config('lankatrails.demo_password', :'demo_password', false);
+\o
 
 DO $seed$
 DECLARE
@@ -30,7 +33,7 @@ BEGIN
 
   -- Provider: Olanka Travels
   INSERT INTO users (email, email_verified, password, profile_picture_url, role, status, created_at, updated_at)
-  VALUES ('olanka@lankatrails.dev', true, pw, '/uploads/profile-pictures/demo-olanka-logo.svg',
+  VALUES ('olanka@lankatrails.dev', true, pw, '/uploads/profile-pictures/demo-olanka-logo.jpg',
     'ROLE_PROVIDER', 'ACTIVE', now() - interval '120 days', now())
   RETURNING user_id INTO v_provider;
   INSERT INTO user_preferences (user_id, preferred_currency, time_zone, language, is_24_hour, measurement_system,
@@ -38,7 +41,7 @@ BEGIN
   VALUES (v_provider, 'LKR', 'Asia/Colombo', 'en-LK', true, 'metric', true, true, true, false);
   INSERT INTO contact_persons (name, email, phone_number, position, identity_document_url)
   VALUES ('Kasun Perera', 'kasun.perera@lankatrails.dev', '0770000001', 'Manager',
-    '/uploads/identification/demo-contact-id.svg')
+    '/uploads/identification/demo-contact-id.jpg')
   RETURNING contact_person_id INTO v_contact;
   INSERT INTO location (city, country, district, province, formatted_address, postal_code, latitude, longitude, coordinates)
   VALUES ('Matara', 'Sri Lanka', 'Matara', 'Southern Province', 'WGXW+VP5, Matara, Sri Lanka',
@@ -48,17 +51,17 @@ BEGIN
     accommodation_approval_status, transport_approval_status, food_approval_status, activity_approval_status, tour_guide_approval_status,
     contact_person_id, location_id)
   VALUES (v_provider, 'Olanka Travels', 'Olanka Travels is a premier destination management company based in Sri Lanka, specializing in customized travel experiences for both local and international tourists.', 'COMPANY', 'BR/COM/123',
-    '/uploads/business-registration/demo-olanka-br.svg',
-    '/uploads/cover-pictures/demo-olanka-cover.svg',
+    '/uploads/business-registration/demo-olanka-br.jpg',
+    '/uploads/cover-pictures/demo-olanka-cover.jpg',
     'APPROVED', 'APPROVED', 'APPROVED', 'PENDING', 'NOT_REQUESTED', v_contact, v_loc);
   INSERT INTO licenses (license_number, expiry_date, license_url, category_id, provider_id)
-  VALUES ('LN/12/1234', current_date + interval '1 year', '/uploads/licence/demo-accommodation-licence.svg', 1, v_provider);
+  VALUES ('LN/12/1234', current_date + interval '1 year', '/uploads/licence/demo-accommodation-licence.jpg', 1, v_provider);
   INSERT INTO licenses (license_number, expiry_date, license_url, category_id, provider_id)
-  VALUES ('TR/45/2026', current_date + interval '1 year', '/uploads/licence/demo-transport-licence.svg', 2, v_provider);
+  VALUES ('TR/45/2026', current_date + interval '1 year', '/uploads/licence/demo-transport-licence.jpg', 2, v_provider);
   INSERT INTO licenses (license_number, expiry_date, license_url, category_id, provider_id)
-  VALUES ('FB/88/2026', current_date + interval '1 year', '/uploads/licence/demo-food-licence.svg', 3, v_provider);
+  VALUES ('FB/88/2026', current_date + interval '1 year', '/uploads/licence/demo-food-licence.jpg', 3, v_provider);
   INSERT INTO licenses (license_number, expiry_date, license_url, category_id, provider_id)
-  VALUES ('AC/17/2026', current_date + interval '1 year', '/uploads/licence/demo-activity-licence.svg', 4, v_provider);
+  VALUES ('AC/17/2026', current_date + interval '1 year', '/uploads/licence/demo-activity-licence.jpg', 4, v_provider);
 
   -- Tourists
   INSERT INTO users (email, email_verified, password, role, status, created_at, updated_at)
@@ -108,7 +111,7 @@ Support eco-conscious tour operators');
     (v_svc, 'FRIDAY', '07:00', '18:00', false, false),
     (v_svc, 'SATURDAY', '07:00', '18:00', false, false),
     (v_svc, 'SUNDAY', '07:00', '18:00', false, false);
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-whale-watching-1.svg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-whale-watching-1.jpg');
 
   -- Olanka CityBus (TRANSPORT)
   INSERT INTO price_configurations (price_type, fixed_price, price_per_unit, price_per_adult, price_per_child,
@@ -139,7 +142,7 @@ Support eco-conscious tour operators');
     (v_svc, 'FRIDAY', '06:00', '22:00', false, false),
     (v_svc, 'SATURDAY', '06:00', '22:00', false, false),
     (v_svc, 'SUNDAY', '06:00', '22:00', false, false);
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-olanka-citybus-1.svg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-olanka-citybus-1.jpg');
 
   -- Tasty Cabin (FOOD_BEVERAGE)
   INSERT INTO price_configurations (price_type, fixed_price, price_per_unit, price_per_adult, price_per_child,
@@ -171,7 +174,7 @@ Support eco-conscious tour operators');
     (v_svc, 'FRIDAY', '08:00', '23:00', false, false),
     (v_svc, 'SATURDAY', '08:00', '23:00', false, false),
     (v_svc, 'SUNDAY', '08:00', '23:00', false, false);
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-tasty-cabin-1.svg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-tasty-cabin-1.jpg');
 
   -- The Tree House (ACCOMMODATION)
   INSERT INTO price_configurations (price_type, fixed_price, price_per_unit, price_per_adult, price_per_child,
@@ -204,8 +207,8 @@ Support eco-conscious tour operators');
     (v_svc, 'FRIDAY', '00:00', '23:59', true, false),
     (v_svc, 'SATURDAY', '00:00', '23:59', true, false),
     (v_svc, 'SUNDAY', '00:00', '23:59', true, false);
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-the-tree-house-1.svg');
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-the-tree-house-2.svg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-the-tree-house-1.jpg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-the-tree-house-2.jpg');
 
   -- Fort Place (ACCOMMODATION)
   INSERT INTO price_configurations (price_type, fixed_price, price_per_unit, price_per_adult, price_per_child,
@@ -238,8 +241,8 @@ Support eco-conscious tour operators');
     (v_svc, 'FRIDAY', '00:00', '23:59', true, false),
     (v_svc, 'SATURDAY', '00:00', '23:59', true, false),
     (v_svc, 'SUNDAY', '00:00', '23:59', true, false);
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-fort-place-1.svg');
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-fort-place-2.svg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-fort-place-1.jpg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-fort-place-2.jpg');
 
   -- Climbers Adventure (ACTIVITY)
   INSERT INTO price_configurations (price_type, fixed_price, price_per_unit, price_per_adult, price_per_child,
@@ -270,7 +273,7 @@ Respect sacred sites and local customs—dress modestly at temples and remove sh
     (v_svc, 'FRIDAY', '07:00', '18:00', false, false),
     (v_svc, 'SATURDAY', '07:00', '18:00', false, false),
     (v_svc, 'SUNDAY', '07:00', '18:00', false, false);
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-climbers-adventure-1.svg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-climbers-adventure-1.jpg');
 
   -- Lighthouse Adventure (ACTIVITY)
   INSERT INTO price_configurations (price_type, fixed_price, price_per_unit, price_per_adult, price_per_child,
@@ -302,7 +305,7 @@ Carry a copy of your ID or passport at all times.');
     (v_svc, 'FRIDAY', '07:00', '18:00', false, false),
     (v_svc, 'SATURDAY', '07:00', '18:00', false, false),
     (v_svc, 'SUNDAY', '07:00', '18:00', false, false);
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-lighthouse-adventure-1.svg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-lighthouse-adventure-1.jpg');
 
   -- Surfing Club (ACTIVITY)
   INSERT INTO price_configurations (price_type, fixed_price, price_per_unit, price_per_adult, price_per_child,
@@ -338,7 +341,7 @@ Follow surf etiquette (right of way, don’t drop in)
     (v_svc, 'FRIDAY', '07:00', '18:00', false, false),
     (v_svc, 'SATURDAY', '07:00', '18:00', false, false),
     (v_svc, 'SUNDAY', '07:00', '18:00', false, false);
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-surfing-club-1.svg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-surfing-club-1.jpg');
 
   -- CarQuotes (TRANSPORT)
   INSERT INTO price_configurations (price_type, fixed_price, price_per_unit, price_per_adult, price_per_child,
@@ -369,7 +372,7 @@ Follow surf etiquette (right of way, don’t drop in)
     (v_svc, 'FRIDAY', '06:00', '22:00', false, false),
     (v_svc, 'SATURDAY', '06:00', '22:00', false, false),
     (v_svc, 'SUNDAY', '06:00', '22:00', false, false);
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-carquotes-1.svg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-carquotes-1.jpg');
   INSERT INTO tabs_section (service_id, heading, content) VALUES (v_svc, 'Available Colours', '<p>Black and White</p>');
 
   -- AutoCabs (TRANSPORT)
@@ -401,7 +404,7 @@ Follow surf etiquette (right of way, don’t drop in)
     (v_svc, 'FRIDAY', '06:00', '22:00', false, false),
     (v_svc, 'SATURDAY', '06:00', '22:00', false, false),
     (v_svc, 'SUNDAY', '06:00', '22:00', false, false);
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-autocabs-1.svg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-autocabs-1.jpg');
 
   -- SuperBus Travels (TRANSPORT)
   INSERT INTO price_configurations (price_type, fixed_price, price_per_unit, price_per_adult, price_per_child,
@@ -432,7 +435,7 @@ Follow surf etiquette (right of way, don’t drop in)
     (v_svc, 'FRIDAY', '06:00', '22:00', false, false),
     (v_svc, 'SATURDAY', '06:00', '22:00', false, false),
     (v_svc, 'SUNDAY', '06:00', '22:00', false, false);
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-superbus-travels-1.svg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-superbus-travels-1.jpg');
 
   -- Matara Dragons (FOOD_BEVERAGE)
   INSERT INTO price_configurations (price_type, fixed_price, price_per_unit, price_per_adult, price_per_child,
@@ -464,7 +467,7 @@ Follow surf etiquette (right of way, don’t drop in)
     (v_svc, 'FRIDAY', '08:00', '23:00', false, false),
     (v_svc, 'SATURDAY', '08:00', '23:00', false, false),
     (v_svc, 'SUNDAY', '08:00', '23:00', false, false);
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-matara-dragons-1.svg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-matara-dragons-1.jpg');
 
   -- Olu Restaurant (FOOD_BEVERAGE)
   INSERT INTO price_configurations (price_type, fixed_price, price_per_unit, price_per_adult, price_per_child,
@@ -496,7 +499,7 @@ Follow surf etiquette (right of way, don’t drop in)
     (v_svc, 'FRIDAY', '08:00', '23:00', false, false),
     (v_svc, 'SATURDAY', '08:00', '23:00', false, false),
     (v_svc, 'SUNDAY', '08:00', '23:00', false, false);
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-olu-restaurant-1.svg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-olu-restaurant-1.jpg');
 
   -- Kamilia Resort (ACCOMMODATION)
   INSERT INTO price_configurations (price_type, fixed_price, price_per_unit, price_per_adult, price_per_child,
@@ -529,8 +532,8 @@ Follow surf etiquette (right of way, don’t drop in)
     (v_svc, 'FRIDAY', '00:00', '23:59', true, false),
     (v_svc, 'SATURDAY', '00:00', '23:59', true, false),
     (v_svc, 'SUNDAY', '00:00', '23:59', true, false);
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-kamilia-resort-1.svg');
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-kamilia-resort-2.svg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-kamilia-resort-1.jpg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-kamilia-resort-2.jpg');
 
   -- Riverside Eco Lodge (ACCOMMODATION)
   INSERT INTO price_configurations (price_type, fixed_price, price_per_unit, price_per_adult, price_per_child,
@@ -563,8 +566,8 @@ Follow surf etiquette (right of way, don’t drop in)
     (v_svc, 'FRIDAY', '00:00', '23:59', true, false),
     (v_svc, 'SATURDAY', '00:00', '23:59', true, false),
     (v_svc, 'SUNDAY', '00:00', '23:59', true, false);
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-riverside-eco-lodge-1.svg');
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-riverside-eco-lodge-2.svg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-riverside-eco-lodge-1.jpg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-riverside-eco-lodge-2.jpg');
   INSERT INTO tabs_section (service_id, heading, content) VALUES (v_svc, 'About Us', '<p>Take a boat ride along a quiet rivulet that leads up to the lodge Kurulubedda , a scenic refuge in the coastal city of Galle that lies tucked away amidst lush greenery.</p>');
   INSERT INTO tabs_section (service_id, heading, content) VALUES (v_svc, 'About Meals', '<p>All meals at Riverside Eco Lodge are inspired by the verdant surroundings, with homegrown and freshly prepared produce served to you as exquisite culinary creations</p>');
 
@@ -599,8 +602,8 @@ Follow surf etiquette (right of way, don’t drop in)
     (v_svc, 'FRIDAY', '00:00', '23:59', true, false),
     (v_svc, 'SATURDAY', '00:00', '23:59', true, false),
     (v_svc, 'SUNDAY', '00:00', '23:59', true, false);
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-weligama-bay-villas-1.svg');
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-weligama-bay-villas-2.svg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-weligama-bay-villas-1.jpg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-weligama-bay-villas-2.jpg');
   INSERT INTO tabs_section (service_id, heading, content) VALUES (v_svc, 'About Us', '<p>This property is 2 minutes walk from the beach. Featuring barbecue facilities, a garden as well as a terrace, Weligama Bay Villas is situated in Weligama, 3.2 km from Kushtarajagala.</p>');
   INSERT INTO tabs_section (service_id, heading, content) VALUES (v_svc, 'About Rooms', '<p>All rooms feature a kitchen and a private bathroom. Free WiFi is offered. The units are fitted with a flat-screen TV with satellite channels, a kettle, a bath, a hair dryer and a desk.</p>');
 
@@ -633,7 +636,7 @@ Follow surf etiquette (right of way, don’t drop in)
     (v_svc, 'FRIDAY', '06:00', '22:00', false, false),
     (v_svc, 'SATURDAY', '06:00', '22:00', false, false),
     (v_svc, 'SUNDAY', '06:00', '22:00', false, false);
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-matara-rentals-1.svg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-matara-rentals-1.jpg');
 
   -- Galle Tours (TRANSPORT)
   INSERT INTO price_configurations (price_type, fixed_price, price_per_unit, price_per_adult, price_per_child,
@@ -664,7 +667,7 @@ Follow surf etiquette (right of way, don’t drop in)
     (v_svc, 'FRIDAY', '06:00', '22:00', false, false),
     (v_svc, 'SATURDAY', '06:00', '22:00', false, false),
     (v_svc, 'SUNDAY', '06:00', '22:00', false, false);
-  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-galle-tours-1.svg');
+  INSERT INTO image (service_id, image_url) VALUES (v_svc, '/uploads/service-pictures/demo-galle-tours-1.jpg');
 
   -- Policies
   INSERT INTO policy_section (heading, policy, category_id, provider_id) VALUES ('Cancellation Policy', '<p>No refund will be provided in case of any cancellation</p>', 4, v_provider)
@@ -798,7 +801,7 @@ Follow surf etiquette (right of way, don’t drop in)
   VALUES (nextval('complaint_seq'), (s->>'208')::bigint, v_tourist, v_complaint, 'PENDING',
     'The room was not cleaned on our second day and the air conditioning stopped working at night.', now() - interval '5 days')
   RETURNING complaint_id INTO v_complaint;
-  INSERT INTO complaint_image (complaint_id, image_url) VALUES (v_complaint, '/uploads/complaint-images/demo-complaint-room.svg');
+  INSERT INTO complaint_image (complaint_id, image_url) VALUES (v_complaint, '/uploads/complaint-images/demo-complaint-room.jpg');
   INSERT INTO complaint (complaint_id, service_id, tourist_id, booking_id, complaint_status, description, date_time, investigation_started_date)
   VALUES (nextval('complaint_seq'), (s->>'102')::bigint, v_tourist2,
     (SELECT b.booking_id FROM bookings b JOIN trip_items ti ON ti.trip_item_id = b.trip_item_id WHERE ti.service_id = (s->>'102')::bigint LIMIT 1),
@@ -817,5 +820,22 @@ Follow surf etiquette (right of way, don’t drop in)
     (SELECT count(*) FROM services WHERE provider_id = v_provider);
 END
 $seed$;
+
+-- Earlier versions of this seed used SVG placeholders, which React Native's Image cannot render.
+-- Point demo data loaded by those versions at the JPG files (no-op on fresh data).
+UPDATE users SET profile_picture_url = regexp_replace(profile_picture_url, '^(/uploads/.+/demo-[a-z0-9-]+)\.svg$', '\1.jpg')
+  WHERE profile_picture_url ~ '^/uploads/.+/demo-[a-z0-9-]+\.svg$';
+UPDATE providers SET br_url = regexp_replace(br_url, '^(/uploads/.+/demo-[a-z0-9-]+)\.svg$', '\1.jpg')
+  WHERE br_url ~ '^/uploads/.+/demo-[a-z0-9-]+\.svg$';
+UPDATE providers SET cover_image_url = regexp_replace(cover_image_url, '^(/uploads/.+/demo-[a-z0-9-]+)\.svg$', '\1.jpg')
+  WHERE cover_image_url ~ '^/uploads/.+/demo-[a-z0-9-]+\.svg$';
+UPDATE contact_persons SET identity_document_url = regexp_replace(identity_document_url, '^(/uploads/.+/demo-[a-z0-9-]+)\.svg$', '\1.jpg')
+  WHERE identity_document_url ~ '^/uploads/.+/demo-[a-z0-9-]+\.svg$';
+UPDATE licenses SET license_url = regexp_replace(license_url, '^(/uploads/.+/demo-[a-z0-9-]+)\.svg$', '\1.jpg')
+  WHERE license_url ~ '^/uploads/.+/demo-[a-z0-9-]+\.svg$';
+UPDATE image SET image_url = regexp_replace(image_url, '^(/uploads/.+/demo-[a-z0-9-]+)\.svg$', '\1.jpg')
+  WHERE image_url ~ '^/uploads/.+/demo-[a-z0-9-]+\.svg$';
+UPDATE complaint_image SET image_url = regexp_replace(image_url, '^(/uploads/.+/demo-[a-z0-9-]+)\.svg$', '\1.jpg')
+  WHERE image_url ~ '^/uploads/.+/demo-[a-z0-9-]+\.svg$';
 
 COMMIT;
