@@ -197,4 +197,51 @@ class BackendFollowUpsTest {
         }
     }
 
+    @Nested
+    @ExtendWith(MockitoExtension.class)
+    class LoginDoesNotLeakAccountDetails {
+        @Mock UserRepository userRepository;
+        @Mock AuthenticationManager authenticationManager;
+        @InjectMocks AuthServiceImpl authService;
+
+        private final MockHttpServletRequest mobile = new MockHttpServletRequest();
+
+        @BeforeEach
+        void mobileClient() {
+            mobile.addHeader("Client-Type", "mobile");
+            // AuthServiceImpl takes most collaborators by constructor; this one is a field
+            ReflectionTestUtils.setField(authService, "authenticationManager", authenticationManager);
+        }
+
+        private LoginRequest login(String email, String password) {
+            LoginRequest request = new LoginRequest();
+            request.setEmail(email);
+            request.setPassword(password);
+            return request;
+        }
+
+        @Test
+        void unknownEmailLooksLikeAWrongPassword() {
+            when(userRepository.findByEmail("nobody@test.dev")).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> authService.authenticateUser(login("nobody@test.dev", "x"), mobile))
+                    .isInstanceOf(BadCredentialsException.class)
+                    .hasMessage("Invalid email or password.");
+        }
+
+        @Test
+        void wrongPasswordOnAProviderDoesNotRevealTheRoleOrVerificationState() {
+            Provider provider = new Provider();
+            provider.setEmail("provider@test.dev");
+            provider.setRole(UserRole.ROLE_PROVIDER);
+            provider.setEmailVerified(false);
+            when(userRepository.findByEmail("provider@test.dev")).thenReturn(Optional.of(provider));
+            when(authenticationManager.authenticate(any()))
+                    .thenThrow(new org.springframework.security.authentication.BadCredentialsException("bad"));
+
+            assertThatThrownBy(() -> authService.authenticateUser(login("provider@test.dev", "wrong"), mobile))
+                    .isInstanceOf(BadCredentialsException.class)
+                    .hasMessage("Invalid email or password.");
+        }
+    }
 }

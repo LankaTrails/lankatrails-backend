@@ -253,22 +253,10 @@ public class AuthServiceImpl implements AuthService {
     public APIResponse<LoginResponse> authenticateUser(LoginRequest request, HttpServletRequest httpServletRequest) {
         log.info("Attempting login for email: {}", request.getEmail());
 
-        // Fetch user by email to check if verified before authenticating
+        // Unknown email, wrong password and account-state errors are only revealed after the
+        // password checks out, so the endpoint cannot be used to probe which emails exist.
         User user = userRepository.findByEmail(request.getEmail().toLowerCase())
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + request.getEmail()));
-
-        // Check if email is verified
-        if (!user.getEmailVerified()) {
-            log.warn("Login failed: Email not verified for {}", request.getEmail());
-            throw new BadCredentialsException("Please verify your email before logging in.");
-        }
-
-        String clientType = httpServletRequest.getHeader("Client-Type");
-
-        if ("MOBILE".equalsIgnoreCase(clientType) && user.getRole() != UserRole.ROLE_TOURIST) {
-            log.warn("Mobile login attempt blocked for non-tourist user {}", user.getEmail());
-            throw new UnauthorizedException("Only tourist accounts are allowed on the mobile app.");
-        }
+                .orElseThrow(() -> new BadCredentialsException("Invalid email or password."));
 
         // Perform authentication (Spring Security)
         Authentication authentication;
@@ -279,6 +267,17 @@ public class AuthServiceImpl implements AuthService {
         } catch (AuthenticationException ex) {
             log.error("Authentication failed for {}: {}", request.getEmail(), ex.getMessage());
             throw new BadCredentialsException("Invalid email or password.");
+        }
+
+        if (!user.getEmailVerified()) {
+            log.warn("Login failed: Email not verified for {}", request.getEmail());
+            throw new BadCredentialsException("Please verify your email before logging in.");
+        }
+
+        String clientType = httpServletRequest.getHeader("Client-Type");
+        if ("MOBILE".equalsIgnoreCase(clientType) && user.getRole() != UserRole.ROLE_TOURIST) {
+            log.warn("Mobile login attempt blocked for non-tourist user {}", user.getEmail());
+            throw new UnauthorizedException("Only tourist accounts are allowed on the mobile app.");
         }
 
         if (user.getStatus() == UserStatus.DISABLED) {
