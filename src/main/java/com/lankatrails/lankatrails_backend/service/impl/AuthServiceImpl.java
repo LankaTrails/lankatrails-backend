@@ -795,14 +795,14 @@ public class AuthServiceImpl implements AuthService {
                 providerInfoDTO.setBusinessRegistrationNumber(provider.getBusinessRegistrationNumber());
                 providerInfoDTO.setStatus(provider.getStatus());
                 providerInfoDTO.setEmail(provider.getEmail());
-                providerInfoDTO.setCity(provider.getLocation().getCity());
+                providerInfoDTO.setCity(provider.getLocation() != null ? provider.getLocation().getCity() : null);
                 responseList.add(providerInfoDTO);
 
             }
             response.setContent(responseList);
             return APIResponse.<ProviderInfoResponse>builder()
                     .success(true)
-                    .message("No pending provider service approvals")
+                    .message("Providers awaiting service approval")
                     .data(response)
                     .build();
         }

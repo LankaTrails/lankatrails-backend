@@ -1,7 +1,6 @@
 package com.lankatrails.lankatrails_backend.controller;
 
 
-import com.lankatrails.lankatrails_backend.config.ApplicationRateLimiterConfig;
 import com.lankatrails.lankatrails_backend.dtos.request.ChangePaswordRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.LoginRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.ProviderRegistrationRequest;
@@ -11,9 +10,9 @@ import com.lankatrails.lankatrails_backend.dtos.response.LoginResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.RegistrationResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.UserProfileDto;
 import com.lankatrails.lankatrails_backend.security.jwt.JwtUtils;
+import com.lankatrails.lankatrails_backend.security.service.LoginRateLimiter;
 import com.lankatrails.lankatrails_backend.security.service.RefreshTokenRedisService;
 import com.lankatrails.lankatrails_backend.service.AuthService;
-import io.github.resilience4j.ratelimiter.RateLimiter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,8 +30,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final JwtUtils jwtUtils;
-    private final ApplicationRateLimiterConfig rateLimiterConfig;
-    private final RateLimiter loginRateLimiter;
+    private final LoginRateLimiter loginRateLimiter;
     private final RefreshTokenRedisService refreshTokenRedisService;
 
 //    @PostMapping(value = "/signup/tourist", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -78,8 +76,13 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request,
             HttpServletRequest httpServletRequest) {
 
-        if (!loginRateLimiter.acquirePermission()) {
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
+        if (!loginRateLimiter.tryAcquire(httpServletRequest.getRemoteAddr(), request.getEmail())) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .header(HttpHeaders.RETRY_AFTER, String.valueOf(loginRateLimiter.windowSeconds()))
+                    .body(APIResponse.<LoginResponse>builder()
+                            .success(false)
+                            .message("Too many login attempts. Please wait a minute and try again.")
+                            .build());
         }
 
         APIResponse<LoginResponse> loginResponse = authService.authenticateUser(request, httpServletRequest);
