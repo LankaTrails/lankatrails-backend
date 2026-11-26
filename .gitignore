@@ -65,3 +65,6 @@ build/
 docker/.env*
 !docker/.env*.example
 docker/logs/
+
+# macOS
+.DS_Store
