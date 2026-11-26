@@ -297,7 +297,8 @@ public class TripServiceImpl implements TripService {
                 .toList();
                 
         if (trips.isEmpty()) {
-            return new APIResponse<>(false, "No trips found for the user", new ArrayList<>());
+            // An empty list is a normal result, not a failure
+            return new APIResponse<>(true, "No trips found for the user", new ArrayList<>());
         }
 
         List<TripResponseDTO> responseDTOs = new ArrayList<>();
@@ -411,7 +412,7 @@ public class TripServiceImpl implements TripService {
                 .toList();
                 
         if (trips.isEmpty()) {
-            return new APIResponse<>(false, "No trips found for the user", null);
+            return new APIResponse<>(true, "No trips found for the user", new ArrayList<>());
         }
         List<TripPeriodDto> tripPeriods = new ArrayList<>();
         for (Trip trip : trips) {

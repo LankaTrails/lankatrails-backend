@@ -1,11 +1,13 @@
 package com.lankatrails.lankatrails_backend.service;
 
+import com.lankatrails.lankatrails_backend.dtos.TripPeriodDto;
 import com.lankatrails.lankatrails_backend.dtos.UserPreferencesDTO;
 import com.lankatrails.lankatrails_backend.dtos.request.UserPreferencesUpdateRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.LoginRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ComplaintInfoResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ProviderInfoResponse;
+import com.lankatrails.lankatrails_backend.dtos.response.TripResponseDTO;
 import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
 import com.lankatrails.lankatrails_backend.model.Provider;
 import com.lankatrails.lankatrails_backend.model.Tourist;
@@ -15,11 +17,14 @@ import com.lankatrails.lankatrails_backend.model.enums.UserRole;
 import com.lankatrails.lankatrails_backend.model.enums.ComplaintStatus;
 import com.lankatrails.lankatrails_backend.repositories.ComplaintRepository;
 import com.lankatrails.lankatrails_backend.repositories.ProviderRepository;
+import com.lankatrails.lankatrails_backend.repositories.TouristRepository;
+import com.lankatrails.lankatrails_backend.repositories.TripRepository;
 import com.lankatrails.lankatrails_backend.repositories.UserRepository;
 import com.lankatrails.lankatrails_backend.security.utils.AuthUtils;
 import com.lankatrails.lankatrails_backend.security.service.LoginRateLimiter;
 import com.lankatrails.lankatrails_backend.service.impl.AuthServiceImpl;
 import com.lankatrails.lankatrails_backend.service.impl.ComplaintServiceImpl;
+import com.lankatrails.lankatrails_backend.service.impl.TripServiceImpl;
 import com.lankatrails.lankatrails_backend.service.impl.UserServiceimpl;
 import org.modelmapper.ModelMapper;
 import org.mockito.Spy;
@@ -142,6 +147,40 @@ class BackendFollowUpsTest {
             APIResponse<ComplaintInfoResponse> response = complaintService.getAllComplaints();
 
             assertThat(response.getData().getContent()).isNotNull().isEmpty();
+        }
+    }
+
+    @Nested
+    @ExtendWith(MockitoExtension.class)
+    class EmptyTrips {
+        @Mock TouristRepository touristRepository;
+        @Mock TripRepository tripRepository;
+        @Mock AuthUtils authUtils;
+        @InjectMocks TripServiceImpl tripService;
+
+        @BeforeEach
+        void touristWithoutTrips() {
+            Tourist tourist = new Tourist();
+            tourist.setUserId(5L);
+            when(authUtils.loggedInUserId()).thenReturn(5L);
+            when(touristRepository.findById(5L)).thenReturn(Optional.of(tourist));
+            when(tripRepository.findByParticipants_Tourist(tourist)).thenReturn(List.of());
+        }
+
+        @Test
+        void noTripsIsASuccessWithAnEmptyList() {
+            APIResponse<List<TripResponseDTO>> response = tripService.getAllMyTrips();
+
+            assertThat(response.isSuccess()).isTrue();
+            assertThat(response.getData()).isNotNull().isEmpty();
+        }
+
+        @Test
+        void noTripPeriodsIsASuccessWithAnEmptyList() {
+            APIResponse<List<TripPeriodDto>> response = tripService.getMyTripPeriod();
+
+            assertThat(response.isSuccess()).isTrue();
+            assertThat(response.getData()).isNotNull().isEmpty();
         }
     }
 
