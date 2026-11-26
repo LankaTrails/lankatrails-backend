@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.service;
 
 import com.lankatrails.lankatrails_backend.dtos.UserPreferencesDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.UserPreferencesUpdateRequest;
 import com.lankatrails.lankatrails_backend.dtos.request.LoginRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ComplaintInfoResponse;
@@ -141,6 +142,58 @@ class BackendFollowUpsTest {
             APIResponse<ComplaintInfoResponse> response = complaintService.getAllComplaints();
 
             assertThat(response.getData().getContent()).isNotNull().isEmpty();
+        }
+    }
+
+    @Nested
+    @ExtendWith(MockitoExtension.class)
+    class PreferencesUpdate {
+        @Mock UserRepository userRepository;
+        @Mock AuthUtils authUtils;
+        @Spy ModelMapper modelMapper = new ModelMapper();
+        @InjectMocks UserServiceimpl userService;
+
+        @Test
+        void updatesTheExistingRowAndKeepsFieldsThatWereNotSent() {
+            Tourist user = new Tourist();
+            user.setUserId(3L);
+            UserPreferences existing = new UserPreferences();
+            existing.setId(40L);
+            existing.setUser(user);
+            existing.setPreferredCurrency("USD");
+            existing.setPushNotifications(true);
+            existing.setEmailNotifications(true);
+            user.setPreferences(existing);
+            when(authUtils.loggedInUserId()).thenReturn(3L);
+            when(userRepository.findById(3L)).thenReturn(Optional.of(user));
+
+            UserPreferencesUpdateRequest request = new UserPreferencesUpdateRequest();
+            request.setPushNotifications(false);
+            APIResponse<UserPreferencesDTO> response = userService.updateUserPreferences(request);
+
+            assertThat(user.getPreferences()).isSameAs(existing);
+            assertThat(existing.getUser()).isSameAs(user);
+            assertThat(existing.getPushNotifications()).isFalse();
+            assertThat(existing.getEmailNotifications()).isTrue();
+            assertThat(existing.getPreferredCurrency()).isEqualTo("USD");
+            assertThat(response.getData().getPushNotifications()).isFalse();
+            verify(userRepository).save(user);
+        }
+
+        @Test
+        void createsALinkedRowWhenTheUserHasNone() {
+            Tourist user = new Tourist();
+            user.setUserId(4L);
+            when(authUtils.loggedInUserId()).thenReturn(4L);
+            when(userRepository.findById(4L)).thenReturn(Optional.of(user));
+
+            UserPreferencesUpdateRequest request = new UserPreferencesUpdateRequest();
+            request.setNotificationsEnabled(true);
+            userService.updateUserPreferences(request);
+
+            assertThat(user.getPreferences()).isNotNull();
+            assertThat(user.getPreferences().getUser()).isSameAs(user);
+            assertThat(user.getPreferences().getNotificationsEnabled()).isTrue();
         }
     }
 

@@ -7,6 +7,7 @@ import com.lankatrails.lankatrails_backend.model.enums.UserStatus;
 import com.lankatrails.lankatrails_backend.exception.BadCredentialsException;
 import com.lankatrails.lankatrails_backend.dtos.request.DeactivateAccountRequest;
 import com.lankatrails.lankatrails_backend.dtos.UserPreferencesDTO;
+import com.lankatrails.lankatrails_backend.dtos.request.UserPreferencesUpdateRequest;
 import com.lankatrails.lankatrails_backend.dtos.response.*;
 import com.lankatrails.lankatrails_backend.exception.BadRequestException;
 import com.lankatrails.lankatrails_backend.exception.ResourceNotFoundException;
@@ -132,18 +133,37 @@ public class UserServiceimpl implements UserService {
     }
 
     @Override
-    public APIResponse<UserPreferencesDTO> updateUserPreferences(UserPreferencesDTO preference) {
+    public APIResponse<UserPreferencesDTO> updateUserPreferences(UserPreferencesUpdateRequest request) {
         User user = userRepository.findById(authUtils.loggedInUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("UserID", authUtils.loggedInUserId()));
 
-        user.setPreferences(modelMapper.map(preference, UserPreferences.class));
+        // Update the existing row in place; replacing it lost the user link and failed on user_id
+        UserPreferences preferences = user.getPreferences();
+        if (preferences == null) {
+            preferences = new UserPreferences();
+            preferences.setUser(user);
+            user.setPreferences(preferences);
+        }
+        applyIfPresent(request.getPreferredCurrency(), preferences::setPreferredCurrency);
+        applyIfPresent(request.getTimeZone(), preferences::setTimeZone);
+        applyIfPresent(request.getLanguage(), preferences::setLanguage);
+        applyIfPresent(request.getIs24Hour(), preferences::setIs24Hour);
+        applyIfPresent(request.getMeasurementSystem(), preferences::setMeasurementSystem);
+        applyIfPresent(request.getNotificationsEnabled(), preferences::setNotificationsEnabled);
+        applyIfPresent(request.getEmailNotifications(), preferences::setEmailNotifications);
+        applyIfPresent(request.getPushNotifications(), preferences::setPushNotifications);
+        applyIfPresent(request.getSmsNotifications(), preferences::setSmsNotifications);
         userRepository.save(user);
 
         return APIResponse.<UserPreferencesDTO>builder()
                 .success(true)
                 .message("User preferences updated successfully")
-                .data(preference)
+                .data(modelMapper.map(preferences, UserPreferencesDTO.class))
                 .build();
+    }
+
+    private static <T> void applyIfPresent(T value, java.util.function.Consumer<T> setter) {
+        if (value != null) setter.accept(value);
     }
 
     @Override

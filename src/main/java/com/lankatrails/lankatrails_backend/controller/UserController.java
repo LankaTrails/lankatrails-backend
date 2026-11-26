@@ -1,6 +1,7 @@
 package com.lankatrails.lankatrails_backend.controller;
 
 import com.lankatrails.lankatrails_backend.dtos.request.DeactivateAccountRequest;
+import com.lankatrails.lankatrails_backend.dtos.request.UserPreferencesUpdateRequest;
 import com.lankatrails.lankatrails_backend.dtos.UserPreferencesDTO;
 import com.lankatrails.lankatrails_backend.dtos.response.APIResponse;
 import com.lankatrails.lankatrails_backend.dtos.response.ProfilePicResponse;
@@ -33,7 +34,7 @@ public class UserController {
     }
 
     @PutMapping("/user-preferences")
-    public ResponseEntity<APIResponse<UserPreferencesDTO>> updateUserPreferences(@Valid @RequestBody UserPreferencesDTO preference) {
+    public ResponseEntity<APIResponse<UserPreferencesDTO>> updateUserPreferences(@Valid @RequestBody UserPreferencesUpdateRequest preference) {
         APIResponse<UserPreferencesDTO> response = userService.updateUserPreferences(preference);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
